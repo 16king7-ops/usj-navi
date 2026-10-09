@@ -838,6 +838,11 @@ figure.amap svg { width: 100%; height: auto; border-radius: 18px; display: block
 .answer .kv b { font-family: var(--round); font-weight: 400; font-size: 22px; color: var(--ink); font-variant-numeric: tabular-nums; }
 .acts3 { display: flex; flex-wrap: wrap; gap: 8px; }
 .acts3 .btn { min-height: 44px; }
+@media (max-width: 520px) {  /* スマホ: 大きい2つ（最適化・当日へ）を1段、マップ・送る・コピーを小さめの1段に */
+  .acts3 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .acts3 .btn { grid-column: span 2; font-size: 12.5px; padding: 6px 4px; border-radius: 12px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; line-height: 1.25; text-align: center; min-height: 52px; }
+  .acts3 #optbtn, .acts3 #golive { grid-column: span 3; font-size: 14px; flex-direction: row; gap: 6px; }
+}
 .plist { list-style: none; margin: 0; padding: 0; display: grid; }
 .plist li { display: grid; grid-template-columns: 4.6em 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
 .plist li:first-child { border-top: 0; }
@@ -1467,11 +1472,11 @@ const S = {
   foods: store.get("foods", []), wc: store.get("wc", 1), entry: store.get("entry", 0), entryMode: store.get("entryMode", "open"), first: store.get("first", ""),
   slack: store.get("slack", true), style: store.get("style", "normal"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
   lightLunch: store.get("lightLunch", false), mealAt: store.get("mealAt", {}), theme: "light", meals: store.get("meals", { lunch: true, dinner: true }),
-  tab: "day", liveLoc: store.get("liveloc", null), fFrom: store.get("ffrom", null), free: store.get("free", {}), mo: store.get("mo", true),
+  tab: "day", liveLoc: store.get("liveloc", null), fFrom: store.get("ffrom", null), free: store.get("free", {}), mo: store.get("mo", true), selBy: store.get("selBy", {}),
 };
 // 予定は日付ごとに持つ（items＝順番、done＝済み、over＝当日に入れた待ち時間、live＝当日モードで組み直した時刻と場所）
 const P = () => S.plans[S.date] || (S.plans[S.date] = { items: null, done: {}, over: {}, live: null });
-const save = () => { ["date", "sel", "must", "showAt", "foods", "wc", "entry", "entryMode", "first", "slack", "style", "wx", "speed", "plans", "inNin", "lightLunch", "mealAt", "meals", "free", "mo"].forEach(k => store.set(k, S[k]));  };
+const save = () => { ["date", "sel", "must", "showAt", "foods", "wc", "entry", "entryMode", "first", "slack", "style", "wx", "speed", "plans", "inNin", "lightLunch", "mealAt", "meals", "free", "mo", "selBy"].forEach(k => store.set(k, S[k]));  };
 
 // ================= 混み具合（日にち） =================
 const AVGS = DAYS.filter(x => x.avg).map(x => x.avg).sort((a, b) => a - b);
@@ -2354,7 +2359,14 @@ function renderTop() {
   const c = M.crowd;
   document.getElementById("datechip").innerHTML = `${md(M.date)} ${LVM[c.lv]}${LV[c.lv]}<span>${hm(M.open)}〜${hm(M.close)}</span>`;
 }
-function setDate(d) { S.date = d; M = buildModel(d); save(); renderTop(); }
+// 選び方（乗りたいもの・必ず）は日付ごとに覚える（3日行くとき、日ごとに変えられる）。初めての日付は、今の選び方を引き継ぐ
+function keepSel() { if (S.date && S.sel) S.selBy = { ...(S.selBy || {}), [S.date]: { sel: S.sel.slice(), must: (S.must || []).slice() } }; }
+function setDate(d) {
+  let back = false;
+  if (S.date && S.date !== d) { keepSel(); const k = (S.selBy || {})[d]; if (k) { back = JSON.stringify(k.sel) !== JSON.stringify(S.sel); S.sel = k.sel.slice(); S.must = k.must.slice(); } }
+  S.date = d; M = buildModel(d); save(); renderTop();
+  if (back && document.getElementById("gtoast")) toast("gtoast", `${md(d)}の選び方（${S.sel.length}個）に切り替えました。選び方は日付ごとに覚えています。`);
+}
 
 // ================= いつ行く =================
 const HERO = [["x_harbor", "メディテレーニアンハーバーとプロメテウス火山"], ["x_mc_night", "夜のホテルミラコスタ"], ["x_fs_frozen", "ファンタジースプリングス（アナと雪の女王）"], ["x_aw", "夕暮れのアメリカンウォーターフロント"], ["x_ac", "アラビアンコースト"],
@@ -2487,7 +2499,9 @@ function renderMeals() {
   if (lt) lt.addEventListener("change", e => { S.lightLunch = e.target.value === "1"; save(); replan(S.lightLunch ? "昼ごはんを食べ歩きにしました。" : "昼ごはんをレストランにしました。"); });
 }
 function renderPresets() {
-  document.getElementById("presets").innerHTML = Object.keys(PRESETS).map(n => `<button type="button" data-pre="${n}">${n}</button>`).join("");
+  const other = Object.entries(S.selBy || {}).filter(([d, v]) => d !== S.date && d >= TODAY && v.sel && v.sel.length && JSON.stringify(v.sel) !== JSON.stringify(S.sel)).sort();
+  document.getElementById("presets").innerHTML = Object.keys(PRESETS).map(n => `<button type="button" data-pre="${n}">${n}</button>`).join("") + other.map(([d, v]) => `<button type="button" data-copyd="${d}">${md(d)}の選び方（${v.sel.length}個）</button>`).join("");
+  document.querySelectorAll("#presets [data-copyd]").forEach(b => b.addEventListener("click", () => { const v = S.selBy[b.dataset.copyd]; S.sel = v.sel.filter(k => RIDES[k] && avail(k, M.date)); S.must = v.must.filter(k => S.sel.includes(k)); S.first = ""; save(); renderCards(); renderPresets(); replan(`${md(b.dataset.copyd)}の選び方を、${md(S.date)}にも使いました。`); }));
   document.querySelectorAll("#presets [data-pre]").forEach(b => b.addEventListener("click", () => applyPreset(b.dataset.pre)));
 }
 function applyPreset(n) {
@@ -2840,7 +2854,7 @@ function shareLink() {
 }
 function readShare(h) { if (!h || !h.startsWith("s-")) return null; try { const o = JSON.parse(unb64u(h.slice(2))); return o && o.v === 1 && /^\d{4}-\d{2}-\d{2}$/.test(o.d) ? o : null; } catch (e) { return null; } }
 function applyShare(o) {
-  S.date = o.d < TODAY ? TODAY : o.d;
+  keepSel(); S.date = o.d < TODAY ? TODAY : o.d;
   S.sel = (o.s || []).filter(k => RIDES[k]); S.must = (o.m || []).filter(k => S.sel.includes(k));
   if (o.em) S.entryMode = o.em; if (o.en != null) S.entry = o.en; if (o.sl != null) S.slack = o.sl; if (o.st) S.style = o.st; if (o.sp) S.speed = o.sp;
   if (o.ll != null) S.lightLunch = o.ll; if (o.me) S.meals = o.me; if (o.mo != null) S.mo = o.mo; S.free = o.fr || {}; S.showAt = { ...S.showAt, ...(o.sa || {}) }; S.first = o.fi || "";
