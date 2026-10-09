@@ -884,6 +884,26 @@ figure.amap svg { width: 100%; height: auto; border-radius: 18px; display: block
 .pdiff ul { margin: 0; padding-left: 1.2em; display: grid; gap: 2px; }
 .pdiff .add { color: var(--good); } .pdiff .del, .pdiff .bad, .confirm .bad { color: var(--bad); }
 .shotrev { display: grid; gap: 8px; }
+.trust { font-size: 14px; }
+.teaser { font: inherit; font-size: 14.5px; text-align: left; display: flex; gap: 8px; align-items: center; width: 100%; border: 1.5px solid var(--sun); background: color-mix(in srgb, var(--sun) 16%, var(--surface)); color: var(--ink); border-radius: 14px; padding: 10px 12px; cursor: pointer; min-height: 48px; }
+.teaser span { flex: 1; min-width: 0; } .teaser i { font-style: normal; font-weight: 900; color: var(--brand); }
+.trustl { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.trustl li { display: block; padding-left: 1.5em; text-indent: -1.5em; line-height: 1.6; }
+.trustl li svg.ic { margin-right: .35em; }
+.trustl .good { color: var(--good); }
+.boost:empty { display: none; }
+.boost { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.boosth { display: grid; gap: 2px; }
+.bopt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 12px; background: var(--surface); }
+.bopt.rec { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.bopt p { margin: 2px 0 0; font-size: 14px; }
+@media (max-width: 520px) { .bopt { grid-template-columns: minmax(0, 1fr); } .bopt .btn { width: 100%; min-height: 44px; } }
+.pickfirst { display: grid; gap: 12px; background: var(--surface); border: 2px solid var(--brand); border-radius: 20px; padding: 18px; }
+.pickfirst h2 { font-size: clamp(20px, 3.4vw, 26px); }
+.pfsets { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 8px; }
+.pfset { font: inherit; text-align: left; display: grid; gap: 2px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 14px; padding: 10px 12px; cursor: pointer; min-height: 56px; }
+.pfset:hover { border-color: var(--brand); }
+.pfset b { font-size: 15.5px; } .pfset small { font-size: 13px; color: var(--ink-3); }
 select, input { max-width: 100%; }
 .srow .cl.sr { grid-column: 1 / -1; white-space: normal; }
 .held { border: 2px dashed var(--warn); border-radius: 14px; padding: 10px 12px; display: grid; gap: 6px; margin-top: 12px; font-size: 14px; background: var(--warn-soft); }
@@ -914,6 +934,9 @@ label.cl input[type=checkbox] { width: 20px; height: 20px; }
   .droptbl td:first-child, .droptbl td[data-l="時刻の決まった予定"], .droptbl td.go { grid-column: 1 / -1; }
   .droptbl td[data-l]::before { content: attr(data-l); display: block; font-size: 12px; font-weight: 700; color: var(--ink-3); }
   .droptbl td.go .btn { width: 100%; }
+  table.droptbl { min-width: 0; }  /* 表の最小幅（広い画面向け）より、スマホではカードを優先 */
+  .linkbtn { min-height: 44px; display: inline-flex; align-items: center; }
+  .toast.float button.tclose { width: 44px; height: 44px; }
   /* スクショの確かめ: 名前・待ち・休止を1行に、状態は次の行に */
   .srow { grid-template-columns: minmax(0, 1fr) 5.2em auto; }
   .srow > span:first-child { grid-column: 1; grid-row: 1; } .srow input[type=number] { grid-column: 2; grid-row: 1; } .srow .cl:not(.sr) { grid-column: 3; grid-row: 1; }
@@ -2075,6 +2098,8 @@ function dayWait(k, x, t) {
   const w = dayWait0(k, x, t);
   return epOf(k) && !(w && w.closed) ? { w: EPW } : w;
 }
+// 答え合わせで、この日の記録は今年の水準などに直さず、そのまま使う（「去年の同じ日の実際の待ちで回すと」のとき）
+let RAW_DAY = null;
 function dayWait0(k, x, t) {
   const r = RIDES[k], src = r.from_ || k;
   if (r.src === "h") {
@@ -2086,7 +2111,7 @@ function dayWait0(k, x, t) {
   const s = x.s[src]; if (!s) return null;
   const sh = M.open - 480, pts = [];
   // 別の日の記録は、予測と同じく行く日の条件（連休の種類・営業時間・今年の水準）に直して使う。その日自身（答え合わせ）はそのまま
-  const f = x.d === M.date ? 1 : relF(M.date, x) * (r.from_ ? 1 : yoyRide(src)) * wxF(M.date, x, src);
+  const f = x.d === M.date || x.d === RAW_DAY ? 1 : relF(M.date, x) * (r.from_ ? 1 : yoyRide(src)) * wxF(M.date, x, src);
   for (let i = 0; i < SLOT_M.length; i++) { const v = dec(s, i); if (v != null) { const m = SLOT_M[i] < 720 ? SLOT_M[i] + sh : SLOT_M[i]; if (!r.open || m >= r.open - 30) pts.push([m, v * f]); } }
   const cutM = (r.cut_in || []).filter(([rg]) => inR(M.date, [rg])).map(z => z[1])[0];
   const P2 = cutM ? pts.filter(p => p[0] <= cutM) : pts;
@@ -2355,7 +2380,7 @@ function goPlan(d) { setDate(d); setTab("plan"); toast("plantoast", `<b>${md(d)}
 const MONTH_PH = { 1: "x_mc_night", 2: "x_ac", 3: "x_venice", 4: "x_harbor", 5: "x_fs", 6: "x_ml", 7: "x_capecod", 8: "x_pd_night", 9: "x_aw", 10: "x_mc_evening", 11: "x_fs_frozen", 12: "x_ml_night" };
 function renderSteps4() {
   const box = document.getElementById("steps4"); if (!box) return;
-  const c = M.crowd, sel = S.sel.filter(k => RIDES[k] && avail(k, M.date)).length, sim = P().items && P().items.length ? curSim() : null;
+  const c = M.crowd, sel = S.sel.filter(k => RIDES[k] && avail(k, M.date)).length, sim = P().items && P().items.length && !noPick() ? curSim() : null;
   const st = [["cal", "STEP 1", "行く日を選ぶ", `${md(M.date)} ${LVM[c.lv]} ${LV[c.lv]}`], ["pick", "STEP 2", "乗りたいものを選ぶ", `${sel}個 選択中（必ず ${mustNow().length}個）`],
     ["plan", "STEP 3", "自動で予定ができる", sim ? `${sim.rides}個・並ぶ${dur(sim.waitTot)}・終わり${hm(sim.end)}` : "選ぶとすぐに組みます"], ["live", "STEP 4", "当日は「今ここ」から", "遅れても、今の待ちで組み直す"]];
   box.innerHTML = st.map(([k, e, t, v]) => `<button type="button" class="step4${k === "plan" ? " hot" : ""}" data-s4="${k}"><em>${e}</em><b>${t}</b><span>${v}</span><i class="go" aria-hidden="true">›</i></button>`).join("");
@@ -2411,8 +2436,9 @@ const GROUPS = [["fs", "ファンタジースプリングス", "入口から一�
   ["show", "ショー", "公演の時刻は日によって変わります。公式アプリで確かめて回を選んでください"], ["relax", "のんびり・移動", "船や電車は、遠くへの移動にも使えます"], ["kids", "マーメイドラグーン", "小さな子ども向け。優先度は低めで計算"]];
 const GSHORT = { fs: "ファンタジー", main: "人気", show: "ショー", relax: "のんびり", kids: "マーメイド" };
 let grpTab = store.get("grpTab", "sel");
-const DEF_SEL = ["ソアリン", "トイストーリーマニア", "センターオブジアース", "タワーオブテラー", "フローズン", "ラプンツェル", "ピーターパン", "レイジングスピリッツ", "インディジョーンズ", "ニモ", "海底2万マイル", "タートルトーク", "マジックランプ", "シンドバッド", "ビリーヴ"];
-const DEF_MUST = ["ソアリン", "トイストーリーマニア", "フローズン"];
+// 初めて開いたときは何も選ばない（選択はその人の端末にだけ保存される）。選ぶまでは計画・当日の画面で選び方を案内する
+const DEF_SEL = [], DEF_MUST = [];
+const noPick = () => !S.sel.some(k => RIDES[k] && avail(k, M.date));
 if (!S.sel) S.sel = DEF_SEL.slice();
 if (!S.must) S.must = DEF_MUST.slice();
 const PRESETS = {
@@ -2455,11 +2481,22 @@ function renderMeals() {
 }
 function renderPresets() {
   document.getElementById("presets").innerHTML = Object.keys(PRESETS).map(n => `<button type="button" data-pre="${n}">${n}</button>`).join("");
-  document.querySelectorAll("[data-pre]").forEach(b => b.addEventListener("click", () => {
-    const [sel, must] = PRESETS[b.dataset.pre], off = sel.filter(k => RIDES[k] && !avail(k, M.date));
-    S.sel = sel.filter(k => RIDES[k] && avail(k, M.date)); S.must = must.filter(k => S.sel.includes(k)); S.first = ""; save(); renderCards();
-    replan(`「${b.dataset.pre}」で選び直しました。${off.length ? `<b>${off.map(k => RIDES[k].short).join("・")}</b>は${md(M.date)}はお休みなので外しました。` : ""}`);
-  }));
+  document.querySelectorAll("#presets [data-pre]").forEach(b => b.addEventListener("click", () => applyPreset(b.dataset.pre)));
+}
+function applyPreset(n) {
+  const [sel, must] = PRESETS[n], off = sel.filter(k => RIDES[k] && !avail(k, M.date));
+  S.sel = sel.filter(k => RIDES[k] && avail(k, M.date)); S.must = must.filter(k => S.sel.includes(k)); S.first = ""; save(); renderCards();
+  replan(`「${n}」で選び直しました。${off.length ? `<b>${off.map(k => RIDES[k].short).join("・")}</b>は${md(M.date)}はお休みなので外しました。` : ""}`);
+}
+// 何も選んでいないときの案内（計画の一番上）: セットを1つ押すか、一覧から自分で選ぶ
+function emptyPickHTML() {
+  return `<div class="pickfirst"><h2>まず、乗りたいものを選びましょう</h2><p>選ぶと、その日の待ち時間の予測から、回る順番と時刻を自動で組みます。あとから足したり外したりもできます。</p>
+    <div class="pfsets">${Object.entries(PRESETS).map(([n, [sel]]) => `<button type="button" class="pfset" data-pf="${n}"><b>${n}</b><small>${sel.filter(k => RIDES[k] && avail(k, M.date)).slice(0, 3).map(k => RIDES[k].short).join("・")} など ${sel.filter(k => RIDES[k] && avail(k, M.date)).length}個</small></button>`).join("")}</div>
+    <button type="button" class="btn" id="pf-own">自分で1つずつ選ぶ（一覧へ）</button></div>`;
+}
+function wireEmptyPick(box) {
+  box.querySelectorAll("[data-pf]").forEach(b => b.addEventListener("click", () => applyPreset(b.dataset.pf)));
+  const own = box.querySelector("#pf-own"); if (own) own.addEventListener("click", () => { setTab("plan"); setTimeout(() => document.getElementById("pickh").scrollIntoView({ behavior: "smooth" }), 60); });
 }
 const itemFor = k => newItem(RIDES[k].src === "ticket" ? "ticket" : RIDES[k].src === "show" ? "show" : "ride", k);
 function renderCards() {
@@ -2643,6 +2680,7 @@ const idleWhy = r => { const R = RIDES[r.it.key]; if (!R || r.idle < 20 || R.src
   const w0 = Math.round(planWait(r.it.key, Math.round(r.arrive))); return w0 > r.wait + 10 ? `（着いてすぐ並ぶと${w0}分、${hm(r.start)}からなら${Math.round(r.wait)}分）` : ""; };
 let whyOpen = false;
 function renderPlanHero(sim) {
+  if (noPick()) { const b = document.getElementById("answer"); b.innerHTML = emptyPickHTML(); wireEmptyPick(b); return; }
   const c = M.crowd, box = document.getElementById("answer"), dp = dpaPlan(sim), miss = (lastMissed || []).filter(x => RIDES[x.key]).map(x => RIDES[x.key].short);
   const sub = r => { const R = RIDES[r.it.key]; if (r.flag) return "⚠ " + r.flag; if (R) return R.src === "show" ? (epOf(r.it.key) ? "ショー（DPAの席）" : `${hm(showTime(r.it.key))}開演・${S.free[r.it.key] ? "5分前に着く" : "場所取りから"}`) : epOf(r.it.key) ? "プレミアアクセス・並ぶ10分ほど" : `乗り終わり ${hm(r.end)}`;
     if (r.it.type === "meal") return `${r.info || "近くの店"}・${isMO(r.to.slice(6)) ? moTxt(r) : `行列 ${Math.round(r.wait)}分ほど`}`; return r.info || ""; };
@@ -2651,17 +2689,120 @@ function renderPlanHero(sim) {
   const t0 = sim.rows.length ? sim.rows[0].arrive - sim.rows[0].walk : entryAt();
   box.innerHTML = `<div class="ah"><div><span class="meta">${md(M.date)}・${LVM[c.lv]} ${LV[c.lv]}・${hm(M.open)}〜${hm(M.close)}</span><h2>${M.date === TODAY ? "今日" : md(M.date)}の攻略プラン</h2></div>
     <div class="kv"><span><b>${sim.rides}</b> 個</span><span>並ぶ <b>${dur(sim.waitTot)}</b></span><span>歩く <b>${dur(sim.walkTot)}</b></span><span>終わり <b>${hm(sim.end)}</b></span></div></div>
+    <button type="button" class="teaser" id="boosttz" hidden></button>
+    <div class="trust" id="trust"></div>
     <div class="acts3"><button type="button" class="btn primary" id="optbtn"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z' /> <path d='M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5' /></svg> おまかせ最適化</button><button type="button" class="btn sun" id="golive">このプランで当日へ ›</button><button type="button" class="btn" id="copyplan2"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z' /> <path d='M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1' /></svg> 文字でコピー</button></div>
     <ol class="plist"><li><span class="t">${hm(t0)}</span><span class="ph"></span><span class="nm">入園${S.entryMode === "happy" ? "（ハッピーエントリー）" : ""}<small>${dp ? "入ったらすぐ、アプリでプレミアアクセスを買う" : "ゲートを入ったら、最初の予定へ"}</small></span><span></span></li>${rows}</ol>
-    ${miss.length ? `<p class="warnline">選んだけれど入りきらなかったもの：${miss.join("、")}（「なぜこの順番？」と、下の「根拠」に理由と直し方）</p>` : ""}
+    <div class="boost" id="boost"></div>
     <details class="more why" id="whybox"${whyOpen ? " open" : ""}><summary>なぜこの順番？</summary><div class="inner" id="why">${whyOpen ? planWhy(sim) : ""}</div></details>
     <button type="button" class="linkbtn" id="godetail">詳しい予定・地図・設定（入園・DPA・組み方）へ ↓</button>`;
   document.getElementById("optbtn").onclick = () => { replan("おまかせ最適化：選んだものを、待ち＋歩く時間が一番少ない順番に組み直しました。"); box.scrollIntoView({ behavior: "smooth", block: "start" }); };
   document.getElementById("golive").onclick = () => setTab("live");
+  renderBoost(sim);
   document.getElementById("copyplan2").onclick = () => copyPlan(sim);
   document.getElementById("godetail").onclick = () => document.getElementById("plandetail").scrollIntoView({ behavior: "smooth", block: "start" });
   document.getElementById("whybox").addEventListener("toggle", e => { whyOpen = e.target.open; if (whyOpen) document.getElementById("why").innerHTML = planWhy(curSim()); });
 }
+// ===== 入りきらなかったとき、どうすれば乗れるか ＋ この予定を信じていい材料 =====
+//  ・信頼: 去年の同じ日の実際の待ち（直さない）でこの予定を回すと／似た日で回すと全部回れた日数／選んだ順にそのまま回るより何個多いか
+//  ・入れる方法: DPA（どれを買うと全部入るか。売り切れの目安も見る）・見込みを攻める（似た日で全部回れた日数つき）・開園ダッシュ・時間帯（一番空く時間）
+//  試算は少しずつ（画面を止めない）。同じ条件なら覚えておく。どれも押すまで予定は変えない
+let boostRun = 0, boostRes = null;
+function trustOf(sim) {
+  const out = {}, ly = (+M.date.slice(0, 4) - 1) + M.date.slice(4), x = DAYMAP[ly];
+  if (x && x.avg && x.s && Object.keys(x.s).length) { RAW_DAY = ly; try { const r = replayLive(sim, x); out.last = { d: ly, avg: x.avg, ok: !r.missed.length, rides: r.rides, planned: r.planned, end: r.end, miss: [...new Set(r.missed.map(m => m.k))] }; } finally { RAW_DAY = null; } }
+  const refs = M.crowd.refs; out.refs = { n: refs.length, ok: refs.filter(y => !replayLive(sim, y).missed.length).length };
+  const nv = naiveSim(); out.naive = { rides: nv.rides, wait: Math.round(nv.waitTot) };
+  return out;
+}
+function tryPlan(o, missK, rate) {  // 設定を一時的に変えて組んでみる（必ず元に戻す）
+  const e0 = P().ep, sl = S.slack, st = S.style, em = S.entryMode;
+  try {
+    if (o.ep) P().ep = { ...(e0 || {}), ...Object.fromEntries(o.ep.map(k => [k, { at: null }])) };
+    if (o.fast) { S.slack = false; S.style = "normal"; }
+    if (o.dash) S.entryMode = "dash";
+    const p = planMain(planItems(), mustNow(), { first: S.first }); if (!p) return { ...o, none: true };
+    const s = simulate(p.order), inK = new Set(s.rows.filter(r => RIDES[r.it.key] && !r.flag).map(r => r.it.key)), no = (o.ep || []).filter(k => dpaChain().no.has(k));
+    const out = { ...o, rides: s.rides, wait: Math.round(s.waitTot), end: s.end, got: missK.filter(k => inK.has(k)), allIn: missK.every(k => inK.has(k)), no, cost: (o.ep || []).filter(k => !no.includes(k)).reduce((a, k) => a + RIDES[k].dpa, 0) };
+    if (rate) {
+      const refs = M.crowd.refs; out.rate = { ok: refs.filter(x => !replayLive(s, x).missed.length).length, n: refs.length };
+      const ly = (+M.date.slice(0, 4) - 1) + M.date.slice(4), x = DAYMAP[ly];  // 去年の同じ日の実際の待ち（直さない）で回すと
+      if (x && x.avg && x.s && Object.keys(x.s).length) { RAW_DAY = ly; try { const r = replayLive(s, x); out.last = { d: ly, rides: r.rides, planned: r.planned }; } finally { RAW_DAY = null; } }
+    }
+    return out;
+  } finally { P().ep = e0; S.slack = sl; S.style = st; S.entryMode = em; }
+}
+function bestBand(k) { const hr = hourRows(k), b = hr.rows.find(x => x.h === hr.best); return b ? { h: b.h, med: b.med, noon: Math.round(waitAt(k, 780).med) } : null; }
+function renderBoost(sim) {
+  const sig = vSigNow() + "|" + JSON.stringify(P().items ? P().items.map(x => x.key) : []);
+  if (boostRes && boostRes.sig === sig) { paintBoost(boostRes); if (!boostRes.done) return; return; }
+  const run = ++boostRun, missK = (lastMissed || []).filter(x => RIDES[x.key] && avail(x.key, M.date)).map(x => x.key), date = S.date;
+  const res = boostRes = { sig, missK, done: false, dpa: [], cur: sim.rides };
+  const jobs = [() => { res.trust = trustOf(sim); }];
+  if (missK.length) {
+    jobs.push(() => { res.hours = missK.map(k => ({ k, b: bestBand(k) })).filter(x => x.b); });
+    const ep = P().ep || {}, okDPA = k => RIDES[k] && RIDES[k].dpa && RIDES[k].src === "r" && avail(k, M.date) && (!RIDES[k].dpaFrom || M.date >= RIDES[k].dpaFrom) && !ep[k] && S.sel.includes(k);
+    const planned = sim.rows.filter(r => RIDES[r.it.key]).sort((a, b) => b.wait - a.wait).map(r => r.it.key);
+    // 待ちの長い予定（DPAにすると時間が空く）の上位3つと、入らなかった人気のもの（DPAで入れる）の上位3つ
+    const cands = [...new Set([...planned.filter(okDPA).slice(0, 3), ...missK.filter(okDPA).sort((a, b) => (RIDES[b].w || 0) - (RIDES[a].w || 0)).slice(0, 3)])];
+    cands.forEach(k => jobs.push(() => res.dpa.push(tryPlan({ ep: [k] }, missK))));
+    jobs.push(() => {  // 1つで全部入らなければ、よく効いた3つから2つの組を試す
+      if (res.dpa.some(o => o.allIn && !o.no.length)) return;
+      const top = res.dpa.filter(o => !o.none && !o.no.length).sort((a, b) => b.rides - a.rides || a.wait - b.wait).slice(0, 3).map(o => o.ep[0]);
+      const pr = []; for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++) pr.push([top[i], top[j]]);
+      jobs.unshift(...pr.map(ks => () => res.dpa.push(tryPlan({ ep: ks }, missK))));
+    });
+    jobs.push(() => { res.fast = S.slack ? tryPlan({ fast: true }, missK, true) : null; });
+    jobs.push(() => { res.dash = !["dash", "happy"].includes(S.entryMode) && entryAt() <= M.open ? tryPlan({ dash: true }, missK) : null; });
+  }
+  const step = () => {
+    if (run !== boostRun || S.date !== date) return;
+    const j = jobs.shift();
+    if (j) { j(); paintBoost(res); setTimeout(step, 0); } else { res.done = true; paintBoost(res); }
+  };
+  paintBoost(res); setTimeout(step, 0);
+}
+function paintBoost(res) {
+  const tb = document.getElementById("trust"), box = document.getElementById("boost"); if (!tb || !box) return;
+  const nm = ks => ks.filter(k => RIDES[k]).map(k => RIDES[k].short).join("・"), t = res.trust;
+  tb.innerHTML = !t ? `<p class="note">この予定を、去年の同じ日と似た日の待ちで確かめています…</p>` : `<ul class="trustl">
+    ${t.last ? `<li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0 -10 0' /> <path d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /></svg> <b>去年の${md(t.last.d)}</b>（日平均${t.last.avg}分）の<b>実際の待ち</b>でこの予定を回すと：${t.last.ok ? `<b class="good">全部回れました</b>（終わり ${hm(t.last.end)}）` : `${t.last.planned}個のうち<b>${t.last.rides}個</b>回れました${t.last.miss.length ? `（${nm(t.last.miss.filter(k => RIDES[k]))}は回れず）` : ""}`}</li>` : ""}
+    <li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 似た日<b>${t.refs.n}日</b>の待ちで回すと、全部回れたのは<b>${t.refs.ok}日</b></li>
+    ${t.naive.rides < res.cur || t.naive.wait > (boostCurWait() ?? 0) + 10 ? `<li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z' /> <path d='M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5' /></svg> 選んだ順にそのまま回るより${res.cur > t.naive.rides ? ` <b>${res.cur - t.naive.rides}個多く</b>乗れて` : ""}、並ぶ時間が<b>${dur(Math.max(0, t.naive.wait - (boostCurWait() ?? t.naive.wait)))}短い</b></li>` : ""}
+  </ul>`;
+  const tz = document.getElementById("boosttz");
+  if (!res.missK.length) { box.innerHTML = ""; if (tz) tz.hidden = true; return; }
+  const best = (() => { const ok = res.dpa.filter(o => !o.none && o.allIn && !o.no.length).sort((a, b) => a.cost - b.cost || a.wait - b.wait); if (ok.length) return ok[0]; return res.dpa.filter(o => !o.none && !o.no.length && o.rides > res.cur).sort((a, b) => b.rides - a.rides || a.cost - b.cost)[0] || null; })();
+  const others = res.dpa.filter(o => o !== best && !o.none && !o.no.length && o.rides > res.cur && o.ep.length === 1).sort((a, b) => b.rides - a.rides || a.wait - b.wait).slice(0, 2);
+  const noBuy = [...new Set(res.dpa.flatMap(o => o.no || []))];
+  const dpaRow = best ? `<div class="bopt rec"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス（有料）</b><span class="badge must">おすすめ</span>
+      <p><b>${nm(best.ep)}</b>のDPA（${best.cost.toLocaleString()}円/人）を買うと、${best.allIn ? `<b>選んだものが全部入ります</b>` : `<b>${best.rides}個</b>（今より+${best.rides - res.cur}個）`}・並ぶ合計 ${dur(best.wait)}・終わり ${hm(best.end)}</p>
+      ${others.length ? `<p class="note">ほかに：${others.map(o => `${nm(o.ep)}（${o.cost.toLocaleString()}円）→ ${o.rides}個`).join("、")}</p>` : ""}${noBuy.length ? `<p class="note">${nm(noBuy)}は、ほかのDPAを先に買うと売り切れの目安より後になるので入れていません。</p>` : ""}</div>
+      <button type="button" class="btn primary" data-bo="dpa">このDPAで組む</button></div>`
+    : res.done && res.dpa.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス</b><p class="note">DPAを買っても、入りきらないものは増えない見込みです（売り切れの目安・時刻の決まった予定のため）。</p></div></div>` : "";
+  const f = res.fast, fastRow = f && !f.none && f.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M4 17l5 1l.75 -1.5' /> <path d='M15 21l0 -4l-4 -3l1 -6' /> <path d='M7 12l0 -3l5 -1l3 3l3 1' /></svg> 見込みを攻める</b><p>待ちを「ふつう」の値で見て、締め切りぎりぎりまで使うと → <b>${f.rides}個</b>（+${f.rides - res.cur}個）${f.allIn ? "・選んだものが全部入る" : ""}</p>
+      <p class="note">${f.last ? `去年の${md(f.last.d)}の実際の待ちなら<b>${f.last.planned}個のうち${f.last.rides}個</b>回れた。` : ""}似た日${f.rate.n}日で回すと、全部回れたのは<b>${f.rate.ok}日</b>（今の予定は${res.trust ? res.trust.refs.ok : "…"}日）。実際はもう少し乗れることが多い一方、待ちが長い日は最後の1つが閉まります</p></div>
+      <button type="button" class="btn" data-bo="fast">攻めた予定にする</button></div>` : "";
+  const d = res.dash, dashRow = d && !d.none && d.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg> 開園前から並ぶ（開園ダッシュ）</b><p>開園と同時に入ると → <b>${d.rides}個</b>（+${d.rides - res.cur}個）${M.crowd.lv >= 3 ? "。混む日は開園の1時間半〜2時間前から並ぶ目安" : ""}</p></div>
+      <button type="button" class="btn" data-bo="dash">開園ダッシュで組む</button></div>` : "";
+  const hs = (res.hours || []).slice().sort((a, b) => (RIDES[b.k].w || 0) * (b.b.noon - b.b.med) - (RIDES[a.k].w || 0) * (a.b.noon - a.b.med)), hTop = hs.slice(0, 3);
+  const hrRow = hTop.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6.5 7h11' /> <path d='M6.5 17h11' /> <path d='M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1z' /> <path d='M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1z' /></svg> 空く時間に行く</b>${hTop.map(({ k, b }) => `<p><b>${RIDES[k].short}</b>は${b.h}時台がいちばん空く（ふつう${b.med}分${b.noon - b.med >= 15 ? `・昼の13時ごろは${b.noon}分` : ""}） <button type="button" class="linkbtn" data-bh="${k}">時間帯で見る</button></p>`).join("")}
+      <p class="note">${hs.length > 3 ? `ほか${hs.length - 3}個も時間帯の画面で見られます。` : ""}ほかの予定を外してこの時間に入れたいときは、時間帯の画面で確かめてから、予定の「…」で時刻を決められます。</p></div></div>` : "";
+  if (tz) {  // 結論のすぐ下に1行で: 入りきらなかった数と、いちばん効く手（押すと下の詳しい欄へ）
+    const fz = res.fast && !res.fast.none && res.fast.rides > res.cur ? res.fast : null, tips = [best ? `${nm(best.ep)}のDPAで<b>${best.allIn ? "全部入る" : `+${best.rides - res.cur}個`}</b>（おすすめ）` : "", fz ? `見込みを攻めると<b>+${fz.rides - res.cur}個</b>` : ""].filter(Boolean);
+    tz.hidden = false; tz.innerHTML = `<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0 -10 0' /> <path d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /></svg> <span>入りきらなかったもの <b>${res.missK.length}個</b>${tips.length ? `。${tips.join("・")}` : res.done ? "" : "。乗れる方法を試算中…"}</span><i aria-hidden="true">↓</i>`;
+    tz.onclick = () => box.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  box.innerHTML = `<div class="boosth"><b>入りきらなかったもの ${res.missK.length}個（${nm(res.missK.slice(0, 3))}${res.missK.length > 3 ? " ほか" : ""}）</b><span class="note">こうすれば乗れるかを試算しました（押すまで予定は変わりません）${res.done ? "" : "… 試算中"}</span></div>${dpaRow}${fastRow}${dashRow}${hrRow}`;
+  box.querySelectorAll("[data-bo]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.bo;
+    if (k === "dpa" && best) { const e2 = { ...(P().ep || {}) }; best.ep.forEach(x => { e2[x] = { at: null }; if (!S.sel.includes(x)) S.sel.push(x); }); P().ep = e2; save(); vSig = ""; replan(`${nm(best.ep)}をプレミアアクセスにして組み直しました。入園したらすぐ、公式アプリで買ってください（買う順番は下の「プレミアアクセスを買う順番」）。`); }
+    if (k === "fast") { S.slack = false; S.style = "normal"; save(); vSig = ""; replan("見込みを攻める組み方にしました。待ちが長い日は、最後の予定が閉まることがあります（当日は今の待ちで組み直してください）。"); }
+    if (k === "dash") { S.entryMode = "dash"; save(); vSig = ""; replan("開園ダッシュ（開園前から並んで、開園と同時に入る）で組み直しました。"); }
+  }));
+  box.querySelectorAll("[data-bh]").forEach(b => b.addEventListener("click", () => { focusK = b.dataset.bh; setTab("hours"); setTimeout(() => { renderDetail(); const de = document.getElementById("detail"); if (de) de.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); }));
+}
+const boostCurWait = () => { try { return Math.round(curSim().waitTot); } catch (e) { return null; } };
 // なぜこの順番？: 選んだ順にそのまま回った場合と比べ、乗り物ごとに「この時刻にした理由」を、予測の数字から出す
 function naiveSim() {
   const items = restItems().map(x => ({ ...x, at: undefined })), isRide = x => RIDES[x.key] && RIDES[x.key].src !== "show" && x.pin == null && !epOf(x.key);
@@ -2717,9 +2858,9 @@ function renderPlanSide() {
   const sim = curSim(); renderSteps4(); lastShown = { end: sim.end, rides: sim.rides };
   renderPlanHero(sim);
   const fab = document.getElementById("fab");
-  fab.innerHTML = `<span>${sim.rides}個・並ぶ${dur(sim.waitTot)}・終わり${hm(sim.end)}</span><span>予定を見る ↓</span>`;
+  fab.innerHTML = noPick() ? `<span>まだ何も選んでいません</span><span>選ぶ ↓</span>` : `<span>${sim.rides}個・並ぶ${dur(sim.waitTot)}・終わり${hm(sim.end)}</span><span>予定を見る ↓</span>`;
   fab.hidden = S.tab !== "plan";
-  fab.onclick = () => document.getElementById("plansum").scrollIntoView({ behavior: "smooth", block: "start" });
+  fab.onclick = () => document.getElementById(noPick() ? "pickh" : "plansum").scrollIntoView({ behavior: "smooth", block: "start" });
   const spd = { 0.8: "ゆっくり", 1: "ふつう", 1.25: "早歩き" };
   const firsts = S.sel.filter(k => avail(k, M.date) && RIDES[k].src !== "ticket" && RIDES[k].src !== "show");
   const ep = P().ep || {}, epKs = Object.keys(RIDES).filter(k => RIDES[k].dpa && avail(k, M.date) && (!RIDES[k].dpaFrom || M.date >= RIDES[k].dpaFrom)), epN = epKs.filter(k => ep[k] && S.sel.includes(k)).length, epNo = epKs.filter(k => ep[k] && S.sel.includes(k) && dpaChain().no.has(k)).length;
@@ -2727,7 +2868,7 @@ function renderPlanSide() {
   const ENTRY = [["open", `開園と同時（${hm(M.open)}）`], ["dash", `開園ダッシュ（開園前から並んで${hm(M.open)}にすぐ入る${M.crowd.lv >= 3 ? "。混む日は1時間半〜2時間前から並ぶ" : ""}）`], ["happy", `ハッピーエントリー（${hm(M.open - 15)}・ディズニーホテルに泊まる人）`], ["later", "開園のあと"], ...(off ? [["after3", `アーリーイブニングパスポート（15:00）${M.crowd.lv >= 3 ? "・混む日は発売されないことが多い" : ""}`]] : [["after5", `ウィークナイトパスポート（17:00）${M.crowd.lv >= 3 ? "・混む日は発売されないことが多い" : ""}`]])];
   const entN = { open: "開園と同時", dash: "開園ダッシュ", happy: "ハッピーエントリー", later: `${hm(entryAt())}`, after3: "15時（アーリーイブニング）", after5: "17時（ウィークナイト）" }[S.entryMode] || "開園と同時";
   const wxN = { 晴: "晴れ", 時雨: "時々雨", 後雨: "のち雨", 雨: "雨" }[(S.wx || {})[S.date]], stN = { normal: "余裕を見る", sure: "確実", must: "必ず最優先", fast: "楽観" }[styleNow()];
-  document.getElementById("plansum").innerHTML = statsHTML(sim) + barHTML(sim) + `<div class="quickset"><div><b>組み方</b><span class="seg">${[["normal", "余裕を見る"], ["sure", "確実"], ["must", "必ず最優先"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
+  document.getElementById("plansum").innerHTML = (noPick() ? `<p class="note">乗りたいものを選ぶと、ここに回れる数・並ぶ時間・1日の流れが出ます。</p>` : statsHTML(sim) + barHTML(sim)) + `<div class="quickset"><div><b>組み方</b><span class="seg">${[["normal", "余裕を見る"], ["sure", "確実"], ["must", "必ず最優先"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
     <details class="ctrlbox"${ctrlOpen ? " open" : ""}><summary><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M6 4v4' /> <path d='M6 12v8' /> <path d='M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M12 4v10' /> <path d='M12 18v2' /> <path d='M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M18 4v1' /> <path d='M18 9v11' /></svg> 入園：${entN}${P().leave ? `・<b>帰る ${hm(P().leave)}</b>（当日の画面で設定）` : ""}・天気${wxN || "未入力"}${S.first ? `・最初に${RIDES[S.first] ? RIDES[S.first].short : ""}` : ""}</summary><div class="ctrls">
       <label>入園 <select id="c-emode">${ENTRY.map(([v, t]) => `<option value="${v}"${v === S.entryMode ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       ${S.entryMode === "later" ? `<label>入る時刻 <select id="c-entry">${[15, 30, 45, 60, 90, 120, 180, 240].map(m => `<option value="${m}"${m === S.entry ? " selected" : ""}>${hm(M.open + m)}</option>`).join("")}</select></label>` : ""}
@@ -2766,7 +2907,7 @@ function renderPlanSide() {
   }));
   renderDpaAdvice(sim);
   document.getElementById("copyplan").onclick = () => copyPlan(sim);
-  renderTL("plantl", sim, "plan");
+  if (noPick()) document.getElementById("plantl").innerHTML = `<p class="note">乗りたいものを選ぶと、ここに予定（時刻・歩く・並ぶ）が出ます。</p>`; else renderTL("plantl", sim, "plan");
   renderFixes("plan");
   document.getElementById("planmap").innerHTML = routeMap(sim) + `<figcaption class="credit">番号は予定の番号と同じです。予定の写真か地図の番号を押すと、その区間だけが目立ちます。<b style="color:var(--toilet)">青い点線</b>はトイレへの寄り道。地図：© OpenStreetMap contributors をもとに作成</figcaption>`;
   wireMapPins("planmap", "plantl");
@@ -3666,7 +3807,7 @@ function renderLiveTL() {
   const catchC = now < M.close ? catchRows() : null, bz = busyNow(), bzIt = bz && P().items.find(x => x.id === bz.id);
   const bzName = bzIt ? itemName(bzIt) : "遅れのぶん", busyT = bz ? `<div class="busy"><span>${bzIt ? `今：<b>${bzName}</b>の最中（${hm(bz.until)}ごろ終わる見込み）` : `遅れのぶん、<b>${hm(bz.until)}</b>まで動けない前提`}。残りの予定は、そのあとから組んでいます。</span><button type="button" class="btn small primary" id="busy-end">${bzIt ? "終わった" : "もう動ける"}</button></div>` : "";
   document.getElementById("nowpanel").hidden = now >= M.close; const palBox = document.getElementById("livepal").closest("details"); if (palBox) palBox.hidden = now >= M.close;
-  document.getElementById("nextcard").innerHTML = now >= M.close ? `<div class="nx"><h3>閉園の時刻（${hm(M.close)}）を過ぎました</h3><p class="note">今日はおつかれさまでした。</p></div>` : catchC ? catchHTML(catchC) : busyT + goneT + heldT + (r0 ? `<div class="nx">${stat}<div class="nxh">${img0 ? `<img src="${img0}" alt="">` : "<span></span>"}<div><small>次はこれ</small><h3>${itemName(r0.it)}${S.must.includes(r0.it.key) ? '<span class="badge must">必ず</span>' : ""}</h3></div></div>
+  document.getElementById("nextcard").innerHTML = noPick() ? `<div class="nx"><h3>まだ予定がありません</h3><p class="note">計画の画面で乗りたいものを選ぶと、ここに「次はこれ」が出ます。</p><div class="row"><button type="button" class="btn primary" id="nx-toplan">乗りたいものを選ぶ</button></div></div>` : now >= M.close ? `<div class="nx"><h3>閉園の時刻（${hm(M.close)}）を過ぎました</h3><p class="note">今日はおつかれさまでした。</p></div>` : catchC ? catchHTML(catchC) : busyT + goneT + heldT + (r0 ? `<div class="nx">${stat}<div class="nxh">${img0 ? `<img src="${img0}" alt="">` : "<span></span>"}<div><small>次はこれ</small><h3>${itemName(r0.it)}${S.must.includes(r0.it.key) ? '<span class="badge must">必ず</span>' : ""}</h3></div></div>
       ${cmp}
       <div class="go2"><span class="note">このまま行くと：${(g => (g >= 1 ? `${bz ? `${bzName}のあと` : "待ち"}${Math.round(g)}分 → ` : ""))(r0.arrive - r0.walk - now)}歩く${r0.walk}分${r0.idle >= 1 ? ` → ${now < M.open + gateSlack() + 1 && !bz ? "入園の列と空き" : "空き"}${Math.round(r0.idle)}分${idleWhy(r0)}` : ""}${r0.wait >= 1 ? ` → 並ぶ${Math.round(r0.wait)}分` : ""}${RIDES[r0.it.key] && RIDES[r0.it.key].src !== "show" ? ` → 乗る${Math.round(r0.d)}分` : ""}</span><b>${hm(now)} → ${hm(r0.end)} おわり</b></div>
       ${(w => (w ? `<div class="why"><b>理由</b> ${w}</div>` : ""))(nextWhy(r0, now))}
@@ -3678,10 +3819,11 @@ function renderLiveTL() {
       <div id="nxconf"></div>
       ${r1 ? `<div class="then">そのあと：<b>${itemName(r1.it)}</b>（${hm(r1.start)}〜）${sim.rows[2] ? ` → ${itemName(sim.rows[2].it)}` : ""}・残りの乗り物${sim.rows.filter(q => RIDES[q.it.key] && RIDES[q.it.key].src !== "show" && !q.flag).length}個・終わり ${sim.end > M.close + 30 ? "閉園後" : hm(sim.end)}${sim.bad ? `・<b style="color:var(--bad)">間に合わないもの${sim.bad}件</b>` : ""}</div>` : ""}</div>` : `<div class="nx"><h3>今日の予定はすべて終わりました</h3><p class="note">下の「乗り物・食べ物を予定に足す」から、まだ乗れるものを足せます。</p></div>`);
   document.querySelectorAll("#nextcard [data-reopen]").forEach(b => b.addEventListener("click", () => reopen(b.dataset.reopen)));
+  if (noPick()) { const b = document.getElementById("nx-toplan"); if (b) b.addEventListener("click", () => { setTab("plan"); setTimeout(() => document.getElementById("pickh").scrollIntoView({ behavior: "smooth" }), 60); }); }
   if (catchC) wireCatch(catchC);
   const be = document.getElementById("busy-end");
   if (be) be.addEventListener("click", () => { const b = P().busy; P().busy = null; if (b) { S.liveLoc = b.loc; store.set("liveloc", b.loc); } save(); doReplan(); });  // 今から組み直す（前は予定の時刻が残って、長い空きが出ていた）
-  if (r0 && now < M.close && !catchC) {
+  if (r0 && now < M.close && !catchC && !noPick()) {
     wireChoices(document.getElementById("nextcard"), "live");
     const f = document.getElementById("nowq");
     if (f) f.addEventListener("submit", e => { e.preventDefault(); const raw = document.getElementById("nowqv").value.trim(), v = Number(raw); if (raw === "" || !isFinite(v) || v < 0) { document.getElementById("nowqv").focus(); return; } /* 空のまま押すと0分として入っていた */ const before = liveSim(); setOver(r0.it.key, Math.round(v), now); P().updSrc = "手入力"; save(); renderLiveTL(); const after = liveSim(); toast("livetoast", `${RIDES[r0.it.key].short}の今の待ち${Math.round(v)}分を入れました。ほかの乗り物の予測にも反映しています。終わり ${hm(before.end)} → ${hm(after.end)}。`); });
