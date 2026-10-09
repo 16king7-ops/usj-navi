@@ -885,6 +885,14 @@ figure.amap svg { width: 100%; height: auto; border-radius: 18px; display: block
 .pdiff .add { color: var(--good); } .pdiff .del, .pdiff .bad, .confirm .bad { color: var(--bad); }
 .shotrev { display: grid; gap: 8px; }
 .trust { font-size: 14px; }
+details.prep > summary { font-weight: 700; }
+.preph { font-size: 12.5px; font-weight: 800; color: var(--brand); letter-spacing: .06em; margin-top: 6px; }
+.prepl { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.prepl label { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; align-items: start; cursor: pointer; min-height: 44px; }
+.prepl input { width: 20px; height: 20px; margin-top: 3px; }
+.prepl b { font-size: 14.5px; font-weight: 700; display: block; line-height: 1.5; }
+.prepl small { display: block; font-size: 13px; color: var(--ink-3); line-height: 1.55; }
+.prepl input:checked + span b { text-decoration: line-through; color: var(--ink-3); }
 .teaser { font: inherit; font-size: 14.5px; text-align: left; display: flex; gap: 8px; align-items: center; width: 100%; border: 1.5px solid var(--sun); background: color-mix(in srgb, var(--sun) 16%, var(--surface)); color: var(--ink); border-radius: 14px; padding: 10px 12px; cursor: pointer; min-height: 48px; }
 .teaser span { flex: 1; min-width: 0; } .teaser i { font-style: normal; font-weight: 900; color: var(--brand); }
 .trustl { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -1459,11 +1467,11 @@ const S = {
   foods: store.get("foods", []), wc: store.get("wc", 1), entry: store.get("entry", 0), entryMode: store.get("entryMode", "open"), first: store.get("first", ""),
   slack: store.get("slack", true), style: store.get("style", "normal"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
   lightLunch: store.get("lightLunch", false), mealAt: store.get("mealAt", {}), theme: "light", meals: store.get("meals", { lunch: true, dinner: true }),
-  tab: "day", liveLoc: store.get("liveloc", null), fFrom: store.get("ffrom", null), free: store.get("free", {}),
+  tab: "day", liveLoc: store.get("liveloc", null), fFrom: store.get("ffrom", null), free: store.get("free", {}), mo: store.get("mo", true),
 };
 // 予定は日付ごとに持つ（items＝順番、done＝済み、over＝当日に入れた待ち時間、live＝当日モードで組み直した時刻と場所）
 const P = () => S.plans[S.date] || (S.plans[S.date] = { items: null, done: {}, over: {}, live: null });
-const save = () => { ["date", "sel", "must", "showAt", "foods", "wc", "entry", "entryMode", "first", "slack", "style", "wx", "speed", "plans", "inNin", "lightLunch", "mealAt", "meals", "free"].forEach(k => store.set(k, S[k]));  };
+const save = () => { ["date", "sel", "must", "showAt", "foods", "wc", "entry", "entryMode", "first", "slack", "style", "wx", "speed", "plans", "inNin", "lightLunch", "mealAt", "meals", "free", "mo"].forEach(k => store.set(k, S[k]));  };
 
 // ================= 混み具合（日にち） =================
 const AVGS = DAYS.filter(x => x.avg).map(x => x.avg).sort((a, b) => a - b);
@@ -2690,17 +2698,21 @@ function renderPlanHero(sim) {
     <div class="kv"><span><b>${sim.rides}</b> 個</span><span>並ぶ <b>${dur(sim.waitTot)}</b></span><span>歩く <b>${dur(sim.walkTot)}</b></span><span>終わり <b>${hm(sim.end)}</b></span></div></div>
     <button type="button" class="teaser" id="boosttz" hidden></button>
     <div class="trust" id="trust"></div>
-    <div class="acts3"><button type="button" class="btn primary" id="optbtn"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z' /> <path d='M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5' /></svg> おまかせ最適化</button><button type="button" class="btn sun" id="golive">このプランで当日へ ›</button><button type="button" class="btn" id="gomap"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 待ち時間マップ</button><button type="button" class="btn" id="copyplan2"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z' /> <path d='M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1' /></svg> 文字でコピー</button></div>
+    <div class="acts3"><button type="button" class="btn primary" id="optbtn"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z' /> <path d='M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5' /></svg> おまかせ最適化</button><button type="button" class="btn sun" id="golive">このプランで当日へ ›</button><button type="button" class="btn" id="gomap"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 待ち時間マップ</button><button type="button" class="btn" id="shareplan"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0' /> <path d='M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2' /> <path d='M16 3.13a4 4 0 0 1 0 7.75' /> <path d='M21 21v-2a4 4 0 0 0 -3 -3.85' /></svg> 一緒に行く人に送る</button><button type="button" class="btn" id="copyplan2"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z' /> <path d='M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1' /></svg> 文字でコピー</button></div>
     <ol class="plist"><li><span class="t">${hm(t0)}</span><span class="ph"></span><span class="nm">入園${S.entryMode === "happy" ? "（ハッピーエントリー）" : ""}<small>${dp ? "入ったらすぐ、アプリでプレミアアクセスを買う" : "ゲートを入ったら、最初の予定へ"}</small></span><span></span></li>${rows}</ol>
+    <details class="more prep" id="prepwrap"${prepOpen ? " open" : ""}><summary><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20.942 13.021a9 9 0 1 0 -9.407 7.967' /> <path d='M12 7v5l3 3' /> <path d='M15 19l2 2l4 -4' /></svg> 当日の朝までにやること</summary><div class="inner" id="prepbox"></div></details>
     <div class="boost" id="boost"></div>
     <details class="more why" id="whybox"${whyOpen ? " open" : ""}><summary>なぜこの順番？</summary><div class="inner" id="why">${whyOpen ? planWhy(sim) : ""}</div></details>
     <button type="button" class="linkbtn" id="godetail">詳しい予定・地図・設定（入園・DPA・組み方）へ ↓</button>`;
   document.getElementById("optbtn").onclick = () => { replan("おまかせ最適化：選んだものを、待ち＋歩く時間が一番少ない順番に組み直しました。"); box.scrollIntoView({ behavior: "smooth", block: "start" }); };
   document.getElementById("golive").onclick = () => setTab("live");
   document.getElementById("gomap").onclick = goMap;
+  document.getElementById("shareplan").onclick = sharePlan;
+  const pb = document.getElementById("prepbox"); if (pb) { pb.innerHTML = prepHTML(sim); wirePrep(pb); }
   renderBoost(sim);
   document.getElementById("copyplan2").onclick = () => copyPlan(sim);
   document.getElementById("godetail").onclick = () => document.getElementById("plandetail").scrollIntoView({ behavior: "smooth", block: "start" });
+  const pw = document.getElementById("prepwrap"); if (pw) pw.addEventListener("toggle", e => (prepOpen = e.target.open));
   document.getElementById("whybox").addEventListener("toggle", e => { whyOpen = e.target.open; if (whyOpen) document.getElementById("why").innerHTML = planWhy(curSim()); });
 }
 // ===== 入りきらなかったとき、どうすれば乗れるか ＋ この予定を信じていい材料 =====
@@ -2816,6 +2828,71 @@ function paintBoost(res) {
   }));
   box.querySelectorAll("[data-bh]").forEach(b => b.addEventListener("click", () => { focusK = b.dataset.bh; setTab("hours"); setTimeout(() => { renderDetail(); const de = document.getElementById("detail"); if (de) de.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); }));
 }
+// ===== 一緒に行く人に送る: 選んだもの・必ず・入園・組み方・DPA・ごはん・帰る時刻をリンクに詰める。開くと同じ予定が組み上がる =====
+//  送り先はログインなしで開ける公開版（GitHub Pages）。印は英数字と - _ だけ（アーティファクトのリンクでも届く形）
+const SHARE_BASE = "https://16king7-ops.github.io/usj-navi/sea/";
+const b64u = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const unb64u = s => decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/"))));
+function shareLink() {
+  const ep = P().ep || {};
+  const o = { v: 1, d: S.date, s: S.sel, m: S.must, em: S.entryMode, en: S.entry, sl: S.slack, st: S.style, sp: S.speed, ll: S.lightLunch, me: S.meals, mo: S.mo !== false, fr: S.free || {}, sa: S.showAt || {}, fi: S.first || "", lv: P().leave ?? null, ep: Object.fromEntries(Object.entries(ep).map(([k, x]) => [k, x && x.at != null ? x.at : null])) };
+  return SHARE_BASE + "#s-" + b64u(JSON.stringify(o));
+}
+function readShare(h) { if (!h || !h.startsWith("s-")) return null; try { const o = JSON.parse(unb64u(h.slice(2))); return o && o.v === 1 && /^\d{4}-\d{2}-\d{2}$/.test(o.d) ? o : null; } catch (e) { return null; } }
+function applyShare(o) {
+  S.date = o.d < TODAY ? TODAY : o.d;
+  S.sel = (o.s || []).filter(k => RIDES[k]); S.must = (o.m || []).filter(k => S.sel.includes(k));
+  if (o.em) S.entryMode = o.em; if (o.en != null) S.entry = o.en; if (o.sl != null) S.slack = o.sl; if (o.st) S.style = o.st; if (o.sp) S.speed = o.sp;
+  if (o.ll != null) S.lightLunch = o.ll; if (o.me) S.meals = o.me; if (o.mo != null) S.mo = o.mo; S.free = o.fr || {}; S.showAt = { ...S.showAt, ...(o.sa || {}) }; S.first = o.fi || "";
+  const pl = P(); pl.ep = Object.fromEntries(Object.entries(o.ep || {}).filter(([k]) => RIDES[k]).map(([k, at]) => [k, { at }])); pl.leave = o.lv ?? null; pl.items = null; pl.done = {}; pl.live = null;
+  save();
+}
+function offerShare(o) {
+  const sum = `${md(o.d)}・${(o.s || []).filter(k => RIDES[k]).length}個${(o.m || []).length ? `（必ず${o.m.length}個）` : ""}`;
+  const go = () => { applyShare(o); setDate(S.date); setTab("plan"); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} toast("gtoast", `送られてきた予定（${sum}）を読み込みました。`); };
+  if (!S.sel.length) { go(); return; }
+  toast("gtoast", `送られてきた予定（${sum}）があります。読み込むと、今の選び方は置き換わります。 <button type="button" class="btn small primary" id="sh-ok">読み込む</button> <button type="button" class="btn small" id="sh-x">やめる</button>`);
+  document.getElementById("sh-ok").onclick = go; document.getElementById("sh-x").onclick = () => toast("gtoast", "");
+}
+function sharePlan() {
+  const url = shareLink(), out = document.getElementById("copyout"), msg = `${md(S.date)}のシーの予定です。開くと同じ予定が出ます（ログインなし）`;
+  const fallback = () => { out.innerHTML = `<textarea class="copybox" readonly aria-label="予定のリンク"></textarea><p class="note">コピーできなかったので、上のリンクを長押しか Ctrl+C でコピーして送ってください。</p>`; const ta = out.querySelector("textarea"); ta.value = url; ta.focus(); ta.select(); out.scrollIntoView({ behavior: "smooth", block: "center" }); };
+  const copy = () => { try { navigator.clipboard.writeText(url).then(() => toast("plantoast", "予定のリンクをコピーしました。LINE などで送ってください。相手はログインなしで開けて、同じ予定が組み上がります（選び方を送るので、ここで動かした順番や済んだ印は送られません）。"), fallback); } catch (e) { fallback(); } };
+  if (navigator.share && String(location.hostname || "").endsWith("github.io")) navigator.share({ title: "シー攻略ナビ", text: msg, url }).catch(copy); else copy();
+}
+// ===== 当日の朝までにやること: 今の予定から作る（チェックは端末に残す） =====
+let prepOpen = false;
+function prepList(sim) {
+  const L = [], c = M.crowd, mon = +M.date.slice(5, 7), dp = dpaPlan(sim) || [], first = sim.rows.find(r => RIDES[r.it.key]);
+  const mo = sim.rows.filter(r => r.it.type === "meal" && r.to && r.to.startsWith("store:") && isMO(r.to.slice(6)));
+  L.push(["before", "公式アプリ（東京ディズニーリゾート・アプリ）にログインして、チケットを登録しておく", "DPA・モバイルオーダー・今の待ち時間の確認に要ります。一緒に行く人のチケットも、まとめて登録しておくと楽"]);
+  if (!(S.wx || {})[S.date]) L.push(["before", "前日に、天気予報を入れる", "雨なら屋内の乗り物中心に組み直します（計画の「入園・天気…」の欄）"]);
+  if (mon === 12 || mon <= 2) L.push(["before", "寒さ対策をしていく", "夜は5℃前後まで冷えます。2〜3時間の屋外の列や、ショーの場所取りは特に冷えるので、カイロ・手袋・ひざ掛けがあると楽"]);
+  L.push(["before", "スマホの充電と、モバイルバッテリー", "待ち時間・DPA・モバイルオーダーで、一日中スマホを使います"]);
+  if (S.entryMode === "after3" || S.entryMode === "after5") L.push(["before", "午後から入るチケットが買えたか確かめる", "混む日は発売されないことが多い"]);
+  const ent = S.entryMode === "dash" ? [`${hm(M.open - (c.lv >= 3 ? 120 : 60))}〜${hm(M.open - (c.lv >= 3 ? 90 : 45))}ごろに入口に並ぶ`, `開園ダッシュの予定です。${c.lv >= 3 ? "混む日は開園の1時間半〜2時間前から列ができ、入園にも20〜40分かかります" : "開園の1時間前くらいから並ぶと前の方に入れます"}`]
+    : S.entryMode === "happy" ? [`${hm(M.open - 15)}に、ハッピーエントリーで入る`, "ディズニーホテルに泊まる人だけ（チェックイン日を除く）"]
+    : ["after3", "after5", "later"].includes(S.entryMode) ? [`${hm(entryAt())}に入園`, ""]
+    : [`${hm(M.open - 30)}ごろには入口に着く`, `入園の列に${c.lv >= 3 ? "20〜40分" : "15分ほど"}かかります（予定は入園の列に15分見ています）`];
+  L.push(["morning", ent[0], ent[1]]);
+  L.push(["morning", "このページを開いておく", String(location.hostname || "").endsWith("github.io") ? "一度開いておけば、電波が弱くても使えます" : "当日は「当日」のタブで、今の待ちを入れながら進めます"]);
+  if (dp.length) L.push(["entry", `アプリでプレミアアクセスを買う：${dp.map(x => `${hm(x.buy)} ${RIDES[x.k].short}`).join(" → ")}`, `売り切れが早い順${dp.some(x => RIDES[x.k].soldout) ? `（${dp.filter(x => RIDES[x.k].soldout).map(x => `${RIDES[x.k].short}は${hm(soldAt(x.k))}ごろ売り切れ`).join("・")}）` : ""}。次のDPAは60分後か、買ったDPAの利用開始から`]);
+  if (mo.length) L.push(["entry", `モバイルオーダーで、${mo.map(r => `${itemName(r.it)}（${r.info || "店"}・${hm(r.start)}に受け取り）`).join("・")}を注文`, c.lv >= 3 ? "混む日は食事どきの枠が早く埋まるので、入園したらすぐ" : "受け取りの1時間前までに"]);
+  if (first) L.push(["entry", `最初は${itemName(first.it)}へ（${hm(first.start)}ごろ・歩いて${first.walk}分）`, ""]);
+  sim.rows.filter(r => RIDES[r.it.key] && RIDES[r.it.key].src === "show" && !epOf(r.it.key)).forEach(r => L.push(["day", `${RIDES[r.it.key].short}は${hm(r.start)}に場所取り（${hm(showTime(r.it.key))}開演）`, "開演時刻は、前日か当日の朝に公式アプリで確かめて"]));
+  return L;
+}
+const PREP_H = { before: "前日まで", morning: "当日の朝", entry: "入園したらすぐ", day: "日中" };
+const prepKey = t => "prep-" + S.date + "-" + t.slice(0, 24);
+function prepHTML(sim, only) {
+  const L = prepList(sim).filter(x => !only || only.includes(x[0])); let h = "";
+  for (const ph of Object.keys(PREP_H)) {
+    const xs = L.filter(x => x[0] === ph); if (!xs.length) continue;
+    h += `<div class="preph">${PREP_H[ph]}</div><ul class="prepl">${xs.map(([, t, d]) => `<li><label><input type="checkbox" data-prep="${prepKey(t)}"${store.get(prepKey(t), false) ? " checked" : ""}><span><b>${t}</b>${d ? `<small>${d}</small>` : ""}</span></label></li>`).join("")}</ul>`;
+  }
+  return h;
+}
+function wirePrep(box) { box.querySelectorAll("[data-prep]").forEach(c => c.addEventListener("change", () => store.set(c.dataset.prep, c.checked))); }
 // 待ち時間マップ（時間帯の画面の上の表）へ
 function goMap() { setTab("hours"); setTimeout(() => { const h = document.getElementById("hmap"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80); }
 const boostCurWait = () => { try { return Math.round(curSim().waitTot); } catch (e) { return null; } };
@@ -3823,7 +3900,8 @@ function renderLiveTL() {
   const catchC = now < M.close ? catchRows() : null, bz = busyNow(), bzIt = bz && P().items.find(x => x.id === bz.id);
   const bzName = bzIt ? itemName(bzIt) : "遅れのぶん", busyT = bz ? `<div class="busy"><span>${bzIt ? `今：<b>${bzName}</b>の最中（${hm(bz.until)}ごろ終わる見込み）` : `遅れのぶん、<b>${hm(bz.until)}</b>まで動けない前提`}。残りの予定は、そのあとから組んでいます。</span><button type="button" class="btn small primary" id="busy-end">${bzIt ? "終わった" : "もう動ける"}</button></div>` : "";
   document.getElementById("nowpanel").hidden = now >= M.close; const palBox = document.getElementById("livepal").closest("details"); if (palBox) palBox.hidden = now >= M.close;
-  document.getElementById("nextcard").innerHTML = noPick() ? `<div class="nx"><h3>まだ予定がありません</h3><p class="note">計画の画面で乗りたいものを選ぶと、ここに「次はこれ」が出ます。</p><div class="row"><button type="button" class="btn primary" id="nx-toplan">乗りたいものを選ぶ</button></div></div>` : now >= M.close ? `<div class="nx"><h3>閉園の時刻（${hm(M.close)}）を過ぎました</h3><p class="note">今日はおつかれさまでした。</p></div>` : catchC ? catchHTML(catchC) : busyT + goneT + heldT + (r0 ? `<div class="nx">${stat}<div class="nxh">${img0 ? `<img src="${img0}" alt="">` : "<span></span>"}<div><small>次はこれ</small><h3>${itemName(r0.it)}${S.must.includes(r0.it.key) ? '<span class="badge must">必ず</span>' : ""}</h3></div></div>
+  const prepT = !noPick() && now <= M.open + 45 && P().items && !Object.values(P().done || {}).some(Boolean) ? (() => { const h = prepHTML(curSim(), ["morning", "entry"]); return h ? `<details class="more prep" open><summary><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20.942 13.021a9 9 0 1 0 -9.407 7.967' /> <path d='M12 7v5l3 3' /> <path d='M15 19l2 2l4 -4' /></svg> 入園の前後にやること</summary><div class="inner" id="prepLive">${h}</div></details>` : ""; })() : "";
+  document.getElementById("nextcard").innerHTML = prepT + (noPick() ? `<div class="nx"><h3>まだ予定がありません</h3><p class="note">計画の画面で乗りたいものを選ぶと、ここに「次はこれ」が出ます。</p><div class="row"><button type="button" class="btn primary" id="nx-toplan">乗りたいものを選ぶ</button></div></div>` : now >= M.close ? `<div class="nx"><h3>閉園の時刻（${hm(M.close)}）を過ぎました</h3><p class="note">今日はおつかれさまでした。</p></div>` : catchC ? catchHTML(catchC) : busyT + goneT + heldT + (r0 ? `<div class="nx">${stat}<div class="nxh">${img0 ? `<img src="${img0}" alt="">` : "<span></span>"}<div><small>次はこれ</small><h3>${itemName(r0.it)}${S.must.includes(r0.it.key) ? '<span class="badge must">必ず</span>' : ""}</h3></div></div>
       ${cmp}
       <div class="go2"><span class="note">このまま行くと：${(g => (g >= 1 ? `${bz ? `${bzName}のあと` : "待ち"}${Math.round(g)}分 → ` : ""))(r0.arrive - r0.walk - now)}歩く${r0.walk}分${r0.idle >= 1 ? ` → ${now < M.open + gateSlack() + 1 && !bz ? "入園の列と空き" : "空き"}${Math.round(r0.idle)}分${idleWhy(r0)}` : ""}${r0.wait >= 1 ? ` → 並ぶ${Math.round(r0.wait)}分` : ""}${RIDES[r0.it.key] && RIDES[r0.it.key].src !== "show" ? ` → 乗る${Math.round(r0.d)}分` : ""}</span><b>${hm(now)} → ${hm(r0.end)} おわり</b></div>
       ${(w => (w ? `<div class="why"><b>理由</b> ${w}</div>` : ""))(nextWhy(r0, now))}
@@ -3833,7 +3911,8 @@ function renderLiveTL() {
       <div id="nxdet" hidden></div>
       <div id="nxalt" hidden>${alts || `<p class="note">今は、あとの予定を遅らせずに入れ替えられる候補がありません。予定が狂ったときは「残りを組み直す」を。</p>`}</div>
       <div id="nxconf"></div>
-      ${r1 ? `<div class="then">そのあと：<b>${itemName(r1.it)}</b>（${hm(r1.start)}〜）${sim.rows[2] ? ` → ${itemName(sim.rows[2].it)}` : ""}・残りの乗り物${sim.rows.filter(q => RIDES[q.it.key] && RIDES[q.it.key].src !== "show" && !q.flag).length}個・終わり ${sim.end > M.close + 30 ? "閉園後" : hm(sim.end)}${sim.bad ? `・<b style="color:var(--bad)">間に合わないもの${sim.bad}件</b>` : ""}</div>` : ""}</div>` : `<div class="nx"><h3>今日の予定はすべて終わりました</h3><p class="note">下の「乗り物・食べ物を予定に足す」から、まだ乗れるものを足せます。</p></div>`);
+      ${r1 ? `<div class="then">そのあと：<b>${itemName(r1.it)}</b>（${hm(r1.start)}〜）${sim.rows[2] ? ` → ${itemName(sim.rows[2].it)}` : ""}・残りの乗り物${sim.rows.filter(q => RIDES[q.it.key] && RIDES[q.it.key].src !== "show" && !q.flag).length}個・終わり ${sim.end > M.close + 30 ? "閉園後" : hm(sim.end)}${sim.bad ? `・<b style="color:var(--bad)">間に合わないもの${sim.bad}件</b>` : ""}</div>` : ""}</div>` : `<div class="nx"><h3>今日の予定はすべて終わりました</h3><p class="note">下の「乗り物・食べ物を予定に足す」から、まだ乗れるものを足せます。</p></div>`));
+  { const pl = document.getElementById("prepLive"); if (pl) wirePrep(pl); }
   document.querySelectorAll("#nextcard [data-reopen]").forEach(b => b.addEventListener("click", () => reopen(b.dataset.reopen)));
   if (noPick()) { const b = document.getElementById("nx-toplan"); if (b) b.addEventListener("click", () => { setTab("plan"); setTimeout(() => document.getElementById("pickh").scrollIntoView({ behavior: "smooth" }), 60); }); }
   if (catchC) wireCatch(catchC);
@@ -4824,8 +4903,9 @@ document.addEventListener("click", e => { const b = e.target.closest && e.target
 // ================= 起動 =================
 if (!S.date || S.date < TODAY) S.date = TODAY;
 setDate(S.date);
-const h0 = location.hash.slice(1);
+const h0 = location.hash.slice(1), sh0 = readShare(h0);
 setTab(["day", "plan", "food", "live", "hours"].includes(h0) ? h0 : "day");
+if (sh0) offerShare(sh0);
 </script>
 <script>
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
