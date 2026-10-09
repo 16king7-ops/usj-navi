@@ -1337,7 +1337,6 @@ html { scroll-padding-top: calc(var(--toph, 150px) + 8px); }
   <section id="tab-plan" role="tabpanel" hidden>
     <div class="answer" id="answer"></div>
     <div class="toast" id="plantoast" hidden></div>
-    <p class="note selfplan"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 4h6v6h-6z' /><path d='M14 4h6v6h-6z' /><path d='M4 14h6v6h-6z' /><path d='M14 14h6v6h-6z' /></svg> おまかせの順番がしっくりこないときは、<button type="button" class="linkbtn" data-gotab="hours">待ち時間マップ</button>（乗り物×時間帯の待ち・似た日の実際）を見て、自分で組み替えられます。</p>
     <div id="planfix"></div>
     <h2 class="sech" id="pickh" data-en="CHOOSE">乗りたいものを選ぶ</h2>
     <div class="planbody"><div class="pickcol">
@@ -2691,13 +2690,14 @@ function renderPlanHero(sim) {
     <div class="kv"><span><b>${sim.rides}</b> 個</span><span>並ぶ <b>${dur(sim.waitTot)}</b></span><span>歩く <b>${dur(sim.walkTot)}</b></span><span>終わり <b>${hm(sim.end)}</b></span></div></div>
     <button type="button" class="teaser" id="boosttz" hidden></button>
     <div class="trust" id="trust"></div>
-    <div class="acts3"><button type="button" class="btn primary" id="optbtn"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z' /> <path d='M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5' /></svg> おまかせ最適化</button><button type="button" class="btn sun" id="golive">このプランで当日へ ›</button><button type="button" class="btn" id="copyplan2"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z' /> <path d='M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1' /></svg> 文字でコピー</button></div>
+    <div class="acts3"><button type="button" class="btn primary" id="optbtn"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z' /> <path d='M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5' /></svg> おまかせ最適化</button><button type="button" class="btn sun" id="golive">このプランで当日へ ›</button><button type="button" class="btn" id="gomap"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 待ち時間マップ</button><button type="button" class="btn" id="copyplan2"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z' /> <path d='M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1' /></svg> 文字でコピー</button></div>
     <ol class="plist"><li><span class="t">${hm(t0)}</span><span class="ph"></span><span class="nm">入園${S.entryMode === "happy" ? "（ハッピーエントリー）" : ""}<small>${dp ? "入ったらすぐ、アプリでプレミアアクセスを買う" : "ゲートを入ったら、最初の予定へ"}</small></span><span></span></li>${rows}</ol>
     <div class="boost" id="boost"></div>
     <details class="more why" id="whybox"${whyOpen ? " open" : ""}><summary>なぜこの順番？</summary><div class="inner" id="why">${whyOpen ? planWhy(sim) : ""}</div></details>
     <button type="button" class="linkbtn" id="godetail">詳しい予定・地図・設定（入園・DPA・組み方）へ ↓</button>`;
   document.getElementById("optbtn").onclick = () => { replan("おまかせ最適化：選んだものを、待ち＋歩く時間が一番少ない順番に組み直しました。"); box.scrollIntoView({ behavior: "smooth", block: "start" }); };
   document.getElementById("golive").onclick = () => setTab("live");
+  document.getElementById("gomap").onclick = goMap;
   renderBoost(sim);
   document.getElementById("copyplan2").onclick = () => copyPlan(sim);
   document.getElementById("godetail").onclick = () => document.getElementById("plandetail").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2737,23 +2737,25 @@ function renderBoost(sim) {
   const sig = vSigNow() + "|" + JSON.stringify(P().items ? P().items.map(x => x.key) : []);
   if (boostRes && boostRes.sig === sig) { paintBoost(boostRes); if (!boostRes.done) return; return; }
   const run = ++boostRun, missK = (lastMissed || []).filter(x => RIDES[x.key] && avail(x.key, M.date)).map(x => x.key), date = S.date;
-  const res = boostRes = { sig, missK, done: false, dpa: [], cur: sim.rides };
+  const res = boostRes = { sig, missK, done: false, dpa: [], cur: sim.rides, curWait: Math.round(sim.waitTot), curEnd: sim.end };
   const jobs = [() => { res.trust = trustOf(sim); }];
-  if (missK.length) {
-    jobs.push(() => { res.hours = missK.map(k => ({ k, b: bestBand(k) })).filter(x => x.b); });
+  {
+    if (missK.length) jobs.push(() => { res.hours = missK.map(k => ({ k, b: bestBand(k) })).filter(x => x.b); });
     const ep = P().ep || {}, okDPA = k => RIDES[k] && RIDES[k].dpa && RIDES[k].src === "r" && avail(k, M.date) && (!RIDES[k].dpaFrom || M.date >= RIDES[k].dpaFrom) && !ep[k] && S.sel.includes(k);
     const planned = sim.rows.filter(r => RIDES[r.it.key]).sort((a, b) => b.wait - a.wait).map(r => r.it.key);
     // 待ちの長い予定（DPAにすると時間が空く）の上位3つと、入らなかった人気のもの（DPAで入れる）の上位3つ
     const cands = [...new Set([...planned.filter(okDPA).slice(0, 3), ...missK.filter(okDPA).sort((a, b) => (RIDES[b].w || 0) - (RIDES[a].w || 0)).slice(0, 3)])];
     cands.forEach(k => jobs.push(() => res.dpa.push(tryPlan({ ep: [k] }, missK))));
-    jobs.push(() => {  // 1つで全部入らなければ、よく効いた3つから2つの組を試す
-      if (res.dpa.some(o => o.allIn && !o.no.length)) return;
+    jobs.push(() => {  // 1つで全部入らなければ、よく効いた3つから2つの組を試す（全部入っているときは1つずつだけ）
+      if (!missK.length || res.dpa.some(o => o.allIn && !o.no.length)) return;
       const top = res.dpa.filter(o => !o.none && !o.no.length).sort((a, b) => b.rides - a.rides || a.wait - b.wait).slice(0, 3).map(o => o.ep[0]);
       const pr = []; for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++) pr.push([top[i], top[j]]);
       jobs.unshift(...pr.map(ks => () => res.dpa.push(tryPlan({ ep: ks }, missK))));
     });
-    jobs.push(() => { res.fast = S.slack ? tryPlan({ fast: true }, missK, true) : null; });
-    jobs.push(() => { res.dash = !["dash", "happy"].includes(S.entryMode) && entryAt() <= M.open ? tryPlan({ dash: true }, missK) : null; });
+    if (missK.length) {
+      jobs.push(() => { res.fast = S.slack ? tryPlan({ fast: true }, missK, true) : null; });
+      jobs.push(() => { res.dash = !["dash", "happy"].includes(S.entryMode) && entryAt() <= M.open ? tryPlan({ dash: true }, missK) : null; });
+    }
   }
   const step = () => {
     if (run !== boostRun || S.date !== date) return;
@@ -2770,16 +2772,24 @@ function paintBoost(res) {
     <li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 似た日<b>${t.refs.n}日</b>の待ちで回すと、全部回れたのは<b>${t.refs.ok}日</b></li>
     ${t.naive.rides < res.cur || t.naive.wait > (boostCurWait() ?? 0) + 10 ? `<li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z' /> <path d='M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5' /></svg> 選んだ順にそのまま回るより${res.cur > t.naive.rides ? ` <b>${res.cur - t.naive.rides}個多く</b>乗れて` : ""}、並ぶ時間が<b>${dur(Math.max(0, t.naive.wait - (boostCurWait() ?? t.naive.wait)))}短い</b></li>` : ""}
   </ul>`;
-  const tz = document.getElementById("boosttz");
-  if (!res.missK.length) { box.innerHTML = ""; if (tz) tz.hidden = true; return; }
-  const best = (() => { const ok = res.dpa.filter(o => !o.none && o.allIn && !o.no.length).sort((a, b) => a.cost - b.cost || a.wait - b.wait); if (ok.length) return ok[0]; return res.dpa.filter(o => !o.none && !o.no.length && o.rides > res.cur).sort((a, b) => b.rides - a.rides || a.cost - b.cost)[0] || null; })();
-  const others = res.dpa.filter(o => o !== best && !o.none && !o.no.length && o.rides > res.cur && o.ep.length === 1).sort((a, b) => b.rides - a.rides || a.wait - b.wait).slice(0, 2);
+  const tz = document.getElementById("boosttz"), miss = res.missK.length > 0;
+  //  おすすめの DPA: 入りきらないときは「全部入る中で安いもの → 一番増えるもの」、全部入っているときは「並ぶ時間が一番減るもの（30分以上）」
+  const best = (() => {
+    const v = res.dpa.filter(o => !o.none && !o.no.length);
+    if (!miss) return v.filter(o => o.rides >= res.cur && res.curWait - o.wait >= 30).sort((a, b) => (res.curWait - b.wait) / Math.max(1, b.cost) - (res.curWait - a.wait) / Math.max(1, a.cost) || a.cost - b.cost)[0] || null;
+    const ok = v.filter(o => o.allIn).sort((a, b) => a.cost - b.cost || a.wait - b.wait); if (ok.length) return ok[0];
+    return v.filter(o => o.rides > res.cur).sort((a, b) => b.rides - a.rides || a.cost - b.cost)[0] || null;
+  })();
+  const others = res.dpa.filter(o => o !== best && !o.none && !o.no.length && o.ep.length === 1 && (miss ? o.rides > res.cur : res.curWait - o.wait >= 30)).sort((a, b) => b.rides - a.rides || a.wait - b.wait).slice(0, 2);
   const noBuy = [...new Set(res.dpa.flatMap(o => o.no || []))];
   const dpaRow = best ? `<div class="bopt rec"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス（有料）</b><span class="badge must">おすすめ</span>
-      <p><b>${nm(best.ep)}</b>のDPA（${best.cost.toLocaleString()}円/人）を買うと、${best.allIn ? `<b>選んだものが全部入ります</b>` : `<b>${best.rides}個</b>（今より+${best.rides - res.cur}個）`}・並ぶ合計 ${dur(best.wait)}・終わり ${hm(best.end)}</p>
-      ${others.length ? `<p class="note">ほかに：${others.map(o => `${nm(o.ep)}（${o.cost.toLocaleString()}円）→ ${o.rides}個`).join("、")}</p>` : ""}${noBuy.length ? `<p class="note">${nm(noBuy)}は、ほかのDPAを先に買うと売り切れの目安より後になるので入れていません。</p>` : ""}</div>
+      <p><b>${nm(best.ep)}</b>のDPA（${best.cost.toLocaleString()}円/人）を買うと、${miss ? (best.allIn ? `<b>選んだものが全部入ります</b>` : `<b>${best.rides}個</b>（今より+${best.rides - res.cur}個）`) + `・並ぶ合計 ${dur(best.wait)}・終わり ${hm(best.end)}` : `並ぶ合計が<b>${dur(res.curWait - best.wait)}短く</b>なります（${dur(res.curWait)} → ${dur(best.wait)}）${best.rides > res.cur ? `・<b>+${best.rides - res.cur}個</b>` : "。空いた時間で、ほかの乗り物も足せます"}`}</p>
+      ${others.length ? `<p class="note">ほかに：${others.map(o => `${nm(o.ep)}（${o.cost.toLocaleString()}円）→ ${miss ? `${o.rides}個` : `並ぶ −${dur(res.curWait - o.wait)}`}`).join("、")}</p>` : ""}${noBuy.length ? `<p class="note">${nm(noBuy)}は、ほかのDPAを先に買うと売り切れの目安より後になるので入れていません。</p>` : ""}</div>
       <button type="button" class="btn primary" data-bo="dpa">このDPAで組む</button></div>`
-    : res.done && res.dpa.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス</b><p class="note">DPAを買っても、入りきらないものは増えない見込みです（売り切れの目安・時刻の決まった予定のため）。</p></div></div>` : "";
+    : !res.done ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス（有料）</b><p class="note">どれを買うと一番効くか試算しています…</p></div></div>`
+    : res.dpa.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス</b><p class="note">${miss ? "DPAを買っても、入りきらないものは増えない見込みです（売り切れの目安・時刻の決まった予定のため）。" : "この予定では、DPAを買っても並ぶ時間はあまり減らない見込みです。"}</p></div></div>` : "";
+  const mapRow = `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 待ち時間マップ</b><p>乗り物×時間帯の待ちを色で一覧。どの時間に何が空くかが一目で分かります。おまかせの順番がしっくりこないとき、自分で組み替える手がかりに。</p></div>
+      <button type="button" class="btn" data-bo="map">マップを見る ›</button></div>`;
   const f = res.fast, fastRow = f && !f.none && f.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M4 17l5 1l.75 -1.5' /> <path d='M15 21l0 -4l-4 -3l1 -6' /> <path d='M7 12l0 -3l5 -1l3 3l3 1' /></svg> 見込みを攻める</b><p>待ちを「ふつう」の値で見て、締め切りぎりぎりまで使うと → <b>${f.rides}個</b>（+${f.rides - res.cur}個）${f.allIn ? "・選んだものが全部入る" : ""}</p>
       <p class="note">${f.last ? `去年の${md(f.last.d)}の実際の待ちなら<b>${f.last.planned}個のうち${f.last.rides}個</b>回れた。` : ""}似た日${f.rate.n}日で回すと、全部回れたのは<b>${f.rate.ok}日</b>（今の予定は${res.trust ? res.trust.refs.ok : "…"}日）。実際はもう少し乗れることが多い一方、待ちが長い日は最後の1つが閉まります</p></div>
       <button type="button" class="btn" data-bo="fast">攻めた予定にする</button></div>` : "";
@@ -2788,20 +2798,26 @@ function paintBoost(res) {
   const hs = (res.hours || []).slice().sort((a, b) => (RIDES[b.k].w || 0) * (b.b.noon - b.b.med) - (RIDES[a.k].w || 0) * (a.b.noon - a.b.med)), hTop = hs.slice(0, 3);
   const hrRow = hTop.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6.5 7h11' /> <path d='M6.5 17h11' /> <path d='M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1z' /> <path d='M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1z' /></svg> 空く時間に行く</b>${hTop.map(({ k, b }) => `<p><b>${RIDES[k].short}</b>は${b.h}時台がいちばん空く（ふつう${b.med}分${b.noon - b.med >= 15 ? `・昼の13時ごろは${b.noon}分` : ""}） <button type="button" class="linkbtn" data-bh="${k}">時間帯で見る</button></p>`).join("")}
       <p class="note">${hs.length > 3 ? `ほか${hs.length - 3}個も時間帯の画面で見られます。` : ""}ほかの予定を外してこの時間に入れたいときは、時間帯の画面で確かめてから、予定の「…」で時刻を決められます。</p></div></div>` : "";
-  if (tz) {  // 結論のすぐ下に1行で: 入りきらなかった数と、いちばん効く手（押すと下の詳しい欄へ）
-    const fz = res.fast && !res.fast.none && res.fast.rides > res.cur ? res.fast : null, tips = [best ? `${nm(best.ep)}のDPAで<b>${best.allIn ? "全部入る" : `+${best.rides - res.cur}個`}</b>（おすすめ）` : "", fz ? `見込みを攻めると<b>+${fz.rides - res.cur}個</b>` : ""].filter(Boolean);
-    tz.hidden = false; tz.innerHTML = `<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0 -10 0' /> <path d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /></svg> <span>入りきらなかったもの <b>${res.missK.length}個</b>${tips.length ? `。${tips.join("・")}` : res.done ? "" : "。乗れる方法を試算中…"}</span><i aria-hidden="true">↓</i>`;
+  if (tz) {  // 結論のすぐ下に1行で: 入りきらなかった数と、いちばん効く手・DPA のおすすめ（押すと下の詳しい欄へ）
+    const fz = res.fast && !res.fast.none && res.fast.rides > res.cur ? res.fast : null;
+    const dpaT = best ? (miss ? `<b>おすすめ</b>は${nm(best.ep)}のDPAで<b>${best.allIn ? "全部入る" : `+${best.rides - res.cur}個`}</b>` : `${nm(best.ep)}のDPAで並ぶ時間<b>−${dur(res.curWait - best.wait)}</b>`) : "";
+    const tips = [dpaT, fz ? `見込みを攻めると<b>+${fz.rides - res.cur}個</b>` : ""].filter(Boolean);
+    const head = miss ? `入りきらなかったもの <b>${res.missK.length}個</b>` : best ? `<b>おすすめ</b>` : "";
+    tz.hidden = !head; tz.innerHTML = head ? `<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> <span>${head}${tips.length ? `${miss ? "。" : "："}${tips.join("・")}` : res.done ? "" : "。乗れる方法を試算中…"}</span><i aria-hidden="true">↓</i>` : "";
     tz.onclick = () => box.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  box.innerHTML = `<div class="boosth"><b>入りきらなかったもの ${res.missK.length}個（${nm(res.missK.slice(0, 3))}${res.missK.length > 3 ? " ほか" : ""}）</b><span class="note">こうすれば乗れるかを試算しました（押すまで予定は変わりません）${res.done ? "" : "… 試算中"}</span></div>${dpaRow}${fastRow}${dashRow}${hrRow}`;
+  box.innerHTML = `<div class="boosth"><b>${miss ? `入りきらなかったもの ${res.missK.length}個（${nm(res.missK.slice(0, 3))}${res.missK.length > 3 ? " ほか" : ""}）` : "もっと楽に回るには"}</b><span class="note">${miss ? "こうすれば乗れるか" : "DPAを使った場合など"}を試算しました（押すまで予定は変わりません）${res.done ? "" : "… 試算中"}</span></div>${dpaRow}${fastRow}${dashRow}${hrRow}${mapRow}`;
   box.querySelectorAll("[data-bo]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.bo;
     if (k === "dpa" && best) { const e2 = { ...(P().ep || {}) }; best.ep.forEach(x => { e2[x] = { at: null }; if (!S.sel.includes(x)) S.sel.push(x); }); P().ep = e2; save(); vSig = ""; replan(`${nm(best.ep)}をプレミアアクセスにして組み直しました。入園したらすぐ、公式アプリで買ってください（買う順番は下の「プレミアアクセスを買う順番」）。`); }
     if (k === "fast") { S.slack = false; S.style = "normal"; save(); vSig = ""; replan("見込みを攻める組み方にしました。待ちが長い日は、最後の予定が閉まることがあります（当日は今の待ちで組み直してください）。"); }
     if (k === "dash") { S.entryMode = "dash"; save(); vSig = ""; replan("開園ダッシュ（開園前から並んで、開園と同時に入る）で組み直しました。"); }
+    if (k === "map") goMap();
   }));
   box.querySelectorAll("[data-bh]").forEach(b => b.addEventListener("click", () => { focusK = b.dataset.bh; setTab("hours"); setTimeout(() => { renderDetail(); const de = document.getElementById("detail"); if (de) de.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); }));
 }
+// 待ち時間マップ（時間帯の画面の上の表）へ
+function goMap() { setTab("hours"); setTimeout(() => { const h = document.getElementById("hmap"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80); }
 const boostCurWait = () => { try { return Math.round(curSim().waitTot); } catch (e) { return null; } };
 // なぜこの順番？: 選んだ順にそのまま回った場合と比べ、乗り物ごとに「この時刻にした理由」を、予測の数字から出す
 function naiveSim() {
