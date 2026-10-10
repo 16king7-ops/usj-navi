@@ -5162,8 +5162,20 @@ if (sh0) offerShare(sh0);
 else if (toToday) toast("gtoast", `今日（${md(TODAY)}）の予定に切り替えました（前は${md(d0)}を開いていました）。`);
 document.addEventListener("click", e => { if (e.target.closest && e.target.closest("#go-today")) { setDate(TODAY); setTab("live"); window.scrollTo({ top: 0 }); } });
 </script>
+<style>.newver { position: fixed; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); z-index: 90; display: flex; gap: 10px; align-items: center; justify-content: space-between; background: #1450d2; color: #fff; border-radius: 14px; padding: 10px 14px; font: 700 14px/1.4 system-ui, "Hiragino Sans", sans-serif; box-shadow: 0 8px 26px rgba(0,0,0,.3); }
+.newver button { font: inherit; border: 0; border-radius: 999px; background: #fff; color: #1450d2; padding: 8px 16px; min-height: 40px; cursor: pointer; }</style>
 <script>
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+// オフライン用: 一度開けば電波がなくても動く。新しい版が届いたら下に知らせて、押すと読み込み直す
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!had || document.querySelector(".newver")) return;
+    const d = document.createElement("div"); d.className = "newver"; d.setAttribute("role", "status");
+    d.innerHTML = '<span>新しい版があります</span><button type="button">読み込む</button>';
+    d.querySelector("button").onclick = () => location.reload(); document.body.appendChild(d);
+  });
+  navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
+}
 </script>
 </body>
 </html>
