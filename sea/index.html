@@ -403,7 +403,7 @@ details.set .inner { display: grid; gap: 12px; padding-bottom: 14px; }
 .freefit { margin-top: 4px; padding-top: 10px; border-top: 1px dashed var(--line); }
 .mustnote { font-size: 12.5px; line-height: 1.6; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 8px 12px; margin: 0; }
 .mustnote b { color: var(--ink); }
-.gtabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.gtabs { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 2px; }
 .gtabs button { font: inherit; font-size: 13.5px; font-weight: 700; white-space: nowrap; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 6px 14px; cursor: pointer; min-height: 38px; }
 .gtabs button[aria-selected="true"] { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
 .wchip { display: inline-block; min-width: 2.6em; text-align: center; border-radius: 7px; padding: 0 6px; font-weight: 800; font-size: 13px; line-height: 1.6; font-variant-numeric: tabular-nums; }
@@ -849,6 +849,8 @@ figure.amap svg { width: 100%; height: auto; border-radius: 18px; display: block
 }
 .plist { list-style: none; margin: 0; padding: 0; display: grid; }
 .plist li.chance { border-top: 1.5px dashed var(--line); align-items: start; }
+.plist li.risk { border-top: 0; padding-top: 0; } .plist li.risk .ph { display: grid; place-items: center; width: 28px; height: 28px; justify-self: center; color: var(--good); background: var(--good-soft); }
+.plist li.risk.bad .ph { color: var(--warn); background: var(--warn-soft); } .plist li.risk .nm { font-weight: 700; font-size: 13.5px; } .plist li.risk small b { color: var(--ink); }
 .plist li.chance .ph { display: grid; place-items: center; color: var(--warn); background: var(--warn-soft); }
 .plist li.chance .chl { display: block; font-weight: 500; font-size: 13.5px; margin-top: 4px; }
 .asks:empty { display: none; }
@@ -1830,6 +1832,7 @@ const earlyOf = k => (epOf(k) ? Math.min(10, RIDES[k].early) : S.free[k] ? 5 : R
 const ROPE = { dash: 35, happy: 25 };
 const ropeCap = (k, t) => { const c = ROPE[S.entryMode]; if (c == null || P().live || !RIDES[k] || RIDES[k].src !== "r" || epOf(k)) return null; return t <= entryAt() + walkPlan(GATE, locOfRide(k)) + 5 ? c : null; };
 const planWait = (k, t) => { if (epOf(k)) return EPW; const rc = ropeCap(k, t); if (rc != null) return Math.min(rc, waitAt(k, t).med); const w = waitAt(k, t); return w.med + (S.style === "sure" ? 1 : S.style === "lean" ? 0 : S.slack ? 0.5 : 0) * PK * Math.max(0, w.p90 - w.med); };  // lean（詰める）は待ちをふつうの値で
+const earlyMinOf = k => (epOf(k) || S.free[k] ? earlyOf(k) : Math.max(5, Math.round(earlyOf(k) / 2)));  // 場所取りに遅くとも着きたい時刻（開演の何分前）。ビリーヴは60分前〜30分前のどこかで
 const openAt = k => { const r = RIDES[k]; if (r.src === "show") return showTime(k) - earlyOf(k); return Math.max(M.open, r.open || 0); };
 function lastAt(k) {
   const r = RIDES[k];
@@ -1959,9 +1962,9 @@ function taskOf(it) {
     const lastA = lastP < last && S.style !== "sure" ? Math.max(lastP, last - CUT_NEAR) : lastP;  // ビリーヴのすぐあとの「必ず」など（「確実」は今までどおり）
     if (r.src === "show") {
       // ショーは場所取りの始まり（open）に着いて、開演＋上演時間に終わる。閉園前に始まるなら終わりが閉園を越えてもよい（帰る時刻を決めたときは、それまでに終わる）
-      const st = showTime(k); open = last = Math.min(open, st);
+      const st = showTime(k); open = Math.min(open, st); last = it.pin != null ? open : Math.max(open, st - earlyMinOf(k));  // 場所取りは目安の時刻から、遅くとも earlyMinOf 分前まで
       const fend = endAt() < M.close ? endAt() : Math.max(endAt(), st + r.len), dur = st + r.len - open;
-      return { it, k, loc: locOfRide(k), dur, open, last: fend - dur < open ? -1 : last, lastP: fend - dur < open ? -1 : last, fend, val: r.w, buf: 0, wait: 0, after: r.after };
+      return { it, k, loc: locOfRide(k), dur, open, last: fend - dur < open ? -1 : last, lastP: fend - dur < open ? -1 : last, fend, val: r.w, buf: 0, wait: 0, after: r.after, fixEnd: st + r.len };
     }
     // 帰る時刻を決めたときは、それまでに乗り終える。決めていなければ、閉園前（締め切り前）に列に入れば乗り終わりは閉園を過ぎてもよい
     const fendR = endAt() < M.close ? endAt() : Infinity, E = Math.min(fendR - durOf(k), M.close - 1); last = Math.min(last, E);
@@ -1984,7 +1987,7 @@ function planRoute(items, mustKeys, opt = {}) {
   tasks.forEach(tk => { tk.li = tk.loc ? LI[tk.loc] : -1; const j = tk.after ? tasks.findIndex(x => x.k === tk.after) : -1; tk.req = j >= 0 ? 1 << j : 0; });
   const W = tasks.map(tk => { const a = new Float32Array(900); if (tk.wait === null) for (let t = 0; t < 900; t++) a[t] = planWait(tk.k, 480 + t); return a; });
   // 見積もりの「重さ」: 待ち＋ぶれの分＋受付終了の60分前からは締め切り間際ほど重く（余裕があるのに閉まる直前を選ばない）
-  const C = tasks.map((tk, i) => { const a = new Float32Array(900); for (let t = 0; t < 900; t++) { const w = W[i][t]; if (tk.wait === null) { const ww = epOf(tk.k) ? { med: 0, p90: 0 } : waitAt(tk.k, 480 + t); a[t] = w + 0.25 * PK * Math.max(0, ww.p90 - ww.med) + 0.5 * Math.max(0, 60 - (tk.last - 480 - t)); } else a[t] = 0; } return a; });
+  const C = tasks.map((tk, i) => { const a = new Float32Array(900); for (let t = 0; t < 900; t++) { const w = W[i][t]; if (tk.wait === null) { const ww = epOf(tk.k) ? { med: 0, p90: 0 } : waitAt(tk.k, 480 + t); a[t] = w + 0.25 * PK * Math.max(0, ww.p90 - ww.med) + 0.5 * Math.max(0, 60 - (tk.last - 480 - t)); } else a[t] = tk.fixEnd != null ? 0.3 * Math.max(0, 480 + t - tk.open) : 0; } return a; });
   const mustMask = tasks.reduce((m, t, i) => (mustKeys.includes(t.k) || t.meal || t.it.pin != null ? m | 1 << i : m), 0);
   const mustIdx = tasks.map((_, i) => i).filter(i => mustMask >> i & 1);
   if (n > 30) { planErr = "選んだものが30個を超えています。いくつか外してください。"; return null; }
@@ -2006,7 +2009,7 @@ function planRoute(items, mustKeys, opt = {}) {
       for (const idle of IDLES) {
         const st = Math.max(Math.round(s0.fin + idle + wk + tk.buf), tk.open);
         if (st > (st - s0.anc <= 60 ? tk.lastA ?? tk.lastP : tk.lastP) || st - 480 >= 899) break;
-        const w = W[i][st - 480], fin = st + w + tk.dur;
+        const w = W[i][st - 480], fin = tk.fixEnd != null ? Math.max(st, tk.fixEnd) : st + w + tk.dur;
         if (fin > (tk.fend ?? END)) break;
         const mask = s0.mask | 1 << i;
         let dead = false;
@@ -2585,11 +2588,11 @@ function renderCards() {
   const groups = GROUPS.map(([g, t, n]) => [g, t, n, Object.keys(RIDES).filter(k => RIDES[k].grp === g && avail(k, M.date))]).filter(x => x[3].length);
   const selKs = S.sel.filter(k => RIDES[k] && avail(k, M.date));
   if (!["sel", "all"].includes(grpTab) && !groups.some(x => x[0] === grpTab)) grpTab = "sel";
-  const tabs = `<div class="gtabs" role="tablist" aria-label="乗り物の種類">${[["sel", `選んだもの ${selKs.length}`], ...groups.map(([g, , , ks]) => [g, `${GSHORT[g] || g} ${ks.filter(k => S.sel.includes(k)).length}/${ks.length}`]), ["all", "全部"]].map(([g, t]) => `<button type="button" role="tab" data-gt="${g}" aria-selected="${g === grpTab}">${t}</button>`).join("")}</div>`;
+  const tabs = `<div class="gtabs" role="tablist" aria-label="乗り物の種類">${[["all", "全部"], ["sel", `選んだもの ${selKs.length}`], ...groups.map(([g, , , ks]) => [g, `${GSHORT[g] || g} ${ks.filter(k => S.sel.includes(k)).length}/${ks.length}`])].map(([g, t]) => `<button type="button" role="tab" data-gt="${g}" aria-selected="${g === grpTab}">${t}</button>`).join("")}</div>`;
   const body = grpTab === "sel"
     ? (selKs.length ? `<div class="cards">${selKs.map(card).join("")}</div><p class="note">ほかの乗り物は、上のタブ（ファンタジー・人気・ショー…）から選べます。</p>` : `<p class="note">まだ選んでいません。上のタブから選んでください。</p>`)
     : groups.filter(x => grpTab === "all" || x[0] === grpTab).map(([g, t, n, ks]) => `<div class="grp"><h3>${t}</h3><small>${n}</small></div><div class="cards">${ks.map(card).join("")}</div>`).join("");
-  const mustNote = `<p class="mustnote"><b>「必ず」にすると</b>：待ちが長くても予定に必ず入れ、外れないように受付の締め切りの見込みの45分前までに並び始める予定にします（ほかは締め切りの見込みまで）。そのぶん時間を多めに使うので、「必ず」が多いほど、ほかに入る数は減ります。入りきらないときは、上の攻略プランの「入れる方法」（プレミアアクセス・開園ダッシュなど）に、どうすれば入るかを出しています。</p>`;
+  const mustNote = `<p class="mustnote"><b>「必ず」にすると</b>（ショーは時刻が決まっているので、選ぶと「必ず」と同じに扱います）：待ちが長くても予定に必ず入れ、外れないように受付の締め切りの見込みの45分前までに並び始める予定にします（ほかは締め切りの見込みまで）。そのぶん時間を多めに使うので、「必ず」が多いほど、ほかに入る数は減ります。入りきらないときは、上の攻略プランの「入れる方法」（プレミアアクセス・開園ダッシュなど）に、どうすれば入るかを出しています。</p>`;
   document.getElementById("cards").innerHTML = tabs + mustNote + body;
   document.querySelectorAll("#cards [data-gt]").forEach(b => b.addEventListener("click", () => { grpTab = b.dataset.gt; store.set("grpTab", grpTab); renderCards(); }));
   document.querySelectorAll("#cards .card").forEach(c => {
@@ -2620,16 +2623,16 @@ function planItems() {
   if (S.meals.dinner) items.push(newItem("meal", "夜ごはん", at("dinner")));
   return items;
 }
-const mustNow = () => S.sel.filter(k => avail(k, M.date) && (S.must.includes(k) || epOf(k)));  // DPA を買うものは「必ず」
+const mustNow = () => S.sel.filter(k => avail(k, M.date) && (S.must.includes(k) || epOf(k) || RIDES[k].src === "show"));  // DPA を買うもの・選んだショーは「必ず」
 // 「必ず」が多すぎて1日に入りきらないとき: 「必ず」を1つずつ「できれば」に下げて、回れる数が一番多い組み方にする（S.must は変えない）。
 //  あわせて、DPA を使えば全部の「必ず」が入るものを調べる（シーは人気のものが一日中2〜3時間待ちの日があるため）
 let relaxNote = "";
 function planRelax(items, musts, opt) {
   relaxNote = "";
   const p = planMain(items, musts, opt); if (p || !musts.length) return p;
-  let best = null;
-  for (let n = 1; n <= musts.length && !best; n++) {
-    const combos = n === 1 ? musts.map(k => [k]) : musts.flatMap((a, i) => musts.slice(i + 1).map(b => [a, b]));
+  let best = null; const cand = musts.filter(k => RIDES[k].src !== "show"), shows = musts.filter(k => RIDES[k].src === "show");  // ショーは外さない
+  for (let n = 1; n <= cand.length && !best; n++) {
+    const combos = n === 1 ? cand.map(k => [k]) : cand.flatMap((a, i) => cand.slice(i + 1).map(b => [a, b]));
     for (const drop of combos) {
       const p2 = planMain(items, musts.filter(k => !drop.includes(k)), opt); if (!p2) continue;
       const sim = simulate(p2.order), got = drop.filter(k => p2.order.some(x => x.key === k)).length;
@@ -2639,7 +2642,7 @@ function planRelax(items, musts, opt) {
     if (n >= 2) break;
   }
   if (!best) {  // 「必ず」を2つ外しても入らない（夕方からの入園で混む日など）: 「必ず」なしで組んで知らせる（前は予定が空のままだった）
-    const p0 = planMain(items, [], opt); if (!p0) return null;
+    const p0 = (shows.length && planMain(items, shows, opt)) || planMain(items, [], opt); if (!p0) return null;
     relaxNote = `「必ず」が1日に入りきらないので、<b>「必ず」なしで</b>組みました（${musts.filter(k => p0.order.some(x => x.key === k)).map(k => RIDES[k].short).join("・") || "「必ず」はどれも入っていません"}）。プレミアアクセスを使うか、「必ず」を減らしてください。`;
     return p0;
   }
@@ -2768,10 +2771,10 @@ let whyOpen = false;
 function renderPlanHero(sim) {
   if (noPick()) { const b = document.getElementById("answer"); b.innerHTML = emptyPickHTML(); wireEmptyPick(b); return; }
   const c = M.crowd, box = document.getElementById("answer"), dp = dpaPlan(sim), miss = (lastMissed || []).filter(x => RIDES[x.key]).map(x => RIDES[x.key].short);
-  const sub = r => { const R = RIDES[r.it.key]; if (r.flag) return "⚠ " + r.flag; if (R) return R.src === "show" ? (epOf(r.it.key) ? "ショー（DPAの席）" : `${hm(showTime(r.it.key))}開演・${S.free[r.it.key] ? "5分前に着く" : "場所取りから"}`) : epOf(r.it.key) ? "プレミアアクセス・並ぶ10分ほど" : `乗り終わり ${hm(r.end)}${ropeCap(r.it.key, r.start) != null ? `・待ちは${S.entryMode === "happy" ? "ハッピーエントリー" : "開園ダッシュ"}で列の先頭近くの目安（表示より短い）` : ""}`;
+  const sub = r => { const R = RIDES[r.it.key]; if (r.flag) return "⚠ " + r.flag; if (R) return R.src === "show" ? (epOf(r.it.key) ? "ショー（DPAの席）" : `${hm(showTime(r.it.key))}開演・${S.free[r.it.key] ? "5分前に着く" : `場所取りは${hm(showTime(r.it.key) - earlyOf(r.it.key))}〜${hm(showTime(r.it.key) - earlyMinOf(r.it.key))}のどこかで（予定は${hm(r.start)}から）`}`) : epOf(r.it.key) ? "プレミアアクセス・並ぶ10分ほど" : `乗り終わり ${hm(r.end)}${ropeCap(r.it.key, r.start) != null ? `・待ちは${S.entryMode === "happy" ? "ハッピーエントリー" : "開園ダッシュ"}で列の先頭近くの目安（表示より短い）` : ""}`;
     if (r.it.type === "meal") return `${r.info || "近くの店"}・${isMO(r.to.slice(6)) ? moTxt(r) : `行列 ${Math.round(r.wait)}分ほど`}`; return r.info || ""; };
-  const rows = sim.rows.map(r => { const R = RIDES[r.it.key], img = rowImg(r);
-    return `${r.walk ? `<li class="mv">↓ 歩く${r.walk}分${r.idle >= 10 ? `・空き${Math.round(r.idle)}分${idleWhy(r)}` : ""}</li>` : ""}<li class="${r.flag ? "bad" : ""}"><span class="t">${hm(r.start)}</span><span class="ph">${img ? `<img src="${img}" alt="" loading="lazy">` : ""}</span><span class="nm">${itemName(r.it)}${S.must.includes(r.it.key) ? '<span class="badge must">必ず</span>' : ""}${R && epOf(r.it.key) ? '<span class="badge ep">DPA</span>' : ""}<small>${sub(r)}</small></span><span>${R && R.src !== "show" && r.wait >= 1 ? wchip(r.wait) : ""}</span></li>`; }).join("");
+  const rows = sim.rows.map((r, i) => { const R = RIDES[r.it.key], img = rowImg(r);
+    return `${r.walk ? `<li class="mv">↓ 歩く${r.walk}分${r.idle >= 10 ? `・空き${Math.round(r.idle)}分${idleWhy(r)}` : ""}</li>` : ""}<li class="${r.flag ? "bad" : ""}"><span class="t">${hm(r.start)}</span><span class="ph">${img ? `<img src="${img}" alt="" loading="lazy">` : ""}</span><span class="nm">${itemName(r.it)}${S.must.includes(r.it.key) ? '<span class="badge must">必ず</span>' : ""}${R && epOf(r.it.key) ? '<span class="badge ep">DPA</span>' : ""}<small>${sub(r)}</small></span><span>${R && R.src !== "show" && r.wait >= 1 ? wchip(r.wait) : ""}</span></li>${showRiskHTML(sim, i)}`; }).join("");
   const t0 = sim.rows.length ? sim.rows[0].arrive - sim.rows[0].walk : entryAt();
   box.innerHTML = `<div class="ah"><div><span class="meta">${md(M.date)}・${LVM[c.lv]} ${LV[c.lv]}・${hm(M.open)}〜${hm(M.close)}${hoursGuess() ? "（予想・公式は未発表）" : ""}</span><h2>${M.date === TODAY ? "今日" : md(M.date)}の攻略プラン</h2></div>
     <div class="kv"><span><b>${sim.rides}</b> 個</span><span>並ぶ <b>${dur(sim.waitTot)}</b></span><span>歩く <b>${dur(sim.walkTot)}</b></span><span>終わり <b>${hm(sim.end)}</b></span></div></div>
@@ -2832,6 +2835,24 @@ function wireAsks() {
   }));
 }
 function applyDPA(o) { const nm = ks => ks.map(k => RIDES[k].short).join("・"), e2 = { ...(P().ep || {}) }; o.ep.forEach(x => { e2[x] = { at: null }; if (!S.sel.includes(x)) S.sel.push(x); }); P().ep = e2; save(); vSig = ""; replan(`${nm(o.ep)}をプレミアアクセスにして組み直しました。入園したらすぐ、公式アプリで買ってください（買う順番は下の「プレミアアクセスを買う順番」）。`); }
+// ===== ショーに間に合うか: すぐ前の乗り物が長引いた日でも、場所取り・開演に間に合うか（似た日の実際の待ちで数える）=====
+//  予定は「ふつう」の待ちで組むので、たいていは間に合う。間に合わない日がある日は、その場の判断（列をあきらめてショーへ）を書く。余裕を足して乗り物を減らすことはしない
+function showRiskOf(sim, i) {
+  const r = sim.rows[i], R = r && RIDES[r.it.key]; if (!R || R.src !== "show") return null;
+  // ショーの前の、いちばん近い乗り物（間はごはん・トイレ・フードだけ）。その乗り物が予定より長引いた分は、間の空き時間で吸収できる
+  let j = i - 1, idle = r.idle || 0;
+  while (j >= 0 && !RIDES[sim.rows[j].it.key] && ["meal", "wc", "food", "rest"].includes(sim.rows[j].it.type)) { idle += sim.rows[j].idle || 0; j--; }
+  const pv = sim.rows[j]; if (!pv || !RIDES[pv.it.key] || RIDES[pv.it.key].src !== "r" || epOf(pv.it.key) || r.start - pv.end > 150) return null;
+  const st = showTime(r.it.key), late1 = st - earlyMinOf(r.it.key) - r.start, late2 = st - 5 - r.start; let n = 0, ok1 = 0, ok2 = 0;
+  for (const x of M.crowd.refs) { const w = dayWait(pv.it.key, x, pv.start); if (!w || w.closed || w.w == null) continue; n++;
+    const delay = pv.start + w.w + pv.d - pv.end - idle; if (delay <= late1) ok1++; if (delay <= late2) ok2++; }
+  return n ? { k: pv.it.key, show: r.it.key, n, ok1, ok2, place: st - earlyMinOf(r.it.key), st, via: j < i - 1 } : null;
+}
+function showRiskHTML(sim, i) {
+  const q = showRiskOf(sim, i); if (!q) return "";
+  const a = RIDES[q.k].short, b = RIDES[q.show].short, place = q.place < q.st - 10;
+  return `<li class="risk ${q.ok2 < q.n ? "bad" : "ok"}"><span></span><span class="ph"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg></span><span class="nm">${b}に間に合うか<small>前の${a}${q.via ? "（そのあとごはんなど）" : ""}が長引いた日も入れて、似た日${q.n}日のうち${place ? `<b>${q.ok1}日</b>は場所取り（遅くとも${hm(q.place)}）に、` : ""}<b>${q.ok2}日</b>は開演（${hm(q.st)}）に間に合っています。${q.ok2 < q.n ? `${a}の列が進まないときは、${a}をやめて${b}へ（当日タブで今の待ちを入れると、間に合うかが出ます）` : place && q.ok1 < q.n ? "場所取りは少し遅れる日もありますが、開演には間に合います" : "まず心配いりません"}</small></span><span></span></li>`;
+}
 // ===== 運がよければ（わんちゃん）: 予定が閉園より前に終わるとき、入らなかった選んだものに、そのあと並べるか =====
 //  似た日の実際の待ちで、その時刻にまだ受付をしていた日を数える（ふつうに歩いて向かう／ショーを10分早く抜けて急いで向かう）
 function chanceOf(sim) {
