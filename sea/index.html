@@ -871,6 +871,8 @@ figure.amap svg { width: 100%; height: auto; border-radius: 18px; display: block
 .hm.mini .mmn { display: block; width: 54px; font-size: 11px; font-weight: 900; line-height: 1.2; padding-right: 2px; }
 .hm.mini .mmn small { display: block; font-size: 9.5px; font-weight: 700; color: var(--ink-3); }
 .hm td.plan { box-shadow: inset 0 0 0 3px var(--sun); }
+.eve { display: grid; gap: 4px; margin-top: 8px; } .eve > b { font-size: 13.5px; } .eve > small { font-size: 12px; color: var(--ink-3); line-height: 1.5; }
+.hm.evet td { min-width: 36px; cursor: default; } .hm.evet thead th { font-size: 10.5px; }
 .plist li { display: grid; grid-template-columns: 4.6em 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
 .plist li:first-child { border-top: 0; }
 .plist .t { font-family: var(--round); font-size: 19px; font-variant-numeric: tabular-nums; }
@@ -2837,14 +2839,28 @@ function chanceHTML(sim) {
 function miniMapHTML(sim) {
   const ks = S.sel.filter(k => RIDES[k] && RIDES[k].src === "r" && M.prof[k] && M.prof[k].some(q => q[1] > 0)); if (!ks.length) return "";
   const H = []; for (let h = Math.floor(M.open / 60); h < Math.ceil(M.close / 60); h++) H.push(h);
-  const at = {}; sim.rows.forEach(r => { if (RIDES[r.it.key] && !r.flag) at[r.it.key] = Math.floor(r.start / 60); });
+  const at = {}, atM = {}; sim.rows.forEach(r => { if (RIDES[r.it.key] && !r.flag) { at[r.it.key] = Math.floor(r.start / 60); atM[r.it.key] = r.start; } });
   const ks2 = [...ks.filter(k => at[k] != null).sort((a, b) => at[a] - at[b]), ...ks.filter(k => at[k] == null)];
   const row = k => { const d = hourRows(k);
     return `<tr><th scope="row"><span class="mmn">${RIDES[k].short}${at[k] == null ? "<small>予定に入らず</small>" : epOf(k) ? "<small>DPA</small>" : ""}</span></th>${H.map(h => { const x = d.rows.find(q => q.h === h), pl = at[k] === h ? " plan" : "";
       if (!x || x.med == null) return `<td class="off${pl}" data-mk="${k}" data-mh="${h}">${x && x.st === "終了" ? "締" : x && x.st === "まだ" ? "" : "—"}</td>`;
       return `<td class="q${HQ(x.med)}${pl}" data-mk="${k}" data-mh="${h}">${x.med}</td>`; }).join("")}</tr>`; };
-  return `<div class="mmh"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 待ち時間マップ<small>選んだもの・ふつうの待ち（分）・${hm(M.open)}〜${hm(M.close)}（いちばん右は${H[H.length - 1]}時台）。<span class="mmk"></span>が予定の時間</small></b><button type="button" class="btn small" id="mm-all">全部の乗り物・くわしく ›</button></div>
-    <div class="hmwrap"><table class="hm mini"><thead><tr><th scope="col"><span class="hm-sr">乗り物</span></th>${H.map(h => `<th scope="col">${h}${h === H[0] ? "時" : ""}</th>`).join("")}</tr></thead><tbody>${ks2.map(row).join("")}</tbody></table></div>`;
+  return `<div class="mmh"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 待ち時間マップ<small>選んだものの、ふつうの待ち（分）の予測。この日に似た日（去年と最近の${M.crowd.refs.length}日）の実際の待ちから出しています。${hm(M.open)}〜${hm(M.close)}（いちばん右は${H[H.length - 1]}時台）。<span class="mmk"></span>が予定の時間</small></b><button type="button" class="btn small" id="mm-all">全部の乗り物・くわしく ›</button></div>
+    <div class="hmwrap"><table class="hm mini"><thead><tr><th scope="col"><span class="hm-sr">乗り物</span></th>${H.map(h => `<th scope="col">${h}${h === H[0] ? "時" : ""}</th>`).join("")}</tr></thead><tbody>${ks2.map(row).join("")}</tbody></table></div>${eveHTML(ks2, atM)}`;
+}
+// 閉園前の3時間は30分ごと（夜は待ちが大きく変わり、受付も順に終わる。記録も30分ごと）。at = { 乗り物: 予定の開始（分） }
+function eveHTML(ks, at = {}) {
+  if (!ks.length) return "";
+  const T = []; for (let t = M.close - 180; t < M.close; t += 30) T.push(t);
+  const cell = (k, t) => {
+    const r = RIDES[k], c = M.cut[k], v = (M.prof[k] || []).filter(q => q[0] >= t && q[0] < t + 30), pl = at[k] != null && at[k] >= t && at[k] < t + 30 ? " plan" : "";
+    const st = r.open && t + 30 <= r.open ? "まだ" : c && c.max && t > c.max + 5 ? "終了" : c && t + 15 > c.p10 ? "注意" : "ok";
+    if (!v.length || st === "まだ" || st === "終了") return `<td class="off${pl}">${st === "終了" ? "締" : st === "まだ" ? "" : "—"}</td>`;
+    const m = Math.round(v.reduce((a, q) => a + q[1], 0) / v.length);
+    return `<td class="q${HQ(m)}${st === "注意" ? " warn" : ""}${pl}">${m}</td>`;
+  };
+  return `<div class="eve"><b>閉園前の3時間は30分ごと</b><small>夜は30分で待ちが大きく変わり、受付も順に終わります。点線の枠＝受付の締め切りが近い、締＝受付が終わったあと</small>
+    <div class="hmwrap"><table class="hm mini evet"><thead><tr><th scope="col"><span class="hm-sr">乗り物</span></th>${T.map(t => `<th scope="col">${hm(t)}</th>`).join("")}</tr></thead><tbody>${ks.map(k => `<tr><th scope="row"><span class="mmn">${RIDES[k].short}</span></th>${T.map(t => cell(k, t)).join("")}</tr>`).join("")}</tbody></table></div></div>`;
 }
 function wireMiniMap() {
   const box = document.getElementById("minimap"); if (!box) return;
@@ -4530,7 +4546,7 @@ function renderHeat() {
     <div class="hmwrap"><table class="hm"><thead><tr><th scope="col"><span class="hm-sr">乗り物</span></th>${H.map(h => `<th scope="col"${h === nowH ? ' class="now"' : ""}>${h}${h === H[0] ? "時" : ""}</th>`).join("")}</tr></thead>
     <tbody>${sel.length ? grp("選んでいるもの") + sel.map(row).join("") : ""}${hmAll || !sel.length ? grp(sel.length ? "ほか" : "乗り物") + rest.map(row).join("") : ""}</tbody></table></div>
     <div class="hmfoot">${sel.length && rest.length ? `<button type="button" class="btn small" id="hm-all">${hmAll ? "選んでいるものだけにする" : `ほかの乗り物も見る（${rest.length}）`}</button>` : ""}<div class="hmleg" aria-hidden="true">${HQL.map((l, i) => `<span><i class="q${i}"></i>${l}</span>`).join("")}<span>分</span></div></div>
-    <div class="hmread" id="hmread" aria-live="polite">${hmReadout()}</div>`;
+    <div class="hmread" id="hmread" aria-live="polite">${hmReadout()}</div>${eveHTML([...sel, ...(hmAll || !sel.length ? rest : [])])}`;
   const wireRead = () => { const g = document.getElementById("hm-go"); if (g) g.addEventListener("click", () => document.getElementById("detail").scrollIntoView({ behavior: "smooth", block: "start" })); };
   const pickCell = (k, h) => { hmPick = { k, h }; focusK = k; box.querySelectorAll(".hm .pick").forEach(x => x.classList.remove("pick")); const td = box.querySelector(`td[data-hk="${k}"][data-hh="${h}"]`); if (td) td.classList.add("pick"); document.getElementById("hmread").innerHTML = hmReadout(); wireRead(); renderDetail(); };
   box.querySelectorAll("td[data-hk]").forEach(td => { td.addEventListener("click", () => pickCell(td.dataset.hk, +td.dataset.hh)); td.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickCell(td.dataset.hk, +td.dataset.hh); } }); });
