@@ -1304,7 +1304,7 @@ html { scroll-padding-top: calc(var(--toph, 150px) + 8px); }
           <li><b>トイレ</b>：寄り道が一番少ない所を基本にします。</li>
           <li><b>プレミアアクセス</b>：買う乗り物は待ち10分ほど。利用時間が決まっていなければ、入園の30分後より後に入れます。去年の似た日での確かめでも同じに扱い、その日に早く受付が終わっていた乗り物だけは乗れなかったと数えます。</li>
         </ul>
-        <p>組み方は4つから選べます。「余裕を見る」は待ちを多めに、歩く時間を1.2倍＋2分で見積もります。「確実」は似た日すべてで回れるまで減らします。「必ず最優先」は「必ず」に乗れる日が減らないところまでほかを減らします。「楽観」はふつうの日の値で組みます。</p>
+        <p>組み方は5つから選べます。「余裕を見る」は待ちを多めに、歩く時間を1.2倍＋2分で見積もります。「確実」は似た日すべてで回れるまで減らします。「必ず最優先」は「必ず」に乗れる日が減らないところまでほかを減らします。「詰める」は待ちをふつうの値で見て、受付の締め切りの近く（「必ず」は45分前・ほかは20分前）まで使います（入園の列と歩く時間は余裕を見たまま）。「楽観」はふつうの日の値で、入園の列も歩く時間も余裕なしで組みます。</p>
       </div></details>
 
       <details class="more"><summary>「この予定は信用できるか」の確かめ方</summary><div class="inner">
@@ -1791,7 +1791,7 @@ function dpaChain() {
   dpaKey = key; dpaC = c; return c;
 }
 const earlyOf = k => (epOf(k) ? Math.min(10, RIDES[k].early) : S.free[k] ? 5 : RIDES[k].early_busy && M && M.crowd && M.crowd.lv >= 3 ? RIDES[k].early_busy : RIDES[k].early);  // 混む日は場所取りを早める（ビリーヴは60分前）
-const planWait = (k, t) => { if (epOf(k)) return EPW; const w = waitAt(k, t); return w.med + (S.style === "sure" ? 1 : S.slack ? 0.5 : 0) * PK * Math.max(0, w.p90 - w.med); };
+const planWait = (k, t) => { if (epOf(k)) return EPW; const w = waitAt(k, t); return w.med + (S.style === "sure" ? 1 : S.style === "lean" ? 0 : S.slack ? 0.5 : 0) * PK * Math.max(0, w.p90 - w.med); };  // lean（詰める）は待ちをふつうの値で
 const openAt = k => { const r = RIDES[k]; if (r.src === "show") return showTime(k) - earlyOf(k); return Math.max(M.open, r.open || 0); };
 function lastAt(k) {
   const r = RIDES[k];
@@ -1917,7 +1917,7 @@ function taskOf(it) {
     let open = openAt(k), last = lastAt(k);
     if (it.pin != null) { open = it.pin; last = epOf(k) && r.src !== "show" ? (it.orig ?? it.pin) + dpaGrace() : it.pin; }  // DPA は利用時間（60分）の中なら間に合う
     if (it.pin == null && epOf(k) && r.src !== "show") open = Math.max(open, (dpaChain().at[k] ?? entryAt()) + 30);
-    const lastP = S.slack && r.src !== "ticket" && r.src !== "show" && it.pin == null ? last - (S.style === "sure" ? CUT_SURE : CUT_SLACK) : last;
+    const lastP = S.slack && r.src !== "ticket" && r.src !== "show" && it.pin == null ? last - (S.style === "sure" ? CUT_SURE : S.style === "lean" && !S.must.includes(k) ? 20 : CUT_SLACK) : last;  // lean は「必ず」以外は締め切りの20分前まで使う
     if (r.src === "show") {
       // ショーは場所取りの始まり（open）に着いて、開演＋上演時間に終わる。閉園前に始まるなら終わりが閉園を越えてもよい（帰る時刻を決めたときは、それまでに終わる）
       const st = showTime(k); open = last = Math.min(open, st);
@@ -2110,8 +2110,10 @@ function troughShare(k, h) {
   return out.length >= 3 ? out.filter(Boolean).length / out.length : null;
 }
 // ================= 去年の実際の日に当てはめる =================
+let WAIT_SCALE = 1;
 function dayWait(k, x, t) {
-  const w = dayWait0(k, x, t);
+  let w = dayWait0(k, x, t);
+  if (WAIT_SCALE !== 1 && w && !w.closed && w.w != null) w = { ...w, w: w.w * WAIT_SCALE };
   return epOf(k) && !(w && w.closed) ? { w: EPW } : w;
 }
 // 答え合わせで、この日の記録は今年の水準などに直さず、そのまま使う（「去年の同じ日の実際の待ちで回すと」のとき）
@@ -2364,10 +2366,13 @@ function renderTop() {
   document.getElementById("datechip").innerHTML = `${md(M.date)} ${LVM[c.lv]}${LV[c.lv]}<span>${hm(M.open)}〜${hm(M.close)}${hoursGuess() ? "（予想）" : ""}</span>`;
 }
 // 選び方（乗りたいもの・必ず）は日付ごとに覚える（3日行くとき、日ごとに変えられる）。初めての日付は、今の選び方を引き継ぐ
-function keepSel() { if (S.date && S.sel) S.selBy = { ...(S.selBy || {}), [S.date]: { sel: S.sel.slice(), must: (S.must || []).slice() } }; }
+//  入園の仕方・組み方・最初に乗るもの・ショーの回・場所取り・ごはんも日付ごと（歩く速さ・モバイルオーダーは共通、天気は日付で持っている）。前の版で覚えた日は選び方だけなので、ほかは今のまま
+const DAYK = ["sel", "must", "entryMode", "entry", "slack", "style", "first", "showAt", "free", "meals", "lightLunch", "mealAt"];
+const cloneJ = v => (v === undefined ? v : JSON.parse(JSON.stringify(v)));
+function keepSel() { if (S.date && S.sel) S.selBy = { ...(S.selBy || {}), [S.date]: Object.fromEntries(DAYK.map(k => [k, cloneJ(S[k])])) }; }
 function setDate(d) {
   let back = false;
-  if (S.date && S.date !== d) { keepSel(); const k = (S.selBy || {})[d]; if (k) { back = JSON.stringify(k.sel) !== JSON.stringify(S.sel); S.sel = k.sel.slice(); S.must = k.must.slice(); } }
+  if (S.date && S.date !== d) { keepSel(); const k = (S.selBy || {})[d]; if (k && k.sel) { back = JSON.stringify(k.sel) !== JSON.stringify(S.sel); DAYK.forEach(x => { if (k[x] !== undefined) S[x] = cloneJ(k[x]); }); } }
   S.date = d; M = buildModel(d); save(); renderTop();
   if (back && document.getElementById("gtoast")) toast("gtoast", `${md(d)}の選び方（${S.sel.length}個）に切り替えました。選び方は日付ごとに覚えています。`);
 }
@@ -2617,7 +2622,7 @@ function replan(msg = "") {
 function ensureItems() { if (!P().items || !P().items.length) { const p = planRelax(planItems(), mustNow(), { first: S.first }); P().items = p ? p.order : []; lastMissed = p ? p.missed : []; save(); if (relaxNote && S.tab === "plan") toast("plantoast", relaxNote); } }
 function syncToggles() {}
 let ctrlOpen = false, epOpen = false;
-const styleNow = () => (!S.slack ? "fast" : S.style === "sure" || S.style === "must" ? S.style : "normal");
+const styleNow = () => (!S.slack ? "fast" : ["sure", "must", "lean"].includes(S.style) ? S.style : "normal");
 function autoArrange() {
   const before = curSim(), done = P().items.filter(x => P().done[x.id]);
   const p = planMain(restItems().map(x => ({ ...x, at: undefined })), mustNow(), liveOpt());
@@ -2738,54 +2743,63 @@ function renderPlanHero(sim) {
 //  ・入れる方法: DPA（どれを買うと全部入るか。売り切れの目安も見る）・見込みを攻める（似た日で全部回れた日数つき）・開園ダッシュ・時間帯（一番空く時間）
 //  試算は少しずつ（画面を止めない）。同じ条件なら覚えておく。どれも押すまで予定は変えない
 let boostRun = 0, boostRes = null;
-function trustOf(sim) {
-  const out = {}, ly = (+M.date.slice(0, 4) - 1) + M.date.slice(4), x = DAYMAP[ly];
-  if (x && x.avg && x.s && Object.keys(x.s).length) { RAW_DAY = ly; try { const r = replayLive(sim, x); out.last = { d: ly, avg: x.avg, ok: !r.missed.length, rides: r.rides, planned: r.planned, end: r.end, miss: [...new Set(r.missed.map(m => m.k))] }; } finally { RAW_DAY = null; } }
-  const refs = M.crowd.refs; out.refs = { n: refs.length, ok: refs.filter(y => !replayLive(sim, y).missed.length).length };
-  const nv = naiveSim(); out.naive = { rides: nv.rides, wait: Math.round(nv.waitTot) };
-  return out;
+const lyOf = d => (+d.slice(0, 4) - 1) + d.slice(4);
+// 予定を似た日で回したときの数え方（全部・必ず全部・平均の個数）。scale で「去年より1割混むと」（待ちを一律に何倍か）
+function rateOf(sim, scale = 1) {
+  const refs = M.crowd.refs, musts = mustNow(); WAIT_SCALE = scale;
+  try { const rr = refs.map(x => replayLive(sim, x)); return { n: refs.length, ok: rr.filter(r => !r.missed.length).length, must: rr.filter(r => !r.missed.some(m => musts.includes(m.k))).length, avg: rr.reduce((a, r) => a + r.rides, 0) / Math.max(1, rr.length) }; }
+  finally { WAIT_SCALE = 1; }
 }
-function tryPlan(o, missK, rate) {  // 設定を一時的に変えて組んでみる（必ず元に戻す）
+// 去年の同じ日の実際の待ち（直さない）で回すと。その日が予測の材料（似た日）に入っているか・記録のない乗り物（予測で代用）も返す
+function lastYearOf(sim) {
+  const ly = lyOf(M.date), x = DAYMAP[ly];
+  if (!(x && x.avg && x.s && Object.keys(x.s).length)) return null;
+  RAW_DAY = ly;
+  try { const r = replayLive(sim, x); return { d: ly, avg: x.avg, ok: !r.missed.length, rides: r.rides, planned: r.planned, end: r.end, miss: [...new Set(r.missed.map(m => m.k))].filter(k => RIDES[k]), unknown: [...new Set((r.unknown || []).map(u => (u && u.k) || u))].filter(k => RIDES[k]), inRefs: M.crowd.refs.some(y => y.d === ly) }; }
+  finally { RAW_DAY = null; }
+}
+function trustOf(sim) { const nv = naiveSim(); return { last: lastYearOf(sim), refs: rateOf(sim), refs11: rateOf(sim, 1.1), naive: { rides: nv.rides, wait: Math.round(nv.waitTot) } }; }
+// 設定を一時的に変えて組んでみる（必ず元に戻す）。自分で足したフード・トイレ・休憩も入れて組む（押したあとの予定と同じになるように）
+function tryPlan(o, rate) {
   const e0 = P().ep, sl = S.slack, st = S.style, em = S.entryMode;
   try {
     if (o.ep) P().ep = { ...(e0 || {}), ...Object.fromEntries(o.ep.map(k => [k, { at: null }])) };
-    if (o.fast) { S.slack = false; S.style = "normal"; }
+    if (o.lean) { S.slack = true; S.style = "lean"; }
     if (o.dash) S.entryMode = "dash";
-    const p = planMain(planItems(), mustNow(), { first: S.first }); if (!p) return { ...o, none: true };
+    const keep = (P().items || []).filter(x => (x.type === "wc" || x.type === "rest" || x.type === "food") && !P().done[x.id]).map(x => ({ ...x, at: undefined }));
+    const p = planMain([...planItems(), ...keep], mustNow(), { first: S.first }); if (!p) return { ...o, none: true };
     const s = simulate(p.order), inK = new Set(s.rows.filter(r => RIDES[r.it.key] && !r.flag).map(r => r.it.key)), no = (o.ep || []).filter(k => dpaChain().no.has(k));
-    const out = { ...o, rides: s.rides, wait: Math.round(s.waitTot), end: s.end, got: missK.filter(k => inK.has(k)), allIn: missK.every(k => inK.has(k)), no, cost: (o.ep || []).filter(k => !no.includes(k)).reduce((a, k) => a + RIDES[k].dpa, 0) };
-    if (rate) {
-      const refs = M.crowd.refs; out.rate = { ok: refs.filter(x => !replayLive(s, x).missed.length).length, n: refs.length };
-      const ly = (+M.date.slice(0, 4) - 1) + M.date.slice(4), x = DAYMAP[ly];  // 去年の同じ日の実際の待ち（直さない）で回すと
-      if (x && x.avg && x.s && Object.keys(x.s).length) { RAW_DAY = ly; try { const r = replayLive(s, x); out.last = { d: ly, rides: r.rides, planned: r.planned }; } finally { RAW_DAY = null; } }
-    }
+    const selK = S.sel.filter(k => RIDES[k] && avail(k, M.date));
+    const out = { ...o, rides: s.rides, wait: Math.round(s.waitTot), end: s.end, keys: [...inK], allIn: selK.every(k => inK.has(k)), no, cost: (o.ep || []).filter(k => !no.includes(k)).reduce((a, k) => a + RIDES[k].dpa, 0) };
+    if (rate) { out.rate = rateOf(s); out.last = lastYearOf(s); }
     return out;
   } finally { P().ep = e0; S.slack = sl; S.style = st; S.entryMode = em; }
 }
-function bestBand(k) { const hr = hourRows(k), b = hr.rows.find(x => x.h === hr.best); return b ? { h: b.h, med: b.med, noon: Math.round(waitAt(k, 780).med) } : null; }
+// 空く時間: 受付の締め切りの見込みの1時間前までから選ぶ（混む日は早く閉まる。去年の12/25のセンターは18:45で終わっていた）
+function bestBand(k) {
+  const hr = hourRows(k), lim = lastAt(k) - 60, ok = hr.rows.filter(x => x.med != null && x.h * 60 + 30 <= lim);
+  const b = ok.reduce((a, x) => (!a || x.med < a.med ? x : a), null);
+  return b ? { h: b.h, med: b.med, noon: Math.round(waitAt(k, 780).med), late: b.h >= 18 } : null;
+}
 function renderBoost(sim) {
-  const sig = vSigNow() + "|" + JSON.stringify(P().items ? P().items.map(x => x.key) : []);
-  if (boostRes && boostRes.sig === sig) { paintBoost(boostRes); if (!boostRes.done) return; return; }
+  const sig = vSigNow() + "|" + [S.entryMode, S.mo, JSON.stringify(S.free || {}), P().leave ?? ""].join("|") + "|" + JSON.stringify(P().items ? P().items.map(x => x.key) : []);
+  if (boostRes && boostRes.sig === sig) { paintBoost(boostRes); return; }
   const run = ++boostRun, missK = (lastMissed || []).filter(x => RIDES[x.key] && avail(x.key, M.date)).map(x => x.key), date = S.date;
-  const res = boostRes = { sig, missK, done: false, dpa: [], cur: sim.rides, curWait: Math.round(sim.waitTot), curEnd: sim.end };
+  const curKeys = [...new Set(sim.rows.filter(r => RIDES[r.it.key] && !r.flag).map(r => r.it.key))];
+  const res = boostRes = { sig, missK, done: false, dpa: [], cur: sim.rides, curKeys, curWait: Math.round(sim.waitTot), curEnd: sim.end };
   const jobs = [() => { res.trust = trustOf(sim); }];
-  {
-    if (missK.length) jobs.push(() => { res.hours = missK.map(k => ({ k, b: bestBand(k) })).filter(x => x.b); });
-    const ep = P().ep || {}, okDPA = k => RIDES[k] && RIDES[k].dpa && RIDES[k].src === "r" && avail(k, M.date) && (!RIDES[k].dpaFrom || M.date >= RIDES[k].dpaFrom) && !ep[k] && S.sel.includes(k);
-    const planned = sim.rows.filter(r => RIDES[r.it.key]).sort((a, b) => b.wait - a.wait).map(r => r.it.key);
-    // 待ちの長い予定（DPAにすると時間が空く）の上位3つと、入らなかった人気のもの（DPAで入れる）の上位3つ
-    const cands = [...new Set([...planned.filter(okDPA).slice(0, 3), ...missK.filter(okDPA).sort((a, b) => (RIDES[b].w || 0) - (RIDES[a].w || 0)).slice(0, 3)])];
-    cands.forEach(k => jobs.push(() => res.dpa.push(tryPlan({ ep: [k] }, missK))));
-    jobs.push(() => {  // 1つで全部入らなければ、よく効いた3つから2つの組を試す（全部入っているときは1つずつだけ）
-      if (!missK.length || res.dpa.some(o => o.allIn && !o.no.length)) return;
-      const top = res.dpa.filter(o => !o.none && !o.no.length).sort((a, b) => b.rides - a.rides || a.wait - b.wait).slice(0, 3).map(o => o.ep[0]);
-      const pr = []; for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++) pr.push([top[i], top[j]]);
-      jobs.unshift(...pr.map(ks => () => res.dpa.push(tryPlan({ ep: ks }, missK))));
-    });
-    if (missK.length) {
-      jobs.push(() => { res.fast = S.slack ? tryPlan({ fast: true }, missK, true) : null; });
-      jobs.push(() => { res.dash = !["dash", "happy"].includes(S.entryMode) && entryAt() <= M.open ? tryPlan({ dash: true }, missK) : null; });
-    }
+  if (missK.length) jobs.push(() => { res.hours = missK.map(k => ({ k, b: bestBand(k) })).filter(x => x.b); });
+  const ep = P().ep || {}, okDPA = k => RIDES[k] && RIDES[k].dpa && RIDES[k].src === "r" && avail(k, M.date) && (!RIDES[k].dpaFrom || M.date >= RIDES[k].dpaFrom) && !ep[k] && S.sel.includes(k);
+  S.sel.filter(okDPA).forEach(k => jobs.push(() => res.dpa.push(tryPlan({ ep: [k] }))));  // DPA のある選んだもの、全部を1つずつ
+  jobs.push(() => {  // 入りきらないときは、1つずつでよく効いた上位5つから2つの組（10通り）も
+    if (!missK.length || res.dpa.some(o => o.allIn && !o.no.length)) return;
+    const top = res.dpa.filter(o => !o.none && !o.no.length).sort((a, b) => b.rides - a.rides || a.wait - b.wait).slice(0, 5).map(o => o.ep[0]);
+    const pr = []; for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++) pr.push([top[i], top[j]]);
+    jobs.unshift(...pr.map(ks => () => res.dpa.push(tryPlan({ ep: ks }))));
+  });
+  if (missK.length) {
+    if (S.style !== "lean") jobs.push(() => { res.fast = tryPlan({ lean: true }, true); });
+    jobs.push(() => { res.dash = !["dash", "happy"].includes(S.entryMode) && entryAt() <= M.open ? tryPlan({ dash: true }) : null; });
   }
   const step = () => {
     if (run !== boostRun || S.date !== date) return;
@@ -2796,45 +2810,48 @@ function renderBoost(sim) {
 }
 function paintBoost(res) {
   const tb = document.getElementById("trust"), box = document.getElementById("boost"); if (!tb || !box) return;
-  const nm = ks => ks.filter(k => RIDES[k]).map(k => RIDES[k].short).join("・"), t = res.trust;
+  const nm = ks => ks.filter(k => RIDES[k]).map(k => RIDES[k].short).join("・"), t = res.trust, miss = res.missK.length > 0;
+  const lostOf = o => res.curKeys.filter(k => !(o.keys || []).includes(k));  // 試算で、今の予定から代わりに外れるもの
   tb.innerHTML = !t ? `<p class="note">この予定を、去年の同じ日と似た日の待ちで確かめています…</p>` : `<ul class="trustl">
-    ${t.last ? `<li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0 -10 0' /> <path d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /></svg> <b>去年の${md(t.last.d)}</b>（日平均${t.last.avg}分）の<b>実際の待ち</b>でこの予定を回すと：${t.last.ok ? `<b class="good">予定の${t.last.planned}個とも回れました</b>（終わり ${hm(t.last.end)}）` : `予定の${t.last.planned}個のうち<b>${t.last.rides}個</b>回れました${t.last.miss.length ? `（${nm(t.last.miss.filter(k => RIDES[k]))}は回れず）` : ""}`}</li>` : ""}
-    <li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 似た日<b>${t.refs.n}日</b>の待ちで回すと、予定の${res.cur}個を全部回れたのは<b>${t.refs.ok}日</b></li>
-    ${res.missK.length ? `<li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 9v4' /> <path d='M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z' /> <path d='M12 16h.01' /></svg> 選んだ${res.cur + res.missK.length}個のうち<b>${res.missK.length}個は、この予定に入っていません</b>（入れる方法は下）</li>` : ""}
-    ${t.naive.rides < res.cur || t.naive.wait > (boostCurWait() ?? 0) + 10 ? `<li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z' /> <path d='M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5' /></svg> 選んだ順にそのまま回るより${res.cur > t.naive.rides ? ` <b>${res.cur - t.naive.rides}個多く</b>乗れて` : ""}、並ぶ時間が<b>${dur(Math.max(0, t.naive.wait - (boostCurWait() ?? t.naive.wait)))}短い</b></li>` : ""}
+    ${t.last ? `<li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0 -10 0' /> <path d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /></svg> <b>去年の${md(t.last.d)}</b>（日平均${t.last.avg}分）の<b>実際の待ち</b>でこの予定を回すと：${t.last.ok ? `<b class="good">予定どおり全部回れました</b>（終わり ${hm(t.last.end)}）` : `<b>${t.last.miss.length ? `${nm(t.last.miss)}は回れませんでした` : "予定の一部は回れませんでした"}</b>`}${t.last.inRefs || t.last.unknown.length ? `<small>${t.last.inRefs ? "この日も予測の材料に入っているので、甘めの確かめです。" : ""}${t.last.unknown.length ? `${nm(t.last.unknown)}は去年の記録がないので、予測で代用しています。` : ""}</small>` : ""}</li>` : ""}
+    <li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 予定を作るのに使った似た日<b>${t.refs.n}日</b>の待ちで回すと、予定の${res.cur}個を全部回れたのは<b>${t.refs.ok}日</b>${mustNow().length ? `（「必ず」を全部は${t.refs.must}日）` : ""}。去年より<b>1割混むと${t.refs11.ok}日</b><small>作った日で確かめているので甘めです。下の「根拠」は、1日ずつ抜いて作り直して確かめています</small></li>
+    ${miss ? `<li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 9v4' /> <path d='M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z' /> <path d='M12 16h.01' /></svg> 選んだ${res.cur + res.missK.length}個のうち<b>${res.missK.length}個は、この予定に入っていません</b>（入れる方法は下）</li>` : ""}
+    ${t.naive.rides < res.cur || t.naive.wait > (boostCurWait() ?? 0) + 10 ? `<li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z' /> <path d='M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5' /></svg> 選んだ順にそのまま回るより${res.cur > t.naive.rides ? ` <b>${res.cur - t.naive.rides}個多く</b>乗れて` : ""}、並ぶ時間が<b>${dur(Math.max(0, t.naive.wait - (boostCurWait() ?? t.naive.wait)))}短い</b>（予測の上での比べ）</li>` : ""}
   </ul>`;
-  const tz = document.getElementById("boosttz"), miss = res.missK.length > 0;
-  //  おすすめの DPA: 入りきらないときは「全部入る中で安いもの → 一番増えるもの」、全部入っているときは「並ぶ時間が一番減るもの（30分以上）」
+  const tz = document.getElementById("boosttz");
+  //  おすすめの DPA: 入りきらないときは「選んだものが全部入る中で安いもの → 一番増えるもの（同じなら安いもの）」、全部入っているときは「並ぶ時間が一番減るもの（30分以上・1円あたり）」
   const best = (() => {
     const v = res.dpa.filter(o => !o.none && !o.no.length);
     if (!miss) return v.filter(o => o.rides >= res.cur && res.curWait - o.wait >= 30).sort((a, b) => (res.curWait - b.wait) / Math.max(1, b.cost) - (res.curWait - a.wait) / Math.max(1, a.cost) || a.cost - b.cost)[0] || null;
     const ok = v.filter(o => o.allIn).sort((a, b) => a.cost - b.cost || a.wait - b.wait); if (ok.length) return ok[0];
-    return v.filter(o => o.rides > res.cur).sort((a, b) => b.rides - a.rides || a.cost - b.cost)[0] || null;
+    return v.filter(o => o.rides > res.cur).sort((a, b) => b.rides - a.rides || a.cost - b.cost || a.wait - b.wait)[0] || null;
   })();
-  const others = res.dpa.filter(o => o !== best && !o.none && !o.no.length && o.ep.length === 1 && (miss ? o.rides > res.cur : res.curWait - o.wait >= 30)).sort((a, b) => b.rides - a.rides || a.wait - b.wait).slice(0, 2);
+  const others = res.dpa.filter(o => o !== best && !o.none && !o.no.length && (miss ? o.rides > res.cur : res.curWait - o.wait >= 30)).sort((a, b) => b.rides - a.rides || a.cost - b.cost || a.wait - b.wait).slice(0, 3);
   const noBuy = [...new Set(res.dpa.flatMap(o => o.no || []))];
+  const lostT = o => { const l = lostOf(o); return l.length ? `（${nm(l)}が代わりに外れます）` : ""; };
   const dpaRow = best ? `<div class="bopt rec"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス（有料）</b><span class="badge must">おすすめ</span>
-      <p><b>${nm(best.ep)}</b>のDPA（${best.cost.toLocaleString()}円/人）を買うと、${miss ? (best.allIn ? `<b>選んだものが全部入ります</b>` : `<b>${best.rides}個</b>（今より+${best.rides - res.cur}個）`) + `・並ぶ合計 ${dur(best.wait)}・終わり ${hm(best.end)}` : `並ぶ合計が<b>${dur(res.curWait - best.wait)}短く</b>なります（${dur(res.curWait)} → ${dur(best.wait)}）${best.rides > res.cur ? `・<b>+${best.rides - res.cur}個</b>` : "。空いた時間で、ほかの乗り物も足せます"}`}</p>
-      ${others.length ? `<p class="note">ほかに：${others.map(o => `${nm(o.ep)}（${o.cost.toLocaleString()}円）→ ${miss ? `${o.rides}個` : `並ぶ −${dur(res.curWait - o.wait)}`}`).join("、")}</p>` : ""}${noBuy.length ? `<p class="note">${nm(noBuy)}は、ほかのDPAを先に買うと売り切れの目安より後になるので入れていません。</p>` : ""}</div>
+      <p><b>${nm(best.ep)}</b>のDPA（${best.cost.toLocaleString()}円/人）を買うと、${miss ? (best.allIn ? `<b>選んだものが全部入ります</b>（${best.rides}個）` : `<b>${best.rides}個</b>（今より+${best.rides - res.cur}個）${lostT(best)}`) + `・並ぶ合計 ${dur(best.wait)}・終わり ${hm(best.end)}` : `並ぶ合計が<b>${dur(res.curWait - best.wait)}短く</b>なります（${dur(res.curWait)} → ${dur(best.wait)}）${best.rides > res.cur ? `・<b>+${best.rides - res.cur}個</b>` : "。空いた時間で、ほかの乗り物も足せます"}`}</p>
+      <p class="note">入園してすぐ（${hm(entryAt() + 30)}ごろまで）に、売り切れの早い順に買えた場合の試算です。買えなかったら今の予定（${res.cur}個）のまま。${!miss ? "おすすめは、1円あたりで並ぶ時間が一番減るもの。" : ""}</p>
+      ${others.length ? `<p class="note">ほかに：${others.map(o => `${nm(o.ep)}（${o.cost.toLocaleString()}円）→ ${miss ? `${o.rides}個${lostOf(o).length ? "※" : ""}` : `並ぶ −${dur(res.curWait - o.wait)}`}`).join("、")}${others.some(o => lostOf(o).length) ? "（※は今の予定のどれかが代わりに外れる）" : ""}</p>` : ""}${noBuy.length ? `<p class="note">${nm(noBuy)}は、ほかのDPAを先に買うと売り切れの目安より後になるので入れていません。</p>` : ""}</div>
       <button type="button" class="btn primary" data-bo="dpa">このDPAで組む</button></div>`
     : !res.done ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス（有料）</b><p class="note">どれを買うと一番効くか試算しています…</p></div></div>`
     : res.dpa.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス</b><p class="note">${miss ? "DPAを買っても、入りきらないものは増えない見込みです（売り切れの目安・時刻の決まった予定のため）。" : "この予定では、DPAを買っても並ぶ時間はあまり減らない見込みです。"}</p></div></div>` : "";
   const mapRow = `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 待ち時間マップ</b><p>乗り物×時間帯の待ちを色で一覧。どの時間に何が空くかが一目で分かります。おまかせの順番がしっくりこないとき、自分で組み替える手がかりに。</p></div>
       <button type="button" class="btn" data-bo="map">マップを見る ›</button></div>`;
-  const f = res.fast, fastRow = f && !f.none && f.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M4 17l5 1l.75 -1.5' /> <path d='M15 21l0 -4l-4 -3l1 -6' /> <path d='M7 12l0 -3l5 -1l3 3l3 1' /></svg> 詰めて組む</b><p>待ちを多めでなく「ふつう」の値で見て、受付が閉まる直前まで使うと → <b>${f.rides}個</b>（+${f.rides - res.cur}個）${f.allIn ? "・選んだものが全部入る" : ""}</p>
-      <p class="note">${f.last ? `去年の${md(f.last.d)}の実際の待ちなら<b>${f.last.planned}個のうち${f.last.rides}個</b>回れた。` : ""}似た日${f.rate.n}日で回すと、全部回れたのは<b>${f.rate.ok}日</b>（今の予定は${res.trust ? res.trust.refs.ok : "…"}日）。詰めるぶん、待ちが長い日は最後の1つが閉まります</p></div>
-      <button type="button" class="btn" data-bo="fast">攻めた予定にする</button></div>` : "";
-  const d = res.dash, dashRow = d && !d.none && d.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg> 開園前から並ぶ（開園ダッシュ）</b><p>開園と同時に入ると → <b>${d.rides}個</b>（+${d.rides - res.cur}個）${M.crowd.lv >= 3 ? "。混む日は開園の1時間半〜2時間前から並ぶ目安" : ""}</p></div>
+  const f = res.fast, tr = t ? t.refs : null, fastRow = f && !f.none && f.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M4 17l5 1l.75 -1.5' /> <path d='M15 21l0 -4l-4 -3l1 -6' /> <path d='M7 12l0 -3l5 -1l3 3l3 1' /></svg> 詰めて組む</b><p>待ちを多めでなく「ふつう」の値で見て、受付の締め切り（「必ず」は45分前・ほかは20分前）まで使うと → <b>${f.rides}個</b>（+${f.rides - res.cur}個）${f.allIn ? "・選んだものが全部入る" : ""}${lostT(f)}。入園の列と歩く時間は、今の予定と同じに見ています</p>
+      <p class="note">似た日${f.rate.n}日の待ちで回すと、${mustNow().length ? `「必ず」を全部回れたのは<b>${f.rate.must}日</b>・` : ""}予定を全部回れたのは<b>${f.rate.ok}日</b>・平均${f.rate.avg.toFixed(1)}個${tr ? `（今の予定は${mustNow().length ? `「必ず」${tr.must}日・` : ""}全部${tr.ok}日・平均${tr.avg.toFixed(1)}個）` : ""}。${f.last ? `去年の${md(f.last.d)}の実際の待ちなら${f.last.ok ? "全部回れます" : `${f.last.miss.length ? nm(f.last.miss) : "一部"}は回れません`}。` : ""}詰めるぶん、待ちが長い日は最後の1つが閉まります</p></div>
+      <button type="button" class="btn" data-bo="fast">詰めて組む</button></div>` : "";
+  const d = res.dash, dashRow = d && !d.none && d.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg> 開園前から並ぶ（開園ダッシュ）</b><p>開園と同時に入ると → <b>${d.rides}個</b>（+${d.rides - res.cur}個）${lostT(d)}${M.crowd.lv >= 3 ? "。混む日は開園の2時間前ごろから並ぶ目安" : ""}</p><p class="note">開園直後の待ちは、記録の最初の表示（開園15分後）から推した目安です</p></div>
       <button type="button" class="btn" data-bo="dash">開園ダッシュで組む</button></div>` : "";
   const hs = (res.hours || []).slice().sort((a, b) => (RIDES[b.k].w || 0) * (b.b.noon - b.b.med) - (RIDES[a.k].w || 0) * (a.b.noon - a.b.med)), hTop = hs.slice(0, 3);
-  const hrRow = hTop.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6.5 7h11' /> <path d='M6.5 17h11' /> <path d='M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1z' /> <path d='M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1z' /></svg> 空く時間に行く</b>${hTop.map(({ k, b }) => `<p><b>${RIDES[k].short}</b>は${b.h}時台がいちばん空く（ふつう${b.med}分${b.noon - b.med >= 15 ? `・昼の13時ごろは${b.noon}分` : ""}） <button type="button" class="linkbtn" data-bh="${k}">時間帯で見る</button></p>`).join("")}
-      <p class="note">${hs.length > 3 ? `ほか${hs.length - 3}個も時間帯の画面で見られます。` : ""}ほかの予定を外してこの時間に入れたいときは、時間帯の画面で確かめてから、予定の「…」で時刻を決められます。</p></div></div>` : "";
-  if (tz) {  // 結論のすぐ下に1行で: 入りきらなかった数と、いちばん効く手・DPA のおすすめ（押すと下の詳しい欄へ）
-    const fz = res.fast && !res.fast.none && res.fast.rides > res.cur ? res.fast : null, dz = res.dash && !res.dash.none && res.dash.rides > res.cur ? res.dash : null;
+  const hrRow = hTop.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6.5 7h11' /> <path d='M6.5 17h11' /> <path d='M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1z' /> <path d='M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1z' /></svg> 空く時間に行く</b>${hTop.map(({ k, b }) => `<p><b>${RIDES[k].short}</b>は${b.h}時台がいちばん空く（ふつう${b.med}分${b.noon - b.med >= 15 ? `・昼の13時ごろは${b.noon}分` : ""}${b.late ? `・受付の締め切りの見込み${hm(lastAt(k))}より前に並び始める` : ""}） <button type="button" class="linkbtn" data-bh="${k}">時間帯で見る</button></p>`).join("")}
+      <p class="note">締め切りの1時間前までで、いちばん空く時間です（混む日は早く閉まることがあります）。${hs.length > 3 ? `ほか${hs.length - 3}個も時間帯の画面で見られます。` : ""}ほかの予定を外してこの時間に入れたいときは、時間帯の画面で確かめてから、予定の「…」で時刻を決められます。</p></div></div>` : "";
+  if (tz) {  // 結論のすぐ下に1行で: 入りきらなかった数と、いちばん効く手・DPA のおすすめ
+    const fz = f && !f.none && f.rides > res.cur ? f : null, dz = d && !d.none && d.rides > res.cur ? d : null;
     const pa = best ? `有料のプレミアアクセス（${nm(best.ep)}・${best.cost.toLocaleString()}円/人）` : "";
     const main = miss ? (best ? `入りきらないもの<b>${res.missK.length}個</b>。<b>おすすめ</b>：${pa}を使えば、${best.allIn ? "<b>選んだものが全部入ります</b>" : `<b>${best.rides}個</b>まで入ります（今は${res.cur}個）`}` : `入りきらないもの<b>${res.missK.length}個</b>。${res.done ? "入れる方法は下に" : "入れる方法を試算中…"}`)
       : best ? `<b>おすすめ</b>：${pa}で、並ぶ時間が<b>${dur(res.curWait - best.wait)}短く</b>なります` : "";
-    const sub = [fz ? `詰めて組むと${fz.rides}個` : "", dz ? `開園ダッシュで${dz.rides}個` : ""].filter(Boolean);
+    const sub = [fz ? `詰めて組むと${fz.rides}個（似た日${fz.rate.n}日で${mustNow().length ? `「必ず」を全部回れたのは${fz.rate.must}日` : `全部回れたのは${fz.rate.ok}日`}）` : "", dz ? `開園ダッシュで${dz.rides}個` : ""].filter(Boolean);
     tz.hidden = !main;
     tz.innerHTML = main ? `<div class="tzt"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> <span>${main}${sub.length ? `<small>ほかに：${sub.join("・")}</small>` : ""}</span></div><div class="tzb">${best ? `<button type="button" class="btn primary small" data-bo="dpa">このDPAで組む</button>` : ""}<button type="button" class="btn small" id="tz-more">${miss ? "ほかの方法・くわしく" : "くわしく"} ↓</button></div>` : "";
     const tm = document.getElementById("tz-more"); if (tm) tm.onclick = () => box.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2843,43 +2860,86 @@ function paintBoost(res) {
   [box, tz].filter(Boolean).forEach(el => el.querySelectorAll("[data-bo]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.bo;
     if (k === "dpa" && best) { const e2 = { ...(P().ep || {}) }; best.ep.forEach(x => { e2[x] = { at: null }; if (!S.sel.includes(x)) S.sel.push(x); }); P().ep = e2; save(); vSig = ""; replan(`${nm(best.ep)}をプレミアアクセスにして組み直しました。入園したらすぐ、公式アプリで買ってください（買う順番は下の「プレミアアクセスを買う順番」）。`); }
-    if (k === "fast") { S.slack = false; S.style = "normal"; save(); vSig = ""; replan("見込みを攻める組み方にしました。待ちが長い日は、最後の予定が閉まることがあります（当日は今の待ちで組み直してください）。"); }
+    if (k === "fast") { S.slack = true; S.style = "lean"; save(); vSig = ""; replan("詰めて組みました（待ちはふつうの値、締め切りは「必ず」45分前・ほか20分前まで）。待ちが長い日は、最後の予定が閉まることがあります（当日は今の待ちで組み直してください）。"); }
     if (k === "dash") { S.entryMode = "dash"; save(); vSig = ""; replan("開園ダッシュ（開園前から並んで、開園と同時に入る）で組み直しました。"); }
     if (k === "map") goMap();
   })));
   box.querySelectorAll("[data-bh]").forEach(b => b.addEventListener("click", () => { focusK = b.dataset.bh; setTab("hours"); setTimeout(() => { renderDetail(); const de = document.getElementById("detail"); if (de) de.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); }));
 }
-// ===== 一緒に行く人に送る: 選んだもの・必ず・入園・組み方・DPA・ごはん・帰る時刻をリンクに詰める。開くと同じ予定が組み上がる =====
-//  送り先はログインなしで開ける公開版（GitHub Pages）。印は英数字と - _ だけ（アーティファクトのリンクでも届く形）
+// ===== 一緒に行く人に送る: その日の選び方・設定（入園・組み方・ごはん・お店・天気・場所取り・ショーの回・DPA・帰る時刻）をリンクに詰める =====
+//  送り先はログインなしで開ける公開版（GitHub Pages）。印は英数字と - _ だけ（アーティファクトのリンクでも届く形）。読むときは型と範囲を確かめ、合わない項目は捨てて知らせる
 const SHARE_BASE = "https://16king7-ops.github.io/usj-navi/sea/";
 const b64u = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const unb64u = s => decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/"))));
 function shareLink() {
   const ep = P().ep || {};
-  const o = { v: 1, d: S.date, s: S.sel, m: S.must, em: S.entryMode, en: S.entry, sl: S.slack, st: S.style, sp: S.speed, ll: S.lightLunch, me: S.meals, mo: S.mo !== false, fr: S.free || {}, sa: S.showAt || {}, fi: S.first || "", lv: P().leave ?? null, ep: Object.fromEntries(Object.entries(ep).map(([k, x]) => [k, x && x.at != null ? x.at : null])) };
+  const o = { v: 1, d: S.date, s: S.sel, m: S.must, em: S.entryMode, en: S.entry, sl: S.slack, st: S.style, sp: S.speed, ll: S.lightLunch, me: S.meals, mo: S.mo !== false, fr: S.free || {}, sa: S.showAt || {}, fi: S.first || "", lv: P().leave ?? null, wx: (S.wx || {})[S.date] || null, ma: S.mealAt || {}, ep: Object.fromEntries(Object.entries(ep).map(([k, x]) => [k, x && x.at != null ? x.at : null])) };
   return SHARE_BASE + "#s-" + b64u(JSON.stringify(o));
 }
-function readShare(h) { if (!h || !h.startsWith("s-")) return null; try { const o = JSON.parse(unb64u(h.slice(2))); return o && o.v === 1 && /^\d{4}-\d{2}-\d{2}$/.test(o.d) ? o : null; } catch (e) { return null; } }
-function applyShare(o) {
-  keepSel(); S.date = o.d < TODAY ? TODAY : o.d;
-  S.sel = (o.s || []).filter(k => RIDES[k]); S.must = (o.m || []).filter(k => S.sel.includes(k));
-  if (o.em) S.entryMode = o.em; if (o.en != null) S.entry = o.en; if (o.sl != null) S.slack = o.sl; if (o.st) S.style = o.st; if (o.sp) S.speed = o.sp;
-  if (o.ll != null) S.lightLunch = o.ll; if (o.me) S.meals = o.me; if (o.mo != null) S.mo = o.mo; S.free = o.fr || {}; S.showAt = { ...S.showAt, ...(o.sa || {}) }; S.first = o.fi || "";
-  const pl = P(); pl.ep = Object.fromEntries(Object.entries(o.ep || {}).filter(([k]) => RIDES[k]).map(([k, at]) => [k, { at }])); pl.leave = o.lv ?? null; pl.items = null; pl.done = {}; pl.live = null;
-  save();
+function readShare(h) {
+  if (!h || !h.startsWith("s-")) return null;
+  let o; try { o = JSON.parse(unb64u(h.slice(2))); } catch (e) { return { bad: true }; }
+  if (!o || typeof o !== "object" || Array.isArray(o)) return { bad: true };
+  if (o.v !== 1) return { newer: true };
+  const drop = [], T = (v, ok, name, def) => (v === undefined ? def : ok(v) ? v : (drop.push(name), def));
+  const isT = v => Number.isInteger(v) && v >= 0 && v <= 1440, obj = v => v && typeof v === "object" && !Array.isArray(v);
+  const isD = v => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(dObj(v)) && iso(dObj(v)) === v && v <= addDays(TODAY, 400);
+  const rk = a => (Array.isArray(a) ? [...new Set(a.filter(k => typeof k === "string" && RIDES[k]))] : null);
+  if (!isD(o.d) || !rk(o.s)) return { bad: true };
+  const q = { d: o.d, s: rk(o.s) };
+  q.m = (rk(o.m) || []).filter(k => q.s.includes(k));
+  q.em = T(o.em, v => ["open", "dash", "happy", "later", "after3", "after5"].includes(v), "入園", undefined);
+  q.en = T(o.en, v => Number.isInteger(v) && v >= 0 && v <= 300, "入る時刻", undefined);
+  q.sl = T(o.sl, v => typeof v === "boolean", "組み方", undefined);
+  q.st = T(o.st, v => ["normal", "sure", "must", "lean"].includes(v), "組み方", undefined);
+  q.sp = T(o.sp, v => [0.8, 1, 1.25].includes(v), "歩く速さ", undefined);
+  q.ll = T(o.ll, v => typeof v === "boolean", "昼ごはん", undefined);
+  q.me = T(o.me, v => obj(v) && typeof v.lunch === "boolean" && typeof v.dinner === "boolean", "ごはん", undefined);
+  q.mo = T(o.mo, v => typeof v === "boolean", "モバイルオーダー", undefined);
+  q.fr = T(o.fr, v => obj(v) && Object.keys(v).every(k => RIDES[k]), "場所取り", {});
+  q.sa = T(o.sa, v => obj(v) && Object.entries(v).every(([k, t]) => RIDES[k] && isT(t)), "ショーの回", {});
+  q.fi = T(o.fi, v => v === "" || (typeof v === "string" && !!RIDES[v]), "最初に乗る", "");
+  q.lv = T(o.lv, v => v === null || (isT(v) && v >= 600), "帰る時刻", null);
+  q.ep = T(o.ep, v => obj(v) && Object.entries(v).every(([k, t]) => RIDES[k] && RIDES[k].dpa && (t === null || isT(t))), "プレミアアクセス", {});
+  q.wx = T(o.wx, v => v === null || ["晴", "時雨", "後雨", "雨"].includes(v), "天気", undefined);
+  q.ma = T(o.ma, v => obj(v) && Object.entries(v).every(([k, sk]) => ["lunch", "dinner"].includes(k) && FOOD.stores[sk]), "お店の指定", {});
+  q.drop = [...new Set(drop)]; q.past = q.d < TODAY;
+  return q;
 }
-function offerShare(o) {
-  const sum = `${md(o.d)}・${(o.s || []).filter(k => RIDES[k]).length}個${(o.m || []).length ? `（必ず${o.m.length}個）` : ""}`;
-  const go = () => { applyShare(o); setDate(S.date); setTab("plan"); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} toast("gtoast", `送られてきた予定（${sum}）を読み込みました。`); };
+function applyShare(q) {
+  keepSel(); S.date = q.past ? TODAY : q.d;
+  S.sel = q.s; S.must = q.m;
+  if (q.em) S.entryMode = q.em; if (q.en != null) S.entry = q.en; if (q.sl != null) S.slack = q.sl; if (q.st) S.style = q.st; if (q.sp) S.speed = q.sp;
+  if (q.ll != null) S.lightLunch = q.ll; if (q.me) S.meals = q.me; if (q.mo != null) S.mo = q.mo; S.free = q.fr; S.showAt = q.sa; S.first = q.fi; S.mealAt = q.ma;
+  if (q.wx !== undefined) { S.wx = { ...(S.wx || {}) }; if (q.wx) S.wx[S.date] = q.wx; else delete S.wx[S.date]; delete crowdCache[S.date]; chCache = null; }  // 天気で予測が変わる（送った側と同じに）
+  const pl = P(); pl.ep = Object.fromEntries(Object.entries(q.ep).map(([k, at]) => [k, { at }])); pl.leave = q.lv; pl.items = null; pl.done = {}; pl.live = null;
+  keepSel(); save();
+}
+function offerShare(q) {
+  if (q.bad) { toast("gtoast", "送られてきたリンクが、途中で切れているか壊れているようです。送った人に、もう一度送ってもらってください。"); return; }
+  if (q.newer) { toast("gtoast", "新しい版のナビで作られたリンクです。ページを開き直す（更新する）と読めることがあります。"); return; }
+  const sum = `${md(q.d)}・${q.s.length}個${q.m.length ? `（必ず${q.m.length}個）` : ""}`;
+  const go = () => {
+    const snap = JSON.stringify({ date: S.date, S: Object.fromEntries([...DAYK, "speed", "mo", "wx", "selBy"].map(k => [k, S[k]])), plans: S.plans });
+    applyShare(q); setDate(S.date); setTab("plan"); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    toast("gtoast", `送られてきた予定（${sum}）を読み込みました。${q.past ? `${md(q.d)}は過ぎたので、今日（${md(TODAY)}）の予定として読み込みました。` : ""}${q.drop.length ? `読めなかった項目（${q.drop.join("・")}）は使いませんでした。` : ""} <button type="button" class="btn small" id="sh-undo">元に戻す</button>`);
+    const u = document.getElementById("sh-undo"); if (u) u.onclick = () => { const o = JSON.parse(snap); Object.assign(S, o.S); S.plans = o.plans; S.date = o.date; Object.keys(crowdCache).forEach(k => delete crowdCache[k]); chCache = null; save(); setDate(S.date); toast("gtoast", "読み込む前に戻しました。"); };
+  };
   if (!S.sel.length) { go(); return; }
-  toast("gtoast", `送られてきた予定（${sum}）があります。読み込むと、この端末の${md(o.d)}の選び方は、送られてきたものに置き換わります（ほかの日の選び方はそのまま）。 <button type="button" class="btn small primary" id="sh-ok">読み込む</button> <button type="button" class="btn small" id="sh-x">やめる</button>`);
+  toast("gtoast", `送られてきた予定（${sum}）があります。読み込むと、この端末の${md(q.d)}の選び方と設定（入園の仕方・組み方など）は、送られてきたものに置き換わります（ほかの日はそのまま。あとで元に戻せます）。 <button type="button" class="btn small primary" id="sh-ok">読み込む</button> <button type="button" class="btn small" id="sh-x">やめる</button>`);
   document.getElementById("sh-ok").onclick = go; document.getElementById("sh-x").onclick = () => toast("gtoast", "");
+}
+// ほかの日の設定で何かする（送る文に、ほかの日のリンクを入れるとき）
+function withDay(d, fn) {
+  keepSel(); const s0 = Object.fromEntries(DAYK.map(k => [k, S[k]])), d0 = S.date;
+  try { const v = (S.selBy || {})[d] || {}; DAYK.forEach(k => { if (v[k] !== undefined) S[k] = cloneJ(v[k]); }); S.date = d; return fn(); }
+  finally { DAYK.forEach(k => (S[k] = s0[k])); S.date = d0; }
 }
 function shareText() {
   const sim = curSim(), dp = dpaPlan(sim) || [];
-  const meet = S.entryMode === "dash" ? hm(M.open - (M.crowd.lv >= 3 ? 150 : 120)) : S.entryMode === "happy" ? hm(M.open - 25) : ["after3", "after5", "later"].includes(S.entryMode) ? hm(entryAt() - 15) : hm(M.open - 30);  // 朝のリストの「入口に着く」と同じ考え
-  const others = Object.keys(S.selBy || {}).filter(d => d !== S.date && d >= TODAY && (S.selBy[d].sel || []).length).sort();
-  let t = `${md(S.date)}のディズニーシー、予定を作りました（開くと同じ予定が出ます・ログインなし）\n`;
+  const meet = S.entryMode === "dash" ? hm(M.open - (M.crowd.lv >= 3 ? 150 : 120)) : S.entryMode === "happy" ? hm(M.open - 25) : ["after3", "after5", "later"].includes(S.entryMode) ? hm(entryAt() - 15) : hm(M.open - (M.crowd.lv >= 3 ? 60 : 30));  // 朝のリストの「入口に着く」と同じ考え
+  const others = Object.keys(S.selBy || {}).filter(d => d !== S.date && d >= TODAY && ((S.selBy[d] || {}).sel || []).length).sort();
+  let t = `${md(S.date)}のディズニーシー、予定を作りました（同じ版のナビなら、開くと同じ予定が出ます・ログインなし）\n`;
   t += `・集合：${meet}ごろ 入口${S.entryMode === "dash" ? "（開園ダッシュ）" : ""}${hoursGuess() ? "（営業時間は前日に公式アプリで確かめる）" : ""}\n`;
   if (dp.length) t += `・入ったらすぐDPAを買う：${dp.map(x => `${hm(x.buy)} ${RIDES[x.k].short}`).join(" → ")}（買う人：　）\n`;
   t += `・乗りたい・外したいものがあったら、リンクを開いて直して送り返して\n${shareLink()}`;
@@ -2888,9 +2948,9 @@ function shareText() {
 function sharePlan() {
   const out = document.getElementById("answer").querySelector("#sharebox") || (() => { const d = document.createElement("div"); d.id = "sharebox"; document.getElementById("answer").querySelector(".acts3").after(d); return d; })();
   const { t, others } = shareText();
-  out.innerHTML = `<div class="confirm sharebox"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0' /> <path d='M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2' /> <path d='M16 3.13a4 4 0 0 1 0 7.75' /> <path d='M21 21v-2a4 4 0 0 0 -3 -3.85' /></svg> 一緒に行く人に送る文</b><textarea class="copybox" rows="6" aria-label="送る文">${t.replace(/</g, "&lt;")}</textarea>${others.length ? `<label class="cl"><input type="checkbox" id="sh-all"> ほかの日（${others.map(md).join("・")}）の予定のリンクも入れる</label>` : ""}<p class="note">文は直せます。「買う人」は決めて書き足してください。相手が開くと、この日の選び方・入園・DPA・帰る時刻がそのまま入ります（ここで動かした順番や済んだ印は送られません）。</p><div class="row"><button type="button" class="btn primary small" id="sh-send">送る・コピー</button><button type="button" class="btn small" id="sh-close">閉じる</button></div></div>`;
+  out.innerHTML = `<div class="confirm sharebox"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0' /> <path d='M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2' /> <path d='M16 3.13a4 4 0 0 1 0 7.75' /> <path d='M21 21v-2a4 4 0 0 0 -3 -3.85' /></svg> 一緒に行く人に送る文</b><textarea class="copybox" rows="6" aria-label="送る文">${t.replace(/</g, "&lt;")}</textarea>${others.length ? `<label class="cl"><input type="checkbox" id="sh-all"> ほかの日（${others.map(md).join("・")}）の予定のリンクも入れる</label>` : ""}<p class="note">文は直せます。「買う人」は決めて書き足してください。相手が開くと、この日の選び方・入園の仕方・組み方・ごはん・お店・天気・DPA・帰る時刻がそのまま入ります（ここで手で動かした順番や済んだ印は送られません）。</p><div class="row"><button type="button" class="btn primary small" id="sh-send">送る・コピー</button><button type="button" class="btn small" id="sh-close">閉じる</button></div></div>`;
   const ta = out.querySelector("textarea"), all = out.querySelector("#sh-all");
-  if (all) all.addEventListener("change", () => { let x = shareText().t; if (all.checked) { const cur = S.date; for (const d of others) { keepSel(); const v = S.selBy[d], s0 = S.sel, m0 = S.must, d0 = S.date; S.date = d; S.sel = v.sel; S.must = v.must; x += `\n\n${md(d)}の予定：\n${shareLink()}`; S.date = d0; S.sel = s0; S.must = m0; } } ta.value = x; });
+  if (all) all.addEventListener("change", () => { let x = shareText().t; if (all.checked) for (const d of others) x += `\n\n${md(d)}の予定：\n${withDay(d, shareLink)}`; ta.value = x; });
   out.querySelector("#sh-close").onclick = () => (out.innerHTML = "");
   out.querySelector("#sh-send").onclick = () => {
     const msg = ta.value, done = () => toast("plantoast", "送る文をコピーしました。LINE などに貼って送ってください。");
@@ -2899,12 +2959,6 @@ function sharePlan() {
     else { try { navigator.clipboard.writeText(msg).then(done, fallback); } catch (e) { fallback(); } }
   };
   out.scrollIntoView({ behavior: "smooth", block: "nearest" });
-}
-function sharePlanOld() {
-  const url = shareLink(), out = document.getElementById("copyout"), msg = `${md(S.date)}のシーの予定です。開くと同じ予定が出ます（ログインなし）`;
-  const fallback = () => { out.innerHTML = `<textarea class="copybox" readonly aria-label="予定のリンク"></textarea><p class="note">コピーできなかったので、上のリンクを長押しか Ctrl+C でコピーして送ってください。</p>`; const ta = out.querySelector("textarea"); ta.value = url; ta.focus(); ta.select(); out.scrollIntoView({ behavior: "smooth", block: "center" }); };
-  const copy = () => { try { navigator.clipboard.writeText(url).then(() => toast("plantoast", "予定のリンクをコピーしました。LINE などで送ってください。相手はログインなしで開けて、同じ予定が組み上がります（選び方を送るので、ここで動かした順番や済んだ印は送られません）。"), fallback); } catch (e) { fallback(); } };
-  if (navigator.share && String(location.hostname || "").endsWith("github.io")) navigator.share({ title: "シー攻略ナビ", text: msg, url }).catch(copy); else copy();
 }
 // ===== 当日の朝までにやること: 今の予定から作る（チェックは端末に残す） =====
 let prepOpen = false;
@@ -2920,10 +2974,11 @@ function prepList(sim) {
   const ent = S.entryMode === "dash" ? (c.lv >= 3 ? [`${hm(M.open - 150)}〜${hm(M.open - 120)}ごろに入口に並ぶ`, "開園ダッシュの予定です。ふつうの日でも開園の2時間前（7:00ごろ）までに並ぶ人が多く、フローズンのDPAを朝いちばんに買いたい人は6:30前後から。年末年始はもっと早い人もいます（castel の目安）"] : [`${hm(M.open - 120)}〜${hm(M.open - 90)}ごろに入口に並ぶ`, "開園ダッシュの予定です。開園の2時間前〜1時間半前に並ぶと前の方に入れます（castel の目安）"])
     : S.entryMode === "happy" ? [`開園の5〜15分前（${hm(M.open - 15)}ごろ）に、ハッピーエントリーで入る`, "ディズニーホテルに泊まる人だけ（チェックイン日を除く）。何分前かは日によります"]
     : ["after3", "after5", "later"].includes(S.entryMode) ? [`${hm(entryAt())}に入園`, ""]
-    : [`${hm(M.open - 30)}ごろには入口に着く`, `入園の列に${c.lv >= 3 ? "20〜40分" : "15分ほど"}かかります（予定は入園の列に15分見ています）`];
+    : c.lv >= 3 ? [`${hm(M.open - 60)}ごろには入口に着く`, "混む日は入園の列に20〜40分かかることがあります。予定は開園15分後に園内に入る前提なので、遅れたら当日タブの「残りを組み直す」で"]
+    : [`${hm(M.open - 30)}ごろには入口に着く`, "入園の列に15分ほどかかります（予定もそう見ています）"];
   L.push(["morning", ent[0], ent[1]]);
   L.push(["morning", "このページを開いておく", String(location.hostname || "").endsWith("github.io") ? "一度開いておけば、電波が弱くても使えます" : "当日は「当日」のタブで、今の待ちを入れながら進めます"]);
-  if (dp.length) L.push(["entry", `アプリでプレミアアクセスを買う（買えなかったら、当日タブの「残りを組み直す」で並ぶ前提に）：${dp.map(x => `${hm(x.buy)} ${RIDES[x.k].short}`).join(" → ")}`, `売り切れが早い順${dp.some(x => RIDES[x.k].soldout) ? `（${dp.filter(x => RIDES[x.k].soldout).map(x => `${RIDES[x.k].short}は${hm(soldAt(x.k))}ごろ売り切れ`).join("・")}）` : ""}。次のDPAは60分後か、買ったDPAの利用開始から`]);
+  if (dp.length) L.push(["entry", `アプリでプレミアアクセスを買う（買えなかったら、当日タブの「残りを組み直す」で並ぶ前提に）：${dp.map(x => `${hm(x.buy)} ${RIDES[x.k].short}`).join(" → ")}`, `売り切れが早い順${dp.some(x => RIDES[x.k].soldout) ? `（${dp.filter(x => RIDES[x.k].soldout).map(x => `${RIDES[x.k].short}は${hm(soldAt(x.k))}ごろ売り切れ`).join("・")}。売り切れの時刻は解説サイトの目安）` : ""}。次のDPAは60分後か、買ったDPAの利用開始から`]);
   if (mo.length) L.push(["entry", `モバイルオーダーで、${mo.map(r => `${itemName(r.it)}（${r.info || "店"}・${hm(r.start)}に受け取り）`).join("・")}を注文`, c.lv >= 3 ? "混む日は食事どきの枠が早く埋まるので、入園したらすぐ" : "受け取りの1時間前までに"]);
   if (first) L.push(["entry", `最初は${itemName(first.it)}へ（${hm(first.start)}ごろ・歩いて${first.walk}分）`, ""]);
   sim.rows.filter(r => RIDES[r.it.key] && RIDES[r.it.key].src === "show" && !epOf(r.it.key)).forEach(r => L.push(["day", `${RIDES[r.it.key].short}は${hm(r.start)}に場所取り（${hm(showTime(r.it.key))}開演）`, "開演時刻は、前日か当日の朝に公式アプリで確かめて"]));
@@ -3009,8 +3064,8 @@ function renderPlanSide() {
   const epCost = epKs.filter(k => ep[k] && S.sel.includes(k) && !dpaChain().no.has(k)).reduce((a, k) => a + RIDES[k].dpa, 0), off = isOff(M.date);
   const ENTRY = [["open", `開園と同時（${hm(M.open)}）`], ["dash", `開園ダッシュ（開園前から並んで${hm(M.open)}にすぐ入る${M.crowd.lv >= 3 ? "。混む日は1時間半〜2時間前から並ぶ" : ""}）`], ["happy", `ハッピーエントリー（${hm(M.open - 15)}・ディズニーホテルに泊まる人）`], ["later", "開園のあと"], ...(off ? [["after3", `アーリーイブニングパスポート（15:00）${M.crowd.lv >= 3 ? "・混む日は発売されないことが多い" : ""}`]] : [["after5", `ウィークナイトパスポート（17:00）${M.crowd.lv >= 3 ? "・混む日は発売されないことが多い" : ""}`]])];
   const entN = { open: "開園と同時", dash: "開園ダッシュ", happy: "ハッピーエントリー", later: `${hm(entryAt())}`, after3: "15時（アーリーイブニング）", after5: "17時（ウィークナイト）" }[S.entryMode] || "開園と同時";
-  const wxN = { 晴: "晴れ", 時雨: "時々雨", 後雨: "のち雨", 雨: "雨" }[(S.wx || {})[S.date]], stN = { normal: "余裕を見る", sure: "確実", must: "必ず最優先", fast: "楽観" }[styleNow()];
-  document.getElementById("plansum").innerHTML = (noPick() ? `<p class="note">乗りたいものを選ぶと、ここに回れる数・並ぶ時間・1日の流れが出ます。</p>` : statsHTML(sim) + barHTML(sim)) + `<div class="quickset"><div><b>組み方</b><span class="seg">${[["normal", "余裕を見る"], ["sure", "確実"], ["must", "必ず最優先"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
+  const wxN = { 晴: "晴れ", 時雨: "時々雨", 後雨: "のち雨", 雨: "雨" }[(S.wx || {})[S.date]], stN = { normal: "余裕を見る", sure: "確実", must: "必ず最優先", lean: "詰める", fast: "楽観" }[styleNow()];
+  document.getElementById("plansum").innerHTML = (noPick() ? `<p class="note">乗りたいものを選ぶと、ここに回れる数・並ぶ時間・1日の流れが出ます。</p>` : statsHTML(sim) + barHTML(sim)) + `<div class="quickset"><div><b>組み方</b><span class="seg">${[["normal", "余裕を見る"], ["sure", "確実"], ["must", "必ず最優先"], ["lean", "詰める"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
     <details class="ctrlbox"${ctrlOpen ? " open" : ""}><summary><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M6 4v4' /> <path d='M6 12v8' /> <path d='M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M12 4v10' /> <path d='M12 18v2' /> <path d='M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M18 4v1' /> <path d='M18 9v11' /></svg> 入園：${entN}${P().leave ? `・<b>帰る ${hm(P().leave)}</b>（当日の画面で設定）` : ""}・天気${wxN || "未入力"}${S.first ? `・最初に${RIDES[S.first] ? RIDES[S.first].short : ""}` : ""}</summary><div class="ctrls">
       <label>入園 <select id="c-emode">${ENTRY.map(([v, t]) => `<option value="${v}"${v === S.entryMode ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       ${S.entryMode === "later" ? `<label>入る時刻 <select id="c-entry">${[15, 30, 45, 60, 90, 120, 180, 240].map(m => `<option value="${m}"${m === S.entry ? " selected" : ""}>${hm(M.open + m)}</option>`).join("")}</select></label>` : ""}
@@ -3030,7 +3085,7 @@ function renderPlanSide() {
   document.querySelectorAll("#plansum [data-qs]").forEach(b => b.addEventListener("click", () => setStyle(b.dataset.qs)));
   document.querySelectorAll("#plansum [data-qw]").forEach(b => b.addEventListener("click", () => setSpeed(+b.dataset.qw)));
   function setStyle(v) { S.slack = v !== "fast"; S.style = v === "fast" ? "normal" : v; save();
-    replan({ normal: "余裕を見た組み方にしました。", sure: "確実な組み方にしました（待ちは多めの値で見積もり、去年の似た日すべてで回れるまで減らします）。", must: "「必ずを最優先」の組み方にしました（「必ず」に乗れる日が減らないところまで、ほかを減らします）。", fast: "ふつうの日の値で組みました（楽観的）。" }[v]);
+    replan({ normal: "余裕を見た組み方にしました。", sure: "確実な組み方にしました（待ちは多めの値で見積もり、去年の似た日すべてで回れるまで減らします）。", must: "「必ずを最優先」の組み方にしました（「必ず」に乗れる日が減らないところまで、ほかを減らします）。", lean: "詰めて組みました（待ちはふつうの値・受付の締め切りは「必ず」45分前、ほかは20分前まで使う。入園の列と歩く時間は余裕を見たまま）。", fast: "ふつうの日の値で組みました（楽観的）。" }[v]);
   }
   function setSpeed(v) { const before = curSim(); S.speed = v; save(); renderPlanSide(); const after = curSim(); toast("plantoast", `歩く速さを「${spd[S.speed]}」にしました。終わり ${hm(before.end)} → ${hm(after.end)}。`); vSig = ""; renderVerdict(after); }
   document.getElementById("c-emode").addEventListener("change", e => { S.entryMode = e.target.value; if (S.entryMode === "later" && !S.entry) S.entry = 30; save(); vSig = ""; replan(`入園を「${e.target.selectedOptions[0].textContent}」にしました。`); });
@@ -3559,7 +3614,7 @@ function judge(loo, musts, keys, key = "same") {
   const ne = loo.filter(l => !l[key] || !l[key].missed.some(m => m.kind === "early")), noEarly = ne, allOkNE = ne.filter(l => l[key] && rodeAll(l, keys, key)).length;  // 予定が組めなかった日も数に入れる（前は除いていて「15/15日」になっていた）
   const kinds = {}; rs.forEach(r => r.missed.forEach(m => (kinds[m.kind] = (kinds[m.kind] || 0) + 1)));
   const rides = rs.reduce((a, r) => a + r.rides, 0) / Math.max(1, rs.length), planned = rs.reduce((a, r) => a + r.planned, 0) / Math.max(1, rs.length);
-  return { N, mustOk, allOk, allOkNE, nNE: noEarly.length, kinds, rides, planned, rs };
+  return { N, mustOk, allOk, allOkNE, nNE: noEarly.length, kinds, rides, planned, rs, noPlan: loo.filter(l => !l[key]).length };  // noPlan: その日を抜くと「必ず」の入る予定が組めなかった日
 }
 // 乗り物1つずつ: 去年の似た日のうち何日乗れたか、乗れなかった理由
 function perRide(k, loo) {
@@ -3583,10 +3638,10 @@ function showVerdict(box, loo, musts, keys) {
   const lost = per.filter(p => p.ok < p.N), mOnly = loo.some(l => l.mOnly != null) ? loo.filter(l => l.mOnly).length : null;
   const mNot = S.must.filter(k => S.sel.includes(k) && RIDES[k] && avail(k, M.date) && !inPlan.has(k));  // 「必ず」なのに入りきらず予定にないもの
   box.innerHTML = `<h3>根拠：似た日（去年と最近）${j.N}日で、この予定を実際の待ち時間で回してみました</h3>
-    <p class="vhead">${mNot.length ? `<b style="color:var(--bad)">「必ず」の${mNot.map(nm).join("・")}は、1日に入りきらず予定に入っていません。</b>` : ""}${musts.length ? `${mNot.length ? "予定に入っている" : ""}「必ず」は <b>${j.mustOk}/${j.N}日</b> で全部回れました。` : ""}${lost.length ? `乗れない日があったのは <b>${lost.map(p => `${nm(p.k)}（${p.N - p.ok}日）`).join("・")}</b> です。${lost.every(p => !S.must.includes(p.k)) ? "どれも「必ず」以外で、その日も「必ず」は回れています。" : ""}${styleNow() !== "sure" ? "確実にしたいときは、上の「組み方」を「確実」にしてください。" : ""}` : "予定の乗り物は、どの日も全部回れました。"}</p>
+    <p class="vhead">${mNot.length ? `<b style="color:var(--bad)">「必ず」の${mNot.map(nm).join("・")}は、1日に入りきらず予定に入っていません。</b>` : ""}${musts.length ? `${mNot.length ? "予定に入っている" : ""}「必ず」は <b>${j.mustOk}/${j.N}日</b> で全部回れました。${j.noPlan ? `${j.noPlan === j.N - j.mustOk ? `回れなかった<b>${j.noPlan}日</b>は、どれも` : `回れなかった${j.N - j.mustOk}日のうち<b>${j.noPlan}日</b>は、`}回ってみて乗れなかったのではなく、その日を抜いて組み直すと「必ず」が1日に入りきらず<b>組めなかった日</b>です（見込みがぎりぎりということ）。` : ""}` : ""}${lost.length ? `乗れない日があったのは <b>${lost.map(p => `${nm(p.k)}（${p.N - p.ok}日）`).join("・")}</b> です。${lost.every(p => !S.must.includes(p.k)) ? "どれも「必ず」以外で、その日も「必ず」は回れています。" : ""}${styleNow() !== "sure" ? "確実にしたいときは、上の「組み方」を「確実」にしてください。" : ""}` : "予定の乗り物は、どの日も全部回れました。"}</p>
     ${mOnly == null || styleNow() === "must" ? "" : mOnly > j.mustOk ? `<p class="warnline">「必ず」だけで組むと ${mOnly}/${j.N}日、今の予定（「必ず」以外も入れた）だと ${j.mustOk}/${j.N}日 です。「必ず」以外を入れたせいで、「必ず」に乗れない日が ${mOnly - j.mustOk}日 増えています。<button type="button" class="btn small primary" data-mustfirst="1">「必ずを最優先」の組み方にする</button></p>` : `<p class="vok">「必ず」以外を入れても、「必ず」に乗れる日は減っていません（「必ず」だけで組んだ場合も ${mOnly}/${j.N}日）。</p>`}
     <div class="stats">
-      ${musts.length ? `<div class="stat main"><div class="k">「必ず」を全部</div><div class="v">${j.mustOk}/${j.N}日</div></div>` : ""}
+      ${musts.length ? `<div class="stat main"><div class="k">「必ず」を全部${j.noPlan ? `<small>（組めない${j.noPlan}日を含む）</small>` : ""}</div><div class="v">${j.mustOk}/${j.N}日</div></div>` : ""}
       <div class="stat${musts.length ? "" : " main"}"><div class="k">予定のものを全部</div><div class="v">${j.allOk}/${j.N}日</div></div>
       <div class="stat"><div class="k">回れた数（平均）</div><div class="v">${j.rides.toFixed(1)}/${Number.isInteger(Math.round(j.planned * 10) / 10) ? Math.round(j.planned) : j.planned.toFixed(1)}個</div></div>
       <div class="stat"><div class="k">早じまいを除くと</div><div class="v">${j.allOkNE}/${j.nNE}日</div></div>
@@ -3950,7 +4005,8 @@ function renderLiveTL() {
   const bzName = bzIt ? itemName(bzIt) : "遅れのぶん", busyT = bz ? `<div class="busy"><span>${bzIt ? `今：<b>${bzName}</b>の最中（${hm(bz.until)}ごろ終わる見込み）` : `遅れのぶん、<b>${hm(bz.until)}</b>まで動けない前提`}。残りの予定は、そのあとから組んでいます。</span><button type="button" class="btn small primary" id="busy-end">${bzIt ? "終わった" : "もう動ける"}</button></div>` : "";
   document.getElementById("nowpanel").hidden = now >= M.close; const palBox = document.getElementById("livepal").closest("details"); if (palBox) palBox.hidden = now >= M.close;
   const prepT = !noPick() && now <= M.open + 45 && P().items && !Object.values(P().done || {}).some(Boolean) ? (() => { const h = prepHTML(curSim(), ["morning", "entry"]); return h ? `<details class="more prep" open><summary><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20.942 13.021a9 9 0 1 0 -9.407 7.967' /> <path d='M12 7v5l3 3' /> <path d='M15 19l2 2l4 -4' /></svg> 入園の前後にやること</summary><div class="inner" id="prepLive">${h}</div></details>` : ""; })() : "";
-  document.getElementById("nextcard").innerHTML = prepT + (noPick() ? `<div class="nx"><h3>まだ予定がありません</h3><p class="note">計画の画面で乗りたいものを選ぶと、ここに「次はこれ」が出ます。</p><div class="row"><button type="button" class="btn primary" id="nx-toplan">乗りたいものを選ぶ</button></div></div>` : now >= M.close ? `<div class="nx"><h3>閉園の時刻（${hm(M.close)}）を過ぎました</h3><p class="note">今日はおつかれさまでした。</p></div>` : catchC ? catchHTML(catchC) : busyT + goneT + heldT + (r0 ? `<div class="nx">${stat}<div class="nxh">${img0 ? `<img src="${img0}" alt="">` : "<span></span>"}<div><small>次はこれ</small><h3>${itemName(r0.it)}${S.must.includes(r0.it.key) ? '<span class="badge must">必ず</span>' : ""}</h3></div></div>
+  const dayT = S.date !== TODAY ? `<div class="warnline">いま出ているのは<b>${md(S.date)}の予定</b>です（今日は${md(TODAY)}）。${md(S.date)}の練習なら、このまま上の時刻を変えて試せます。 <button type="button" class="btn small" id="go-today">今日（${md(TODAY)}）の予定にする</button></div>` : "";
+  document.getElementById("nextcard").innerHTML = dayT + prepT + (noPick() ? `<div class="nx"><h3>まだ予定がありません</h3><p class="note">計画の画面で乗りたいものを選ぶと、ここに「次はこれ」が出ます。</p><div class="row"><button type="button" class="btn primary" id="nx-toplan">乗りたいものを選ぶ</button></div></div>` : now >= M.close ? `<div class="nx"><h3>閉園の時刻（${hm(M.close)}）を過ぎました</h3><p class="note">今日はおつかれさまでした。</p></div>` : catchC ? catchHTML(catchC) : busyT + goneT + heldT + (r0 ? `<div class="nx">${stat}<div class="nxh">${img0 ? `<img src="${img0}" alt="">` : "<span></span>"}<div><small>次はこれ</small><h3>${itemName(r0.it)}${S.must.includes(r0.it.key) ? '<span class="badge must">必ず</span>' : ""}</h3></div></div>
       ${cmp}
       <div class="go2"><span class="note">このまま行くと：${(g => (g >= 1 ? `${bz ? `${bzName}のあと` : "待ち"}${Math.round(g)}分 → ` : ""))(r0.arrive - r0.walk - now)}歩く${r0.walk}分${r0.idle >= 1 ? ` → ${now < M.open + gateSlack() + 1 && !bz ? "入園の列と空き" : "空き"}${Math.round(r0.idle)}分${idleWhy(r0)}` : ""}${r0.wait >= 1 ? ` → 並ぶ${Math.round(r0.wait)}分` : ""}${RIDES[r0.it.key] && RIDES[r0.it.key].src !== "show" ? ` → 乗る${Math.round(r0.d)}分` : ""}</span><b>${hm(now)} → ${hm(r0.end)} おわり</b></div>
       ${(w => (w ? `<div class="why"><b>理由</b> ${w}</div>` : ""))(nextWhy(r0, now))}
@@ -4196,14 +4252,14 @@ const lossOf = it => { const R = RIDES[it.key]; if (it.type === "meal") return 1
 let PAIR_MAX = 45, DROP_MS = 4000;  // 2つ外す試算は最大15通り（候補6つまでなら全部）・4秒まで。試さなかった組は画面に出す
 // 入れなければならないもの（必ず・時刻の決まったもの・ごはん）に要る時間の下限。歩く0分・ごはんは食べる時間だけ・乗り物はこのあと一番短い時刻の予測の待ち。
 //  これが残りの時間を超えれば、どんな順番でも入らない（予測の上では確か）。超えなければ、入るかどうかは組んでみないと分からない
-function needLB(items, start) {
+function needLB(items, start, med) {
   let t = 0;
   for (const it of items) {
     const R = RIDES[it.key];
     if (it.type === "meal") t += it.light ? 12 : it.key === "昼ごはん" ? 40 : 30;
     else if (R && R.src === "show") t += earlyOf(it.key) + R.len;
     else if (R && epOf(it.key)) t += EPW + durOf(it.key);
-    else if (R) { let m = Infinity; for (let x = Math.max(start, openAt(it.key)); x <= lastAt(it.key); x += 15) m = Math.min(m, planWait(it.key, x)); t += m + durOf(it.key); }
+    else if (R) { let m = Infinity; for (let x = Math.max(start, openAt(it.key)); x <= lastAt(it.key); x += 5) m = Math.min(m, med ? waitAt(it.key, x).med : planWait(it.key, x)); t += m + durOf(it.key); }
   }
   return t;
 }
@@ -4229,19 +4285,19 @@ function dropOptions(rest, musts, opt) {
     }
   }
   out.sort((a, b) => b.s.rides - a.s.rides || a.loss - b.loss || a.s.waitTot - b.s.waitTot || a.s.end - b.s.end);
-  return { cand, out, fail, proven, avail, base: lb([]), pair: pairTried > 0 || proven.some(x => x.length === 2), pairsTotal: out.some(o => o.ids.length === 1) ? 0 : pairs.length, pairTried, skip };
+  return { cand, out, fail, proven, avail, base: lb([]), baseMed: needLB(rest.filter(need), opt.start, true), pair: pairTried > 0 || proven.some(x => x.length === 2), pairsTotal: out.some(o => o.ids.length === 1) ? 0 : pairs.length, pairTried, skip };
 }
 // 何を試して、何を試していないか
 function dropNote(d, byId) {
   const nm = ids => ids.map(id => itemName(byId.get(id))).join("＋"), out = [];
   const f1 = d.fail.filter(ids => ids.length === 1), f2 = d.fail.filter(ids => ids.length === 2), p1 = d.proven.filter(ids => ids.length === 1), p2 = d.proven.filter(ids => ids.length === 2);
-  if (d.base > d.avail) out.push(`今のままでは、どの順番でも入りません（最低でも${dur(d.base)}要る見込みで、残りは${dur(Math.max(0, d.avail))}）`);
-  if (p1.length) out.push(`1つ外しても時間が足りないと確かめた：${p1.map(nm).join("・")}`);
+  if (d.base > d.avail) out.push(d.baseMed > d.avail ? `今のままでは、どの順番でも入りません（待ちがふつうの値でも最低${dur(d.baseMed)}要り、残りは${dur(Math.max(0, d.avail))}）` : `余裕を見た待ちでは、どの順番でも入りません（最低${dur(d.base)}要る見込みで、残りは${dur(Math.max(0, d.avail))}。待ちがふつうの値なら入ることもあります）`);
+  if (p1.length) out.push(`1つ外しても、余裕を見た待ちでは時間が足りないと確かめた：${p1.map(nm).join("・")}`);
   if (f1.length) out.push(`1つ外したが、試算した範囲では入る組み方が見つからなかった：${f1.map(nm).join("・")}`);
   if (d.out.some(o => o.ids.length === 1) && d.cand.length >= 2) out.push("1つ外すだけで入る案があるので、2つ外す案は試算していません");
   if (d.pairsTotal) out.push(`2つ外す組み合わせは全${d.pairsTotal}通り：${p2.length ? `${p2.length}通りは時間が足りないと確かめた・` : ""}${d.pairTried}通りを損が小さい組から試算${f2.length ? `（うち${f2.length}通りは試算の範囲で見つからない）` : ""}`);
   if (d.skip.length) out.push(`<b>試算していない組み合わせが${d.skip.length}通りあります</b>（時間がかかるため）<details class="skipd"><summary>どれか見る</summary>${d.skip.map(pr => pr.map(x => itemName(x)).join("＋")).join("・")}</details>`);
-  if (f1.length || f2.length || d.skip.length) out.push("「見つからなかった」「試算していない」ものは、組み方しだいで入る可能性が残っています（「時間が足りないと確かめた」ものは、予測の上では入りません）");
+  if (f1.length || f2.length || d.skip.length) out.push("「見つからなかった」「試算していない」ものは、組み方しだいで入る可能性が残っています（「時間が足りないと確かめた」ものは、余裕を見た待ちの予測では入りません）");
   return out.join("。") + (out.length ? "。" : "");
 }
 const prioTxt = it => { const R = RIDES[it.key]; if (it.type === "meal") return `ごはん（${it.key === "昼ごはん" ? "11:00〜13:30" : "17:00〜19:30"}の枠）`; return R && R.src === "show" ? `ショー ${hm(showTime(it.key))}` : it.pin != null && R && epOf(it.key) ? `買ったDPA ${hm(it.orig ?? it.pin)}〜（${R.dpa ? R.dpa.toLocaleString() + "円" : ""}がむだに）` : epOf(it.key) ? "DPAで乗る予定" : S.must.includes(it.key) ? "必ず" : it.pin != null ? `${hm(it.pin)}に固定` : "できれば"; };
@@ -4951,10 +5007,13 @@ document.querySelectorAll(".tabhero[data-ph]").forEach(el => {
 document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-gotab]"); if (!b) return; setTab(b.dataset.gotab); window.scrollTo({ top: 0 }); });
 // ================= 起動 =================
 if (!S.date || S.date < TODAY) S.date = TODAY;
-setDate(S.date);
-const h0 = location.hash.slice(1), sh0 = readShare(h0);
+const h0 = location.hash.slice(1), sh0 = readShare(h0), d0 = S.date;
+const toToday = !sh0 && d0 !== TODAY && !!((((S.plans || {})[TODAY] || {}).items || []).length || (((S.selBy || {})[TODAY] || {}).sel || []).length);
+setDate(toToday ? TODAY : S.date);
 setTab(["day", "plan", "food", "live", "hours"].includes(h0) ? h0 : "day");
 if (sh0) offerShare(sh0);
+else if (toToday) toast("gtoast", `今日（${md(TODAY)}）の予定に切り替えました（前は${md(d0)}を開いていました）。`);
+document.addEventListener("click", e => { if (e.target.closest && e.target.closest("#go-today")) { setDate(TODAY); setTab("live"); window.scrollTo({ top: 0 }); } });
 </script>
 <script>
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
