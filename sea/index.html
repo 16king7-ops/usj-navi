@@ -2772,8 +2772,17 @@ function tryPlan(o, rate) {
     const selK = S.sel.filter(k => RIDES[k] && avail(k, M.date));
     const out = { ...o, rides: s.rides, wait: Math.round(s.waitTot), end: s.end, keys: [...inK], allIn: selK.every(k => inK.has(k)), no, cost: (o.ep || []).filter(k => !no.includes(k)).reduce((a, k) => a + RIDES[k].dpa, 0) };
     if (rate) { out.rate = rateOf(s); out.last = lastYearOf(s); }
-    return out;
+    out.sim = s; return out;
   } finally { P().ep = e0; S.slack = sl; S.style = st; S.entryMode = em; }
+}
+// 厳しめの答え合わせ（歩く1.4倍＋3分・行列1.5倍・入園15分遅れ）で、似た日に予定を全部回れた日数。同じ個数の DPA の候補を比べるのに使う
+function harshOf(o) {
+  const e0 = P().ep;
+  try {
+    if (o.ep) P().ep = { ...(e0 || {}), ...Object.fromEntries(o.ep.map(k => [k, { at: null }])) };
+    const rr = M.crowd.refs.map(x => replayLive(o.sim, x, "harsh"));
+    return { n: rr.length, ok: rr.filter(r => !r.missed.length).length, avg: rr.reduce((a, r) => a + r.rides, 0) / Math.max(1, rr.length) };
+  } finally { P().ep = e0; }
 }
 // 空く時間: 受付の締め切りの見込みの1時間前までから選ぶ（混む日は早く閉まる。去年の12/25のセンターは18:45で終わっていた）
 function bestBand(k) {
@@ -2791,11 +2800,16 @@ function renderBoost(sim) {
   if (missK.length) jobs.push(() => { res.hours = missK.map(k => ({ k, b: bestBand(k) })).filter(x => x.b); });
   const ep = P().ep || {}, okDPA = k => RIDES[k] && RIDES[k].dpa && RIDES[k].src === "r" && avail(k, M.date) && (!RIDES[k].dpaFrom || M.date >= RIDES[k].dpaFrom) && !ep[k] && S.sel.includes(k);
   S.sel.filter(okDPA).forEach(k => jobs.push(() => res.dpa.push(tryPlan({ ep: [k] }))));  // DPA のある選んだもの、全部を1つずつ
-  jobs.push(() => {  // 入りきらないときは、1つずつでよく効いた上位5つから2つの組（10通り）も
-    if (!missK.length || res.dpa.some(o => o.allIn && !o.no.length)) return;
-    const top = res.dpa.filter(o => !o.none && !o.no.length).sort((a, b) => b.rides - a.rides || a.wait - b.wait).slice(0, 5).map(o => o.ep[0]);
-    const pr = []; for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++) pr.push([top[i], top[j]]);
-    jobs.unshift(...pr.map(ks => () => res.dpa.push(tryPlan({ ep: ks }))));
+  jobs.push(() => {  // 入りきらないときは、1つずつでよく効いた上位3つと、ほかの全部との2つの組も（1つでは組めないものも、ほかと組むと入ることがある。12/31 のトイマニ＋タワテラ）
+    if (!missK.length || res.dpa.some(o => o.allIn && !o.no.length)) return;  // 全部の組で試すと、上位はどれも上位3つのどれかを含んでいた（12/25・12/31・1/1）
+    const top = res.dpa.filter(o => !o.none && !o.no.length).sort((a, b) => b.rides - a.rides || a.wait - b.wait).slice(0, 3).map(o => o.ep[0]), all = res.dpa.map(o => o.ep[0]), pr = [];
+    top.forEach((a, i) => all.forEach(b => { if (b !== a && !top.slice(0, i).includes(b)) pr.push([a, b]); }));
+    jobs.unshift(...pr.map(x => () => res.dpa.push(tryPlan({ ep: x }))));
+  });
+  jobs.push(() => {  // 一番多く入る組（全部入る組があればそれ）が同じ個数で並ぶとき、厳しめの答え合わせで比べる（安い順に8つまで）
+    const v = res.dpa.filter(o => !o.none && !o.no.length), mx = Math.max(res.cur + 1, ...v.map(o => o.rides));
+    const top = !missK.length ? [] : v.some(o => o.allIn) ? v.filter(o => o.allIn) : v.filter(o => o.rides === mx);
+    jobs.unshift(...top.sort((a, b) => a.cost - b.cost).slice(0, 8).map(o => () => { o.harsh = harshOf(o); }), () => { res.ranked = true; });
   });
   if (missK.length) {
     if (S.style !== "lean") jobs.push(() => { res.fast = tryPlan({ lean: true }, true); });
@@ -2820,21 +2834,22 @@ function paintBoost(res) {
   </ul>`;
   const tz = document.getElementById("boosttz");
   //  おすすめの DPA: 入りきらないときは「選んだものが全部入る中で安いもの → 一番増えるもの（同じなら安いもの）」、全部入っているときは「並ぶ時間が一番減るもの（30分以上・1円あたり）」
-  const best = (() => {
+  const hk = o => (o.harsh ? o.harsh.ok + o.harsh.avg / 100 : -1);
+  const best = !res.ranked ? null : (() => {
     const v = res.dpa.filter(o => !o.none && !o.no.length);
     if (!miss) return v.filter(o => o.rides >= res.cur && res.curWait - o.wait >= 30).sort((a, b) => (res.curWait - b.wait) / Math.max(1, b.cost) - (res.curWait - a.wait) / Math.max(1, a.cost) || a.cost - b.cost)[0] || null;
-    const ok = v.filter(o => o.allIn).sort((a, b) => a.cost - b.cost || a.wait - b.wait); if (ok.length) return ok[0];
-    return v.filter(o => o.rides > res.cur).sort((a, b) => b.rides - a.rides || a.cost - b.cost || a.wait - b.wait)[0] || null;
+    const ok = v.filter(o => o.allIn).sort((a, b) => hk(b) - hk(a) || a.cost - b.cost || a.wait - b.wait); if (ok.length) return ok[0];
+    return v.filter(o => o.rides > res.cur).sort((a, b) => b.rides - a.rides || hk(b) - hk(a) || a.cost - b.cost || a.wait - b.wait)[0] || null;
   })();
-  const others = res.dpa.filter(o => o !== best && !o.none && !o.no.length && (miss ? o.rides > res.cur : res.curWait - o.wait >= 30)).sort((a, b) => b.rides - a.rides || a.cost - b.cost || a.wait - b.wait).slice(0, 3);
+  const others = !best ? [] : res.dpa.filter(o => o !== best && !o.none && !o.no.length && (miss ? o.rides > res.cur : res.curWait - o.wait >= 30)).sort((a, b) => b.rides - a.rides || hk(b) - hk(a) || a.cost - b.cost || a.wait - b.wait).slice(0, 3);
   const noBuy = [...new Set(res.dpa.flatMap(o => o.no || []))];
   const lostT = o => { const l = lostOf(o); return l.length ? `（${nm(l)}が代わりに外れます）` : ""; };
   const dpaRow = best ? `<div class="bopt rec"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス（有料）</b><span class="badge must">おすすめ</span>
       <p><b>${nm(best.ep)}</b>のDPA（${best.cost.toLocaleString()}円/人）を買うと、${miss ? (best.allIn ? `<b>選んだものが全部入ります</b>（${best.rides}個）` : `<b>${best.rides}個</b>（今より+${best.rides - res.cur}個）${lostT(best)}`) + `・並ぶ合計 ${dur(best.wait)}・終わり ${hm(best.end)}` : `並ぶ合計が<b>${dur(res.curWait - best.wait)}短く</b>なります（${dur(res.curWait)} → ${dur(best.wait)}）${best.rides > res.cur ? `・<b>+${best.rides - res.cur}個</b>` : "。空いた時間で、ほかの乗り物も足せます"}`}</p>
-      <p class="note">入園してすぐ（${hm(entryAt() + 30)}ごろまで）に、売り切れの早い順に買えた場合の試算です。買えなかったら今の予定（${res.cur}個）のまま。${!miss ? "おすすめは、1円あたりで並ぶ時間が一番減るもの。" : ""}</p>
+      <p class="note">入園してすぐ（${hm(entryAt() + 30)}ごろまで）に、売り切れの早い順に買えた場合の試算です。買えなかったら今の予定（${res.cur}個）のまま。${best.harsh ? `${best.harsh.ok ? `厳しめ（歩く・並ぶのが長め、入園15分遅れ）に回しても、似た日${best.harsh.n}日のうち<b>${best.harsh.ok}日</b>は全部回れます` : `厳しめ（歩く・並ぶのが長め、入園15分遅れ）に回すと、似た日で全部回れた日はありません（平均${best.harsh.avg.toFixed(1)}個）`}${others.some(o => o.harsh && o.rides === best.rides) ? "（同じ個数の中で、厳しめでも回れる日が多いものを選んでいます）" : ""}。` : ""}${!miss ? "おすすめは、1円あたりで並ぶ時間が一番減るもの。" : ""}</p>
       ${others.length ? `<p class="note">ほかに：${others.map(o => `${nm(o.ep)}（${o.cost.toLocaleString()}円）→ ${miss ? `${o.rides}個${lostOf(o).length ? "※" : ""}` : `並ぶ −${dur(res.curWait - o.wait)}`}`).join("、")}${others.some(o => lostOf(o).length) ? "（※は今の予定のどれかが代わりに外れる）" : ""}</p>` : ""}${noBuy.length ? `<p class="note">${nm(noBuy)}は、ほかのDPAを先に買うと売り切れの目安より後になるので入れていません。</p>` : ""}</div>
       <button type="button" class="btn primary" data-bo="dpa">このDPAで組む</button></div>`
-    : !res.done ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス（有料）</b><p class="note">どれを買うと一番効くか試算しています…</p></div></div>`
+    : !res.ranked && !res.done ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス（有料）</b><p class="note">どれを買うと一番効くか試算しています…（${res.dpa.length}通り）</p></div></div>`
     : res.dpa.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス</b><p class="note">${miss ? "DPAを買っても、入りきらないものは増えない見込みです（売り切れの目安・時刻の決まった予定のため）。" : "この予定では、DPAを買っても並ぶ時間はあまり減らない見込みです。"}</p></div></div>` : "";
   const mapRow = `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 待ち時間マップ</b><p>乗り物×時間帯の待ちを色で一覧。どの時間に何が空くかが一目で分かります。おまかせの順番がしっくりこないとき、自分で組み替える手がかりに。</p></div>
       <button type="button" class="btn" data-bo="map">マップを見る ›</button></div>`;
