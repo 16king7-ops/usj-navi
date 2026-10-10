@@ -103,6 +103,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-v
 .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--shade) 85%, transparent) 0%, color-mix(in srgb, var(--shade) 30%, transparent) 55%, transparent 100%), linear-gradient(0deg, color-mix(in srgb, var(--shade) 70%, transparent), transparent 45%); pointer-events: none; }
 .hero .txt { position: absolute; z-index: 2; left: 0; bottom: 0; padding: clamp(18px, 4vw, 44px); display: grid; gap: 12px; color: var(--hero-ink); max-width: 640px; }
 .hero .txt p { color: var(--hero-ink-2); font-size: clamp(14px, 1.8vw, 17px); }
+.hero .txt p.pcnote { font-size: 13px; color: var(--hero-ink); background: color-mix(in srgb, var(--shade) 55%, transparent); border-radius: 10px; padding: 6px 10px; }
 .hero .kicker { font-family: var(--round); font-weight: 700; font-size: 14px; letter-spacing: .1em; color: var(--sun); }
 .hero .cap { position: absolute; z-index: 2; right: 16px; bottom: 12px; font-size: 12px; color: var(--hero-ink-2); background: color-mix(in srgb, var(--shade) 55%, transparent); padding: 2px 10px; border-radius: 999px; }
 .hero .dots { position: absolute; z-index: 2; right: 18px; top: 16px; display: flex; gap: 6px; }
@@ -1097,11 +1098,14 @@ svg text.area, .rp-map text, .map svg text { paint-order: stroke; stroke: var(--
 /* 計画のカード: 説明は3行（PCは4行）までにし、DPAの行は切られないよう別の行に */
 .card .meta { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 @media (max-width: 600px) { .card .meta { -webkit-line-clamp: 3; } }
-.card .dpaline { font-size: 12px; font-weight: 700; color: var(--brand); line-height: 1.4; }
-.card .dpaline span { white-space: nowrap; }
-@media (max-width: 600px) { .card .dpaline { font-size: 10.5px; } }
+.card .dpabtn { font: inherit; font-size: 12.5px; font-weight: 800; line-height: 1.3; text-align: left; border: 1.5px solid var(--brand); color: var(--brand); background: transparent; border-radius: 10px; padding: 3px 8px; min-height: 34px; cursor: pointer; display: grid; }
+.card .dpabtn small { font-size: 11px; font-weight: 600; opacity: .85; }
+.card .dpabtn[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
+@media (max-width: 600px) { .card .dpabtn { font-size: 11px; padding: 2px 6px; min-height: 30px; border-radius: 8px; } .card .dpabtn small { font-size: 9.5px; } }
 .cards { align-items: start; }
 .fab.near { display: none !important; }
+.fab small { display: block; font-size: 11.5px; font-weight: 500; opacity: .85; }
+.linkbtn.toans { justify-self: start; text-align: left; font-weight: 700; min-height: 40px; }
 /* 写真のないお店のカード: 大きな空の枠にしない */
 .rp-mcard.noimg .mph { aspect-ratio: auto; height: 36px; }
 /* 一番上の固定バーの下に、飛び先の見出しが隠れないように（高さは JS で --toph に入れる） */
@@ -1246,6 +1250,7 @@ html { scroll-padding-top: calc(var(--toph, 150px) + 8px); }
         <span class="kicker"><span class="long">東京ディズニーシー ／ </span>1年分の待ち時間から</span>
         <h1>シー<br>攻略ナビ</h1>
         <p>1年分の待ち時間の記録から、行く日の混み具合と、乗りたいものを一番待たずに回る順番を出します。入園の時刻やプレミアアクセスも入れて組めます。</p>
+        <p class="pcnote"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 9v4' /> <path d='M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z' /> <path d='M12 16h.01' /></svg> 計画づくりは、パソコンの大きい画面のほうが見やすいです（予定・待ち時間マップ・入れる方法を並べて見られます）。当日はスマホで「当日」のタブを。</p>
         <div class="row"><button type="button" class="btn sun" data-go="cal">行く日を選ぶ</button><button type="button" class="btn" data-goplan="1">計画を立てる</button><button type="button" class="btn" data-goabout="1">このナビの考え方</button></div>
       </div>
       <span class="count" id="count" hidden></span>
@@ -1394,7 +1399,7 @@ html { scroll-padding-top: calc(var(--toph, 150px) + 8px); }
     <div class="strip" id="strip"><div id="plansum"></div></div>
     <div class="mapsched">
       <figure class="map sticky" id="planmap"></figure>
-      <div class="panel" style="gap:10px"><div class="copyrow"><h3>詳しい予定</h3><span class="row" style="gap:6px"><button type="button" class="btn small" data-ostory="plan"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 8h.01' /> <path d='M6 13l2.644 -2.644a1.21 1.21 0 0 1 1.712 0l3.644 3.644' /> <path d='M13 13l1.644 -1.644a1.21 1.21 0 0 1 1.712 0l1.644 1.644' /> <path d='M4 8v-2a2 2 0 0 1 2 -2h2' /> <path d='M4 16v2a2 2 0 0 0 2 2h2' /> <path d='M16 4h2a2 2 0 0 1 2 2v2' /> <path d='M16 20h2a2 2 0 0 0 2 -2v-2' /></svg> 1日を写真で予習</button><button type="button" class="btn small" id="copyplan"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z' /> <path d='M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1' /></svg> 文字でコピー</button></span></div><div id="copyout"></div><div id="tadvice"></div><div id="znote"></div><div class="tlist" id="plantl"></div><div class="row"><button type="button" class="btn small" id="plan-free">＋ お土産・自由時間（30分）を足す</button><span class="note">最後に入ります。予定の「…」で長さや順番を変えられます</span></div></div>
+      <div class="panel" style="gap:10px"><button type="button" class="linkbtn toans" data-toans="1">↑ おすすめ・わんちゃん・待ち時間マップは、上の「攻略プラン」に</button><div class="copyrow"><h3>詳しい予定</h3><span class="row" style="gap:6px"><button type="button" class="btn small" data-ostory="plan"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 8h.01' /> <path d='M6 13l2.644 -2.644a1.21 1.21 0 0 1 1.712 0l3.644 3.644' /> <path d='M13 13l1.644 -1.644a1.21 1.21 0 0 1 1.712 0l1.644 1.644' /> <path d='M4 8v-2a2 2 0 0 1 2 -2h2' /> <path d='M4 16v2a2 2 0 0 0 2 2h2' /> <path d='M16 4h2a2 2 0 0 1 2 2v2' /> <path d='M16 20h2a2 2 0 0 0 2 -2v-2' /></svg> 1日を写真で予習</button><button type="button" class="btn small" id="copyplan"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z' /> <path d='M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1' /></svg> 文字でコピー</button></span></div><div id="copyout"></div><div id="tadvice"></div><div id="znote"></div><div class="tlist" id="plantl"></div><div class="row"><button type="button" class="btn small" id="plan-free">＋ お土産・自由時間（30分）を足す</button><span class="note">最後に入ります。予定の「…」で長さや順番を変えられます</span></div></div>
     </div>
     </div></div>
     <button type="button" class="fab" id="fab" hidden></button>
@@ -1820,7 +1825,12 @@ function dpaChain() {
   dpaKey = key; dpaC = c; return c;
 }
 const earlyOf = k => (epOf(k) ? Math.min(10, RIDES[k].early) : S.free[k] ? 5 : RIDES[k].early_busy && M && M.crowd && M.crowd.lv >= 3 ? RIDES[k].early_busy : RIDES[k].early);  // 混む日は場所取りを早める（ビリーヴは60分前）
-const planWait = (k, t) => { if (epOf(k)) return EPW; const w = waitAt(k, t); return w.med + (S.style === "sure" ? 1 : S.style === "lean" ? 0 : S.slack ? 0.5 : 0) * PK * Math.max(0, w.p90 - w.med); };  // lean（詰める）は待ちをふつうの値で
+// 開園ダッシュ・ハッピーエントリーで、入口からまっすぐ向かう1つ目は列の先頭近くなので短い。表示の待ち（開園15分後の最初の表示など）は、開園直後に一気に並んだ人の分を含むので長い。
+//  先頭近くの目安: 開園ダッシュ35分・ハッピーエントリー25分（ソアリンは入場開始直後に先頭近くで30〜35分・数分遅れると80分以上、トイマニは開園直後25〜35分の日も、ハッピーエントリーで前に30〜40人なら20〜25分。解説サイトと体験談 2025〜2026）
+//  当日（組み直し）は今の待ちで見るので使わない
+const ROPE = { dash: 35, happy: 25 };
+const ropeCap = (k, t) => { const c = ROPE[S.entryMode]; if (c == null || P().live || !RIDES[k] || RIDES[k].src !== "r" || epOf(k)) return null; return t <= entryAt() + walkPlan(GATE, locOfRide(k)) + 5 ? c : null; };
+const planWait = (k, t) => { if (epOf(k)) return EPW; const rc = ropeCap(k, t); if (rc != null) return Math.min(rc, waitAt(k, t).med); const w = waitAt(k, t); return w.med + (S.style === "sure" ? 1 : S.style === "lean" ? 0 : S.slack ? 0.5 : 0) * PK * Math.max(0, w.p90 - w.med); };  // lean（詰める）は待ちをふつうの値で
 const openAt = k => { const r = RIDES[k]; if (r.src === "show") return showTime(k) - earlyOf(k); return Math.max(M.open, r.open || 0); };
 function lastAt(k) {
   const r = RIDES[k];
@@ -2144,6 +2154,7 @@ let WAIT_SCALE = 1;
 function dayWait(k, x, t) {
   let w = dayWait0(k, x, t);
   if (WAIT_SCALE !== 1 && w && !w.closed && w.w != null) w = { ...w, w: w.w * WAIT_SCALE };
+  const rc = ropeCap(k, t); if (rc != null && w && !w.closed && w.w != null) w = { ...w, w: Math.min(w.w, rc) };  // 答え合わせも同じ前提（入園が遅れた「厳しめ」では効かない）
   return epOf(k) && !(w && w.closed) ? { w: EPW } : w;
 }
 // 答え合わせで、この日の記録は今年の水準などに直さず、そのまま使う（「去年の同じ日の実際の待ちで回すと」のとき）
@@ -2385,11 +2396,12 @@ function setTab(t) {
 // タブを行き来したとき、そのタブで見ていた位置に戻す（前は毎回一番上に戻り、カレンダーなどを見比べにくかった）
 const tabY = {};
 document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { const from = S.tab, to = b.dataset.tab; tabY[from] = window.scrollY; setTab(to); if (to !== from && tabY[to] != null) requestAnimationFrame(() => window.scrollTo(0, tabY[to])); }));
-// 計画の下の「予定を見る」バー: 数字の箱や予定が見えているときは隠す（前は予定の上でも出て、押すと上へ飛んでいた）
+// 計画の下の「攻略プランへ」バー: 上の攻略プランが見えているときは隠す（前は「予定を見る ↓」で下の詳しい予定へ飛ばしていて、上のおすすめに気づかれなかった）
 (() => { const fab = document.getElementById("fab"), seen = new Set(); if (!fab || !window.IntersectionObserver) return;
   const io = new IntersectionObserver(es => { es.forEach(e => (e.isIntersecting ? seen.add(e.target.id) : seen.delete(e.target.id))); fab.classList.toggle("near", seen.size > 0); });
-  ["plansum", "plantl", "answer"].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); }); })();
+  ["answer"].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); }); })();
 document.getElementById("datechip").addEventListener("click", () => setTab("day"));
+document.addEventListener("click", e => { if (e.target.closest && e.target.closest("[data-toans]")) document.getElementById("answer").scrollIntoView({ behavior: "smooth", block: "start" }); });
 document.documentElement.setAttribute("data-theme", "light");  // 見た目は昼だけ
 function renderTop() {
   const c = M.crowd;
@@ -2522,7 +2534,11 @@ function cardMeta(k) {
   const lo = Math.min(...ok.map(x => x.med)), hi = Math.max(...ok.map(x => x.med));
   return `<em>${hi - lo < 25 ? `ほぼ一日中 ${rng(lo, hi, "分")}` : `空く ${hb.h}時台（${hb.med}分）`}</em><br>締切 ${c ? hm(c.p10) : "—"}・${r.open && r.open > M.open ? hm(r.open) + "から・" : ""}${g}${M.wide[k] ? `<br>※去年のこの時期は休止` : ""}${dp}`;
 }
-const cardDpa = k => { const r = RIDES[k]; return r.dpa && (!r.dpaFrom || M.date >= r.dpaFrom) ? `<div class="dpaline">DPA ${r.dpa.toLocaleString()}円${r.soldout ? `<span>（${hm(soldAt(k))}ごろ売切）</span>` : ""}</div>` : ""; };
+const cardDpa = k => { const r = RIDES[k]; if (!(r.dpa && (!r.dpaFrom || M.date >= r.dpaFrom))) return ""; const on = !!(P().ep || {})[k];
+  return `<button type="button" class="dpabtn" data-dpa="${k}" aria-pressed="${on}">${on ? "✓ DPAで乗る" : "＋ DPA"}<small>${r.dpa.toLocaleString()}円${r.soldout ? `・${hm(soldAt(k))}ごろ売切` : ""}</small></button>`; };
+// DPA を買う・やめる（乗り物カードと、下の設定の欄で同じ）
+function setDPA(k, on) { const e2 = { ...(P().ep || {}) }; if (on) { e2[k] = { at: null }; if (!S.sel.includes(k)) S.sel.push(k); askSet("d", 1); } else delete e2[k]; P().ep = e2; save(); renderCards();
+  replan(on ? `${RIDES[k].short}をプレミアアクセスにしました（待ち10分ほど）。入園したらすぐアプリで買ってください。買えたら利用時間も入れると、その時刻で組みます。` : `${RIDES[k].short}のプレミアアクセスを外しました。`); }
 const mealSk = m => (S.mealAt[m] && FOOD.stores[S.mealAt[m]] ? S.mealAt[m] : null);
 const mealPh = (m, d) => { const sk = mealSk(m), g = sk && (FOOD.stores[sk].gallery || [])[0]; return PH[g] || PH[d] || PH.x_capecod; };
 const mealAtTxt = m => { const sk = mealSk(m); return `<p class="mstore">${sk ? `お店：<button type="button" class="linkbtn" data-ostore="${sk}">${FOOD.stores[sk].name}</button>　<button type="button" class="linkbtn" data-mealclr="${m}">おまかせに戻す</button>` : `お店はおまかせ　<button type="button" class="linkbtn" data-gorest="1">レストランを見て決める</button>`}</p>`; };
@@ -2582,6 +2598,7 @@ function renderCards() {
     const k = c.dataset.k, ph = c.querySelector(".ph");
     ph.addEventListener("click", () => { if (ph.dataset.dragged) { delete ph.dataset.dragged; return; } toggleSel(k); });
     c.querySelector(".info").addEventListener("click", () => openRide(k));
+    const db = c.querySelector("[data-dpa]"); if (db) db.addEventListener("click", () => setDPA(k, db.getAttribute("aria-pressed") !== "true"));
     c.querySelector(".must").addEventListener("click", () => { let msg = ""; if (S.must.includes(k) && S.sel.includes(k)) S.must = S.must.filter(x => x !== k); else { S.must = [...new Set([...S.must, k])]; if (!S.sel.includes(k)) S.sel.push(k); const n = S.must.filter(x => S.sel.includes(x)).length; if (n >= 3) msg = `「必ず」が${n}個です。「必ず」は締め切りの見込みの45分前までに並ぶ予定にするので、多いとほかが入りにくくなります（1〜2個がおすすめ）。`; } save(); renderCards(); replan(msg); });
     const sel = c.querySelector("select[data-show]"), fs = c.querySelector("select[data-free]");
     if (fs) fs.addEventListener("change", () => { setFree(k, fs.value === "0"); if (!S.sel.includes(k)) S.sel.push(k); save(); renderCards(); replan(); });
@@ -2753,7 +2770,7 @@ let whyOpen = false;
 function renderPlanHero(sim) {
   if (noPick()) { const b = document.getElementById("answer"); b.innerHTML = emptyPickHTML(); wireEmptyPick(b); return; }
   const c = M.crowd, box = document.getElementById("answer"), dp = dpaPlan(sim), miss = (lastMissed || []).filter(x => RIDES[x.key]).map(x => RIDES[x.key].short);
-  const sub = r => { const R = RIDES[r.it.key]; if (r.flag) return "⚠ " + r.flag; if (R) return R.src === "show" ? (epOf(r.it.key) ? "ショー（DPAの席）" : `${hm(showTime(r.it.key))}開演・${S.free[r.it.key] ? "5分前に着く" : "場所取りから"}`) : epOf(r.it.key) ? "プレミアアクセス・並ぶ10分ほど" : `乗り終わり ${hm(r.end)}`;
+  const sub = r => { const R = RIDES[r.it.key]; if (r.flag) return "⚠ " + r.flag; if (R) return R.src === "show" ? (epOf(r.it.key) ? "ショー（DPAの席）" : `${hm(showTime(r.it.key))}開演・${S.free[r.it.key] ? "5分前に着く" : "場所取りから"}`) : epOf(r.it.key) ? "プレミアアクセス・並ぶ10分ほど" : `乗り終わり ${hm(r.end)}${ropeCap(r.it.key, r.start) != null ? `・待ちは${S.entryMode === "happy" ? "ハッピーエントリー" : "開園ダッシュ"}で列の先頭近くの目安（表示より短い）` : ""}`;
     if (r.it.type === "meal") return `${r.info || "近くの店"}・${isMO(r.to.slice(6)) ? moTxt(r) : `行列 ${Math.round(r.wait)}分ほど`}`; return r.info || ""; };
   const rows = sim.rows.map(r => { const R = RIDES[r.it.key], img = rowImg(r);
     return `${r.walk ? `<li class="mv">↓ 歩く${r.walk}分${r.idle >= 10 ? `・空き${Math.round(r.idle)}分${idleWhy(r)}` : ""}</li>` : ""}<li class="${r.flag ? "bad" : ""}"><span class="t">${hm(r.start)}</span><span class="ph">${img ? `<img src="${img}" alt="" loading="lazy">` : ""}</span><span class="nm">${itemName(r.it)}${S.must.includes(r.it.key) ? '<span class="badge must">必ず</span>' : ""}${R && epOf(r.it.key) ? '<span class="badge ep">DPA</span>' : ""}<small>${sub(r)}</small></span><span>${R && R.src !== "show" && r.wait >= 1 ? wchip(r.wait) : ""}</span></li>`; }).join("");
@@ -2794,8 +2811,8 @@ function asksHTML() {
   if (a.e && a.d) return `<div class="asksum">${sum}<button type="button" class="linkbtn" id="ask-redo">入園・DPAを変える</button></div>`;
   const laters = [30, 60, 90, 120, 180, 240].filter(m => M.open + m < M.close - 180);
   return `<div class="askcard"><b class="askh"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M6 4v4' /> <path d='M6 12v8' /> <path d='M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M12 4v10' /> <path d='M12 18v2' /> <path d='M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M18 4v1' /> <path d='M18 9v11' /></svg> あと${(!a.e) + (!a.d)}つ教えてください<small>入園の時刻とプレミアアクセスで、乗れる数が大きく変わります</small></b>
-    ${a.e ? "" : `<div class="ask"><span class="askq">何時ごろ入園しますか？<small>今は「${entryLabel()}」で組んでいます</small></span><div class="askb">${[["open", `開園と同時 ${hm(M.open)}`], ["dash", `開園前から並ぶ`], ["happy", `ホテル泊（${hm(M.open - 15)}）`]].map(([v, t]) => `<button type="button" class="btn small${S.entryMode === v ? " on" : ""}" data-ask-e="${v}">${t}</button>`).join("")}<select id="ask-later" aria-label="遅れて入る時刻"><option value="">遅れて入る…</option>${laters.map(m => `<option value="${m}"${S.entryMode === "later" && S.entry === m ? " selected" : ""}>${hm(M.open + m)}ごろ</option>`).join("")}</select></div></div>`}
-    ${a.d ? "" : `<div class="ask"><span class="askq">プレミアアクセス（有料・1つ2,000〜2,500円）を買いますか？<small>並ばずに乗れる。どれを買うと一番効くかは試算しています</small></span><div class="askb"><button type="button" class="btn small primary" data-ask-d="buy" id="ask-buy">${boostRes && boostRes.best ? `買う（${boostRes.best.ep.map(k => RIDES[k].short).join("・")}・${boostRes.best.cost.toLocaleString()}円で組む）` : "買う（おすすめで組む）"}</button><button type="button" class="btn small" data-ask-d="see">どれが効くか見る</button><button type="button" class="btn small" data-ask-d="no">買わない</button></div></div>`}
+    ${a.e ? "" : `<div class="ask"><span class="askq">何時ごろ入園しますか？<small>今は「${entryLabel()}」で組んでいます</small></span><div class="askb">${[["open", `開園と同時 ${hm(M.open)}`], ["dash", `開園前から並ぶ（1つ目は先頭近く）`], ["happy", `ホテル泊（${hm(M.open - 15)}）`]].map(([v, t]) => `<button type="button" class="btn small${S.entryMode === v ? " on" : ""}" data-ask-e="${v}">${t}</button>`).join("")}<select id="ask-later" aria-label="遅れて入る時刻"><option value="">遅れて入る…</option>${laters.map(m => `<option value="${m}"${S.entryMode === "later" && S.entry === m ? " selected" : ""}>${hm(M.open + m)}ごろ</option>`).join("")}</select></div></div>`}
+    ${a.d ? "" : `<div class="ask"><span class="askq">プレミアアクセス（有料・1つ2,000〜2,500円）を買いますか？<small>並ばずに乗れる。どれを買うと一番効くかは試算しています。乗り物を選ぶ所の「＋ DPA」でも選べます</small></span><div class="askb"><button type="button" class="btn small primary" data-ask-d="buy" id="ask-buy">${boostRes && boostRes.best ? `買う（${boostRes.best.ep.map(k => RIDES[k].short).join("・")}・${boostRes.best.cost.toLocaleString()}円で組む）` : "買う（おすすめで組む）"}</button><button type="button" class="btn small" data-ask-d="see">どれが効くか見る</button><button type="button" class="btn small" data-ask-d="no">買わない</button></div></div>`}
     <p class="askst">組み方は「<b>${STYLE_LABEL[styleNow()]}</b>」（${STYLE_NOTE[styleNow()].split("。")[0]}）。 <button type="button" class="linkbtn" data-ask-style="1">組み方を変える</button></p>
   </div>`;
 }
@@ -2985,7 +3002,7 @@ function paintBoost(res) {
   const f = res.fast, tr = t ? t.refs : null, fastRow = f && !f.none && f.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M4 17l5 1l.75 -1.5' /> <path d='M15 21l0 -4l-4 -3l1 -6' /> <path d='M7 12l0 -3l5 -1l3 3l3 1' /></svg> 「ふつう」で組む</b><p>待ちを多めでなく、似た日のふつうの値で見て組むと → <b>${f.rides}個</b>（+${f.rides - res.cur}個）${f.allIn ? "・選んだものが全部入る" : ""}${lostT(f)}。入園の列と歩く時間は、今の予定と同じに見ています</p>
       <p class="note">似た日${f.rate.n}日の待ちで回すと、${mustNow().length ? `「必ず」を全部回れたのは<b>${f.rate.must}日</b>・` : ""}予定を全部回れたのは<b>${f.rate.ok}日</b>・平均${f.rate.avg.toFixed(1)}個${tr ? `（今の予定は${mustNow().length ? `「必ず」${tr.must}日・` : ""}全部${tr.ok}日・平均${tr.avg.toFixed(1)}個）` : ""}。${f.last ? `去年の${md(f.last.d)}の実際の待ちなら${f.last.ok ? "全部回れます" : `${f.last.miss.length ? nm(f.last.miss) : "一部"}は回れません`}。` : ""}待ちをふつうの値で見るぶん、待ちが長い日は最後の1つが閉まることがあります</p></div>
       <button type="button" class="btn" data-bo="fast">「ふつう」で組む</button></div>` : "";
-  const d = res.dash, dashRow = d && !d.none && d.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg> 開園前から並ぶ（開園ダッシュ）</b><p>開園と同時に入ると → <b>${d.rides}個</b>（+${d.rides - res.cur}個）${lostT(d)}${M.crowd.lv >= 3 ? "。混む日は開園の2時間前ごろから並ぶ目安" : ""}</p><p class="note">開園直後の待ちは、記録の最初の表示（開園15分後）から推した目安です</p></div>
+  const d = res.dash, dashRow = d && !d.none && d.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg> 開園前から並ぶ（開園ダッシュ）</b><p>開園と同時に入ると → <b>${d.rides}個</b>（+${d.rides - res.cur}個）${lostT(d)}${M.crowd.lv >= 3 ? "。混む日は開園の2時間前ごろから並ぶ目安" : ""}</p><p class="note">入口からまっすぐ向かう1つ目は、列の先頭近くの目安（35分。ソアリン・トイマニの体験談と解説サイトから）。2つ目からは表示の待ちで見ています</p></div>
       <button type="button" class="btn" data-bo="dash">開園ダッシュで組む</button></div>` : "";
   const hs = (res.hours || []).slice().sort((a, b) => (RIDES[b.k].w || 0) * (b.b.noon - b.b.med) - (RIDES[a.k].w || 0) * (a.b.noon - a.b.med)), hTop = hs.slice(0, 3);
   const hrRow = hTop.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6.5 7h11' /> <path d='M6.5 17h11' /> <path d='M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1z' /> <path d='M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1z' /></svg> 空く時間に行く</b>${hTop.map(({ k, b }) => `<p><b>${RIDES[k].short}</b>は${b.h}時台がいちばん空く（ふつう${b.med}分${b.noon - b.med >= 15 ? `・昼の13時ごろは${b.noon}分` : ""}${b.late ? `・受付の締め切りの見込み${hm(lastAt(k))}より前に並び始める` : ""}） <button type="button" class="linkbtn" data-bh="${k}">時間帯で見る</button></p>`).join("")}
@@ -3114,7 +3131,7 @@ function prepList(sim) {
   if (mon === 12 || mon <= 2) L.push(["before", "寒さ対策をしていく", "夜は0〜5℃くらいまで冷え、海風で体感はもっと寒くなります。2〜3時間の屋外の列や、ショーの場所取りは特に冷えるので、カイロ・手袋・ひざ掛けがあると楽"]);
   L.push(["before", "スマホの充電と、モバイルバッテリー", "待ち時間・DPA・モバイルオーダーで、一日中スマホを使います"]);
   if (S.entryMode === "after3" || S.entryMode === "after5") L.push(["before", "午後から入るチケットが買えたか確かめる", "混む日は発売されないことが多い"]);
-  const ent = S.entryMode === "dash" ? (c.lv >= 3 ? [`${hm(M.open - 150)}〜${hm(M.open - 120)}ごろに入口に並ぶ`, "開園ダッシュの予定です。ふつうの日でも開園の2時間前（7:00ごろ）までに並ぶ人が多く、フローズンのDPAを朝いちばんに買いたい人は6:30前後から。年末年始はもっと早い人もいます（castel の目安）"] : [`${hm(M.open - 120)}〜${hm(M.open - 90)}ごろに入口に並ぶ`, "開園ダッシュの予定です。開園の2時間前〜1時間半前に並ぶと前の方に入れます（castel の目安）"])
+  const ent = S.entryMode === "dash" ? (c.lv >= 3 ? [`${hm(M.open - 150)}〜${hm(M.open - 120)}ごろに入口に並ぶ`, "開園ダッシュの予定です。ふつうの日でも開園の2時間前（7:00ごろ）までに並ぶ人が多く、フローズンのDPAを朝いちばんに買いたい人は6:30前後から。年末年始はもっと早い人もいます（castel の目安）。予定の1つ目は列の先頭近くの待ち（35分ほど）で見ています。列の後ろのほうになったら、当日タブの「残りを組み直す」で"] : [`${hm(M.open - 120)}〜${hm(M.open - 90)}ごろに入口に並ぶ`, "開園ダッシュの予定です。開園の2時間前〜1時間半前に並ぶと前の方に入れます（castel の目安）。予定の1つ目は列の先頭近くの待ち（35分ほど）で見ています。列の後ろのほうになったら、当日タブの「残りを組み直す」で"])
     : S.entryMode === "happy" ? [`開園の5〜15分前（${hm(M.open - 15)}ごろ）に、ハッピーエントリーで入る`, "ディズニーホテルに泊まる人だけ（チェックイン日を除く）。何分前かは日によります"]
     : ["after3", "after5", "later"].includes(S.entryMode) ? [`${hm(entryAt())}に入園`, ""]
     : c.lv >= 3 ? [`${hm(M.open - 60)}ごろには入口に着く`, "混む日は入園の列に20〜40分かかることがあります。予定は開園15分後に園内に入る前提なので、遅れたら当日タブの「残りを組み直す」で"]
@@ -3198,9 +3215,9 @@ function renderPlanSide() {
   const sim = curSim(); renderSteps4(); lastShown = { end: sim.end, rides: sim.rides };
   renderPlanHero(sim);
   const fab = document.getElementById("fab");
-  fab.innerHTML = noPick() ? `<span>まだ何も選んでいません</span><span>選ぶ ↓</span>` : `<span>${sim.rides}個・並ぶ${dur(sim.waitTot)}・終わり${hm(sim.end)}</span><span>予定を見る ↓</span>`;
+  fab.innerHTML = noPick() ? `<span>まだ何も選んでいません</span><span>選ぶ ↓</span>` : `<span>${sim.rides}個・終わり${hm(sim.end)}<small>おすすめ・わんちゃん・待ち時間マップ</small></span><span>攻略プランへ ↑</span>`;
   fab.hidden = S.tab !== "plan";
-  fab.onclick = () => document.getElementById(noPick() ? "pickh" : "plansum").scrollIntoView({ behavior: "smooth", block: "start" });
+  fab.onclick = () => document.getElementById(noPick() ? "pickh" : "answer").scrollIntoView({ behavior: "smooth", block: "start" });
   const spd = { 0.8: "ゆっくり", 1: "ふつう", 1.25: "早歩き" };
   const firsts = S.sel.filter(k => avail(k, M.date) && RIDES[k].src !== "ticket" && RIDES[k].src !== "show");
   const ep = P().ep || {}, epKs = Object.keys(RIDES).filter(k => RIDES[k].dpa && avail(k, M.date) && (!RIDES[k].dpaFrom || M.date >= RIDES[k].dpaFrom)), epN = epKs.filter(k => ep[k] && S.sel.includes(k)).length, epNo = epKs.filter(k => ep[k] && S.sel.includes(k) && dpaChain().no.has(k)).length;
@@ -3238,8 +3255,7 @@ function renderPlanSide() {
   document.getElementById("c-auto").addEventListener("click", autoArrange);
   document.getElementById("epbox").addEventListener("toggle", e => (epOpen = e.target.open));
   document.querySelectorAll("#plansum [data-ep]").forEach(c => c.addEventListener("change", () => {
-    const k = c.dataset.ep, e2 = { ...(P().ep || {}) }; if (c.checked) { e2[k] = { at: null }; if (!S.sel.includes(k)) S.sel.push(k); } else delete e2[k]; P().ep = e2; save(); renderCards();
-    replan(c.checked ? `${RIDES[k].short}をプレミアアクセスにしました（待ち10分ほど）。買えたら利用時間も入れてください。` : `${RIDES[k].short}のプレミアアクセスを外しました。`);
+    setDPA(c.dataset.ep, c.checked);
   }));
   document.querySelectorAll("#plansum [data-ept]").forEach(c => c.addEventListener("change", () => {
     const k = c.dataset.ept, e2 = { ...(P().ep || {}) }; if (!e2[k]) return; e2[k] = { at: toMin(c.value) }; P().ep = e2; save();
