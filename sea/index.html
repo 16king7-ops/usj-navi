@@ -859,6 +859,7 @@ figure.amap svg { width: 100%; height: auto; border-radius: 18px; display: block
 .askb select { font: inherit; font-size: 13px; min-height: 44px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); padding: 0 12px; }
 .asksum { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; font-size: 13.5px; color: var(--ink-2); }
 .asksum .linkbtn { min-height: 32px; }
+.askst { font-size: 12.5px; color: var(--ink-2); }
 .minimap:empty { display: none; }
 .minimap { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 10px; }
 .mmh { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; }
@@ -1329,7 +1330,7 @@ html { scroll-padding-top: calc(var(--toph, 150px) + 8px); }
           <li><b>トイレ</b>：寄り道が一番少ない所を基本にします。</li>
           <li><b>プレミアアクセス</b>：買う乗り物は待ち10分ほど。利用時間が決まっていなければ、入園の30分後より後に入れます。去年の似た日での確かめでも同じに扱い、その日に早く受付が終わっていた乗り物だけは乗れなかったと数えます。</li>
         </ul>
-        <p>組み方は5つから選べます。「余裕を見る」は待ちを多めに、歩く時間を1.2倍＋2分で見積もり、受付は締め切りの見込みまでに並べばよいとします（「必ず」だけは45分前まで）。「確実」は締め切りの見込みの60分前までにし、似た日すべてで回れるまで減らします。「必ず最優先」は「必ず」に乗れる日が減らないところまでほかを減らします。「詰める」は待ちを多めでなくふつうの値で見て組みます（入園の列と歩く時間は余裕を見たまま）。「楽観」はふつうの日の値で、入園の列も歩く時間も余裕なしで組みます。</p>
+        <p>組み方は5つから選べます。はじめは「ふつう」：待ちは似た日のふつう（真ん中）の値、歩く時間は1.2倍＋2分、入園の列15分で見積もり、受付は締め切りの見込みまでに並べばよいとします（「必ず」だけは45分前まで）。「慎重」は待ちを多め（長めの日寄り）に見積もります。「確実」は締め切りの見込みの60分前までにし、似た日すべてで回れるまで減らします。「必ず最優先」は「必ず」に乗れる日が減らないところまでほかを減らします。「楽観」はふつうの値で、入園の列も歩く時間も余裕なしで組みます。当日は今の待ちで組み直すので、ずれてもそこで直せます。</p>
       </div></details>
 
       <details class="more"><summary>「この予定は信用できるか」の確かめ方</summary><div class="inner">
@@ -1499,7 +1500,7 @@ const TODAY = iso(new Date());
 const S = {
   date: store.get("date", null), sel: store.get("sel", null), must: store.get("must", null), showAt: store.get("showAt", {}),
   foods: store.get("foods", []), wc: store.get("wc", 1), entry: store.get("entry", 0), entryMode: store.get("entryMode", "open"), first: store.get("first", ""),
-  slack: store.get("slack", true), style: store.get("style", "normal"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
+  slack: store.get("slack", true), style: store.get("style", "lean"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
   lightLunch: store.get("lightLunch", false), mealAt: store.get("mealAt", {}), theme: "light", meals: store.get("meals", { lunch: true, dinner: true }),
   tab: "day", liveLoc: store.get("liveloc", null), fFrom: store.get("ffrom", null), free: store.get("free", {}), mo: store.get("mo", true), selBy: store.get("selBy", {}),
 };
@@ -1786,7 +1787,7 @@ function waitAt0(k, t) {
   const hw = (seen ? NC.h0 + NC.h1 * (1 - Math.exp(-h / NC.th)) : NC.hu) * (1 + NC.hl * Math.exp(-Math.max(0, (seen ? x.from : s.t1) - M.open) / NC.ts));
   return { med: Math.max(0, Math.exp(lm) - NC.c), p10: Math.max(0, Math.exp(lm - hw) - NC.c), p90: Math.max(0, Math.exp(lm + hw) - NC.c) };
 }
-// 組み方（S.style）: normal＝余裕を見る（ふつうと多めの中間）／sure＝確実（多めの値・似た日すべてで回れるまで減らす）
+// 組み方（S.style）: lean＝ふつう（待ちはふつうの値。はじめの値）／normal＝慎重（ふつうと多めの中間）／sure＝確実（多めの値・似た日すべてで回れるまで減らす）
 // 計画で見る「多め」: 予測の幅（p90）は正直な80%の範囲に広げたので、計画の控えめさは前と同じになるよう 0.32 を掛ける（前の上乗せ 平均12分 ÷ 今の 37分）
 const PK = 0.32, upper = w => w.med + PK * Math.max(0, w.p90 - w.med);
 // ディズニー・プレミアアクセス（DPA。P().ep = { 乗り物: { at: 利用時間の始まり or null } }。日付ごと）。専用の列なので待ちは10分ほどで見る
@@ -2650,13 +2651,14 @@ function replan(msg = "") {
 function ensureItems() { if (!P().items || !P().items.length) { const p = planRelax(planItems(), mustNow(), { first: S.first }); P().items = p ? p.order : []; lastMissed = p ? p.missed : []; save(); if (relaxNote && S.tab === "plan") toast("plantoast", relaxNote); } }
 function syncToggles() {}
 let ctrlOpen = false, epOpen = false;
-// 組み方ごとの中身（ボタンの下に出す）。受付の締め切りの見込み＝似た日の9割はこの時刻までまだ並べた
+// 組み方の名前と中身（ボタンの下に出す）。中の名前は lean＝ふつう、normal＝慎重（前は「余裕を見る」）。受付の締め切りの見込み＝似た日の9割はこの時刻までまだ並べた
+const STYLE_LABEL = { lean: "ふつう", normal: "慎重", sure: "確実", must: "必ず最優先", fast: "楽観" };
 const STYLE_NOTE = {
-  normal: "待ちは多め、歩く時間は1.2倍＋2分、入園の列15分で見積もり。受付は締め切りの見込みまでに並べばよい（「必ず」だけは外れないように45分前まで）",
-  sure: "待ちは多めの値で、受付は締め切りの見込みの60分前まで。似た日すべてで回れるまで減らす",
-  must: "「必ず」に乗れる日が減らないところまで、ほかを減らす（見積もりと締め切りは「余裕を見る」と同じ）",
-  lean: "待ちは多めでなく、ふつうの値で見積もり（歩く時間・入園の列・締め切りは「余裕を見る」と同じ）",
-  fast: "待ちも歩く時間もふつうの値、入園の列も見ない。受付は締め切りの見込みまで（「必ず」も）",
+  lean: "待ちは似た日のふつう（真ん中）の値、歩く時間は1.2倍＋2分、入園の列15分で見積もり。受付は締め切りの見込みまでに並べばよい（「必ず」だけは外れないように45分前まで）。待ちが長い日は、最後の1つが閉まることもあります",
+  normal: "待ちを多め（長めの日寄り）に見積もる。ほかは「ふつう」と同じ。予定どおり回れる日は多いけれど、乗れる数は少なめ",
+  sure: "待ちは多めの値で、受付は締め切りの見込みの60分前まで。似た日すべてで回れるまで減らす（乗れる数はいちばん少ない）",
+  must: "「必ず」に乗れる日が減らないところまで、ほかを減らす（待ちの見積もりは「慎重」と同じ）",
+  fast: "待ちも歩く時間もふつうの値で、入園の列も見ない。受付は締め切りの見込みまで（「必ず」も）。うまくいった日の目安",
 };
 const styleNow = () => (!S.slack ? "fast" : ["sure", "must", "lean"].includes(S.style) ? S.style : "normal");
 function autoArrange() {
@@ -2785,16 +2787,18 @@ function askSet(k, v) { store.set(askKey(), { ...(store.get(askKey(), {}) || {})
 function entryLabel() { return S.entryMode === "dash" ? `開園ダッシュ（${hm(M.open)}）` : S.entryMode === "happy" ? `ハッピーエントリー（${hm(M.open - 15)}）` : S.entryMode === "later" ? `${hm(entryAt())}に入園` : S.entryMode === "after3" || S.entryMode === "after5" ? `${hm(entryAt())}から（午後のチケット）` : `開園と同時（${hm(M.open)}）`; }
 function asksHTML() {
   const a = askState(), ep = Object.keys(P().ep || {}).filter(k => RIDES[k]);
-  const sum = `<span><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg> 入園：<b>${entryLabel()}</b></span><span><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> DPA：<b>${ep.length ? ep.map(k => RIDES[k].short).join("・") : a.dn ? "買わない" : "未定"}</b></span>`;
-  if (a.e && a.d) return `<div class="asksum">${sum}<button type="button" class="linkbtn" id="ask-redo">変える</button></div>`;
+  const sum = `<span><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M6 4v4' /> <path d='M6 12v8' /> <path d='M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M12 4v10' /> <path d='M12 18v2' /> <path d='M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M18 4v1' /> <path d='M18 9v11' /></svg> 組み方：<b>${STYLE_LABEL[styleNow()]}</b> <button type="button" class="linkbtn" data-ask-style="1">変える</button></span><span><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg> 入園：<b>${entryLabel()}</b></span><span><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> DPA：<b>${ep.length ? ep.map(k => RIDES[k].short).join("・") : a.dn ? "買わない" : "未定"}</b></span>`;
+  if (a.e && a.d) return `<div class="asksum">${sum}<button type="button" class="linkbtn" id="ask-redo">入園・DPAを変える</button></div>`;
   const laters = [30, 60, 90, 120, 180, 240].filter(m => M.open + m < M.close - 180);
   return `<div class="askcard"><b class="askh"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M6 4v4' /> <path d='M6 12v8' /> <path d='M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M12 4v10' /> <path d='M12 18v2' /> <path d='M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M18 4v1' /> <path d='M18 9v11' /></svg> あと${(!a.e) + (!a.d)}つ教えてください<small>入園の時刻とプレミアアクセスで、乗れる数が大きく変わります</small></b>
     ${a.e ? "" : `<div class="ask"><span class="askq">何時ごろ入園しますか？<small>今は「${entryLabel()}」で組んでいます</small></span><div class="askb">${[["open", `開園と同時 ${hm(M.open)}`], ["dash", `開園前から並ぶ`], ["happy", `ホテル泊（${hm(M.open - 15)}）`]].map(([v, t]) => `<button type="button" class="btn small${S.entryMode === v ? " on" : ""}" data-ask-e="${v}">${t}</button>`).join("")}<select id="ask-later" aria-label="遅れて入る時刻"><option value="">遅れて入る…</option>${laters.map(m => `<option value="${m}"${S.entryMode === "later" && S.entry === m ? " selected" : ""}>${hm(M.open + m)}ごろ</option>`).join("")}</select></div></div>`}
     ${a.d ? "" : `<div class="ask"><span class="askq">プレミアアクセス（有料・1つ2,000〜2,500円）を買いますか？<small>並ばずに乗れる。どれを買うと一番効くかは試算しています</small></span><div class="askb"><button type="button" class="btn small primary" data-ask-d="buy" id="ask-buy">${boostRes && boostRes.best ? `買う（${boostRes.best.ep.map(k => RIDES[k].short).join("・")}・${boostRes.best.cost.toLocaleString()}円で組む）` : "買う（おすすめで組む）"}</button><button type="button" class="btn small" data-ask-d="see">どれが効くか見る</button><button type="button" class="btn small" data-ask-d="no">買わない</button></div></div>`}
+    <p class="askst">組み方は「<b>${STYLE_LABEL[styleNow()]}</b>」（${STYLE_NOTE[styleNow()].split("。")[0]}）。 <button type="button" class="linkbtn" data-ask-style="1">組み方を変える</button></p>
   </div>`;
 }
 function wireAsks() {
   const box = document.getElementById("asks"); if (!box) return;
+  box.querySelectorAll("[data-ask-style]").forEach(b => b.addEventListener("click", () => { const q = document.getElementById("plansum"); if (q) q.scrollIntoView({ behavior: "smooth", block: "start" }); }));
   const r = document.getElementById("ask-redo"); if (r) r.onclick = () => { store.set(askKey(), {}); box.innerHTML = asksHTML(); wireAsks(); };
   box.querySelectorAll("[data-ask-e]").forEach(b => b.addEventListener("click", () => { askSet("e", 1); S.entryMode = b.dataset.askE; save(); vSig = ""; replan(`入園を「${entryLabel()}」にして組み直しました。`); }));
   const sl = document.getElementById("ask-later"); if (sl) sl.addEventListener("change", () => { if (!sl.value) return; askSet("e", 1); S.entryMode = "later"; S.entry = +sl.value; save(); vSig = ""; replan(`入園を${hm(entryAt())}にして組み直しました。`); });
@@ -2961,9 +2965,9 @@ function paintBoost(res) {
       <button type="button" class="btn primary" data-bo="dpa">このDPAで組む</button></div>`
     : !res.ranked && !res.done ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス（有料）</b><p class="note">どれを買うと一番効くか試算しています…（${res.dpa.length}通り）</p></div></div>`
     : res.dpa.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス</b><p class="note">${miss ? "DPAを買っても、入りきらないものは増えない見込みです（売り切れの目安・時刻の決まった予定のため）。" : "この予定では、DPAを買っても並ぶ時間はあまり減らない見込みです。"}</p></div></div>` : "";
-  const f = res.fast, tr = t ? t.refs : null, fastRow = f && !f.none && f.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M4 17l5 1l.75 -1.5' /> <path d='M15 21l0 -4l-4 -3l1 -6' /> <path d='M7 12l0 -3l5 -1l3 3l3 1' /></svg> 詰めて組む</b><p>待ちを多めでなく「ふつう」の値で見て組むと → <b>${f.rides}個</b>（+${f.rides - res.cur}個）${f.allIn ? "・選んだものが全部入る" : ""}${lostT(f)}。入園の列と歩く時間は、今の予定と同じに見ています</p>
-      <p class="note">似た日${f.rate.n}日の待ちで回すと、${mustNow().length ? `「必ず」を全部回れたのは<b>${f.rate.must}日</b>・` : ""}予定を全部回れたのは<b>${f.rate.ok}日</b>・平均${f.rate.avg.toFixed(1)}個${tr ? `（今の予定は${mustNow().length ? `「必ず」${tr.must}日・` : ""}全部${tr.ok}日・平均${tr.avg.toFixed(1)}個）` : ""}。${f.last ? `去年の${md(f.last.d)}の実際の待ちなら${f.last.ok ? "全部回れます" : `${f.last.miss.length ? nm(f.last.miss) : "一部"}は回れません`}。` : ""}詰めるぶん、待ちが長い日は最後の1つが閉まります</p></div>
-      <button type="button" class="btn" data-bo="fast">詰めて組む</button></div>` : "";
+  const f = res.fast, tr = t ? t.refs : null, fastRow = f && !f.none && f.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M4 17l5 1l.75 -1.5' /> <path d='M15 21l0 -4l-4 -3l1 -6' /> <path d='M7 12l0 -3l5 -1l3 3l3 1' /></svg> 「ふつう」で組む</b><p>待ちを多めでなく、似た日のふつうの値で見て組むと → <b>${f.rides}個</b>（+${f.rides - res.cur}個）${f.allIn ? "・選んだものが全部入る" : ""}${lostT(f)}。入園の列と歩く時間は、今の予定と同じに見ています</p>
+      <p class="note">似た日${f.rate.n}日の待ちで回すと、${mustNow().length ? `「必ず」を全部回れたのは<b>${f.rate.must}日</b>・` : ""}予定を全部回れたのは<b>${f.rate.ok}日</b>・平均${f.rate.avg.toFixed(1)}個${tr ? `（今の予定は${mustNow().length ? `「必ず」${tr.must}日・` : ""}全部${tr.ok}日・平均${tr.avg.toFixed(1)}個）` : ""}。${f.last ? `去年の${md(f.last.d)}の実際の待ちなら${f.last.ok ? "全部回れます" : `${f.last.miss.length ? nm(f.last.miss) : "一部"}は回れません`}。` : ""}待ちをふつうの値で見るぶん、待ちが長い日は最後の1つが閉まることがあります</p></div>
+      <button type="button" class="btn" data-bo="fast">「ふつう」で組む</button></div>` : "";
   const d = res.dash, dashRow = d && !d.none && d.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg> 開園前から並ぶ（開園ダッシュ）</b><p>開園と同時に入ると → <b>${d.rides}個</b>（+${d.rides - res.cur}個）${lostT(d)}${M.crowd.lv >= 3 ? "。混む日は開園の2時間前ごろから並ぶ目安" : ""}</p><p class="note">開園直後の待ちは、記録の最初の表示（開園15分後）から推した目安です</p></div>
       <button type="button" class="btn" data-bo="dash">開園ダッシュで組む</button></div>` : "";
   const hs = (res.hours || []).slice().sort((a, b) => (RIDES[b.k].w || 0) * (b.b.noon - b.b.med) - (RIDES[a.k].w || 0) * (a.b.noon - a.b.med)), hTop = hs.slice(0, 3);
@@ -2974,16 +2978,16 @@ function paintBoost(res) {
     const pa = best ? `有料のプレミアアクセス（${nm(best.ep)}・${best.cost.toLocaleString()}円/人）` : "";
     const main = miss ? (best ? `入りきらないもの<b>${res.missK.length}個</b>。<b>おすすめ</b>：${pa}を使えば、${best.allIn ? "<b>選んだものが全部入ります</b>" : `<b>${best.rides}個</b>まで入ります（今は${res.cur}個）`}` : `入りきらないもの<b>${res.missK.length}個</b>。${res.done ? "入れる方法は下に" : "入れる方法を試算中…"}`)
       : best ? `<b>おすすめ</b>：${pa}で、並ぶ時間が<b>${dur(res.curWait - best.wait)}短く</b>なります` : "";
-    const sub = [fz ? `詰めて組むと${fz.rides}個（似た日${fz.rate.n}日で${mustNow().length ? `「必ず」を全部回れたのは${fz.rate.must}日` : `全部回れたのは${fz.rate.ok}日`}）` : "", dz ? `開園ダッシュで${dz.rides}個` : ""].filter(Boolean);
+    const sub = [fz ? `「ふつう」で組むと${fz.rides}個（似た日${fz.rate.n}日で${mustNow().length ? `「必ず」を全部回れたのは${fz.rate.must}日` : `全部回れたのは${fz.rate.ok}日`}）` : "", dz ? `開園ダッシュで${dz.rides}個` : ""].filter(Boolean);
     tz.hidden = !main;
     tz.innerHTML = main ? `<div class="tzt"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> <span>${main}${sub.length ? `<small>ほかに：${sub.join("・")}</small>` : ""}</span></div><div class="tzb">${best ? `<button type="button" class="btn primary small" data-bo="dpa">このDPAで組む</button>` : ""}<button type="button" class="btn small" id="tz-more">${miss ? "ほかの方法・くわしく" : "くわしく"} ↓</button></div>` : "";
     const tm = document.getElementById("tz-more"); if (tm) tm.onclick = () => box.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  box.innerHTML = `<div class="boosth"><b>${miss ? `入りきらなかったもの ${res.missK.length}個（${nm(res.missK.slice(0, 3))}${res.missK.length > 3 ? " ほか" : ""}）` : "もっと楽に回るには"}</b><span class="note">${miss ? "こうすれば乗れるか" : "DPAを使った場合など"}を試算しました（押すまで予定は変わりません）${res.done ? "" : "… 試算中"}</span></div>${dpaRow}${fastRow || dashRow || hrRow ? `<details class="more bmore"${miss ? " open" : ""}><summary>ほかの方法（${[fastRow ? "詰めて組む" : "", dashRow ? "開園ダッシュ" : "", hrRow ? "空く時間" : ""].filter(Boolean).join("・")}）</summary><div class="inner">${fastRow}${dashRow}${hrRow}</div></details>` : ""}`;
+  box.innerHTML = `<div class="boosth"><b>${miss ? `入りきらなかったもの ${res.missK.length}個（${nm(res.missK.slice(0, 3))}${res.missK.length > 3 ? " ほか" : ""}）` : "もっと楽に回るには"}</b><span class="note">${miss ? "こうすれば乗れるか" : "DPAを使った場合など"}を試算しました（押すまで予定は変わりません）${res.done ? "" : "… 試算中"}</span></div>${dpaRow}${fastRow || dashRow || hrRow ? `<details class="more bmore"${miss ? " open" : ""}><summary>ほかの方法（${[fastRow ? "「ふつう」で組む" : "", dashRow ? "開園ダッシュ" : "", hrRow ? "空く時間" : ""].filter(Boolean).join("・")}）</summary><div class="inner">${fastRow}${dashRow}${hrRow}</div></details>` : ""}`;
   [box, tz].filter(Boolean).forEach(el => el.querySelectorAll("[data-bo]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.bo;
     if (k === "dpa" && best) { askSet("d", 1); applyDPA(best); }
-    if (k === "fast") { S.slack = true; S.style = "lean"; save(); vSig = ""; replan("詰めて組みました（待ちを多めでなく、ふつうの値で見ています）。待ちが長い日は、最後の予定が閉まることがあります（当日は今の待ちで組み直してください）。"); }
+    if (k === "fast") { S.slack = true; S.style = "lean"; save(); vSig = ""; replan("「ふつう」の組み方にしました（待ちは似た日のふつうの値）。待ちが長い日は、最後の予定が閉まることがあります（当日は今の待ちで組み直してください）。"); }
     if (k === "dash") { askSet("e", 1); S.entryMode = "dash"; save(); vSig = ""; replan("開園ダッシュ（開園前から並んで、開園と同時に入る）で組み直しました。"); }
   })));
   box.querySelectorAll("[data-bh]").forEach(b => b.addEventListener("click", () => { focusK = b.dataset.bh; setTab("hours"); setTimeout(() => { renderDetail(); const de = document.getElementById("detail"); if (de) de.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); }));
@@ -3186,8 +3190,8 @@ function renderPlanSide() {
   const epCost = epKs.filter(k => ep[k] && S.sel.includes(k) && !dpaChain().no.has(k)).reduce((a, k) => a + RIDES[k].dpa, 0), off = isOff(M.date);
   const ENTRY = [["open", `開園と同時（${hm(M.open)}）`], ["dash", `開園ダッシュ（開園前から並んで${hm(M.open)}にすぐ入る${M.crowd.lv >= 3 ? "。混む日は1時間半〜2時間前から並ぶ" : ""}）`], ["happy", `ハッピーエントリー（${hm(M.open - 15)}・ディズニーホテルに泊まる人）`], ["later", "開園のあと"], ...(off ? [["after3", `アーリーイブニングパスポート（15:00）${M.crowd.lv >= 3 ? "・混む日は発売されないことが多い" : ""}`]] : [["after5", `ウィークナイトパスポート（17:00）${M.crowd.lv >= 3 ? "・混む日は発売されないことが多い" : ""}`]])];
   const entN = { open: "開園と同時", dash: "開園ダッシュ", happy: "ハッピーエントリー", later: `${hm(entryAt())}`, after3: "15時（アーリーイブニング）", after5: "17時（ウィークナイト）" }[S.entryMode] || "開園と同時";
-  const wxN = { 晴: "晴れ", 時雨: "時々雨", 後雨: "のち雨", 雨: "雨" }[(S.wx || {})[S.date]], stN = { normal: "余裕を見る", sure: "確実", must: "必ず最優先", lean: "詰める", fast: "楽観" }[styleNow()];
-  document.getElementById("plansum").innerHTML = (noPick() ? `<p class="note">乗りたいものを選ぶと、ここに回れる数・並ぶ時間・1日の流れが出ます。</p>` : statsHTML(sim) + barHTML(sim)) + `<div class="quickset"><div><b>組み方</b><span class="seg">${[["normal", "余裕を見る"], ["sure", "確実"], ["must", "必ず最優先"], ["lean", "詰める"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span><small class="stylenote">${STYLE_NOTE[styleNow()]}</small></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
+  const wxN = { 晴: "晴れ", 時雨: "時々雨", 後雨: "のち雨", 雨: "雨" }[(S.wx || {})[S.date]], stN = STYLE_LABEL[styleNow()];
+  document.getElementById("plansum").innerHTML = (noPick() ? `<p class="note">乗りたいものを選ぶと、ここに回れる数・並ぶ時間・1日の流れが出ます。</p>` : statsHTML(sim) + barHTML(sim)) + `<div class="quickset"><div><b>組み方</b><span class="seg">${[["lean", "ふつう"], ["normal", "慎重"], ["sure", "確実"], ["must", "必ず最優先"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span><small class="stylenote">${STYLE_NOTE[styleNow()]}</small></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
     <details class="ctrlbox"${ctrlOpen ? " open" : ""}><summary><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M6 4v4' /> <path d='M6 12v8' /> <path d='M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M12 4v10' /> <path d='M12 18v2' /> <path d='M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M18 4v1' /> <path d='M18 9v11' /></svg> 入園：${entN}${P().leave ? `・<b>帰る ${hm(P().leave)}</b>（当日の画面で設定）` : ""}・天気${wxN || "未入力"}${S.first ? `・最初に${RIDES[S.first] ? RIDES[S.first].short : ""}` : ""}</summary><div class="ctrls">
       <label>入園 <select id="c-emode">${ENTRY.map(([v, t]) => `<option value="${v}"${v === S.entryMode ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       ${S.entryMode === "later" ? `<label>入る時刻 <select id="c-entry">${[15, 30, 45, 60, 90, 120, 180, 240].map(m => `<option value="${m}"${m === S.entry ? " selected" : ""}>${hm(M.open + m)}</option>`).join("")}</select></label>` : ""}
@@ -3207,7 +3211,7 @@ function renderPlanSide() {
   document.querySelectorAll("#plansum [data-qs]").forEach(b => b.addEventListener("click", () => setStyle(b.dataset.qs)));
   document.querySelectorAll("#plansum [data-qw]").forEach(b => b.addEventListener("click", () => setSpeed(+b.dataset.qw)));
   function setStyle(v) { S.slack = v !== "fast"; S.style = v === "fast" ? "normal" : v; save();
-    replan({ normal: "余裕を見た組み方にしました（待ちは多め・歩く時間は1.2倍＋2分。受付は締め切りの見込みまで、「必ず」だけ45分前まで）。", sure: "確実な組み方にしました（待ちは多めの値で見積もり、去年の似た日すべてで回れるまで減らします）。", must: "「必ずを最優先」の組み方にしました（「必ず」に乗れる日が減らないところまで、ほかを減らします）。", lean: "詰めて組みました（待ちを多めでなく、ふつうの値で見ています。入園の列と歩く時間は余裕を見たまま）。", fast: "ふつうの日の値で組みました（楽観的）。" }[v]);
+    replan({ normal: "慎重な組み方にしました（待ちを多めに見積もります。予定どおり回れる日は多いけれど、乗れる数は少なめ）。", sure: "確実な組み方にしました（待ちは多めの値で見積もり、去年の似た日すべてで回れるまで減らします）。", must: "「必ずを最優先」の組み方にしました（「必ず」に乗れる日が減らないところまで、ほかを減らします）。", lean: "ふつうの組み方にしました（待ちは似た日のふつうの値。待ちが長い日は、最後の1つが閉まることもあります）。", fast: "ふつうの日の値で組みました（楽観的）。" }[v]);
   }
   function setSpeed(v) { const before = curSim(); S.speed = v; save(); renderPlanSide(); const after = curSim(); toast("plantoast", `歩く速さを「${spd[S.speed]}」にしました。終わり ${hm(before.end)} → ${hm(after.end)}。`); vSig = ""; renderVerdict(after); }
   document.getElementById("c-emode").addEventListener("change", e => { S.entryMode = e.target.value; if (S.entryMode === "later" && !S.entry) S.entry = 30; save(); vSig = ""; replan(`入園を「${e.target.selectedOptions[0].textContent}」にしました。`); });
@@ -5132,6 +5136,7 @@ document.querySelectorAll(".tabhero[data-ph]").forEach(el => {
 document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-gotab]"); if (!b) return; setTab(b.dataset.gotab); window.scrollTo({ top: 0 }); });
 // ================= 起動 =================
 if (!S.date || S.date < TODAY) S.date = TODAY;
+if (!store.get("styleV", 0)) { if (S.style === "normal") S.style = "lean"; Object.values(S.selBy || {}).forEach(v => { if (v && v.style === "normal") v.style = "lean"; }); store.set("styleV", 2); save(); }
 const h0 = location.hash.slice(1), sh0 = readShare(h0), d0 = S.date;
 const toToday = !sh0 && d0 !== TODAY && !!((((S.plans || {})[TODAY] || {}).items || []).length || (((S.selBy || {})[TODAY] || {}).sel || []).length);
 setDate(toToday ? TODAY : S.date);
