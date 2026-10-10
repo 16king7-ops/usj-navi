@@ -1319,13 +1319,13 @@ html { scroll-padding-top: calc(var(--toph, 150px) + 8px); }
         <ul>
           <li><b>その時刻の待ち</b>：30分きざみの予測。開園直後の伸び方も入れています。</li>
           <li><b>歩く時間</b>：OpenStreetMap の園内の通路から、乗り物どうしの最短の道のりを出しています（分速70m＋1分）。</li>
-          <li><b>受付の締め切り</b>：似た日の9割の日でまだ並べた時刻です。締め切りの60分前からは、間際ほど避けます。</li>
+          <li><b>受付の締め切り</b>：似た日の9割の日でまだ並べた時刻です。予定は、この時刻までに並び始めれば入れます（「必ず」だけは45分前まで。似た日で確かめると、それより詰めると「必ず」に乗れない日が出たため）。締め切りの60分前からは、ほかに空いている時間があれば間際を避けます。</li>
           <li><b>ショー</b>：選んだ回の開演に間に合うように、場所取りの時間（ビリーヴは30分前など）も入れます。</li>
           <li><b>ごはん</b>：昼（11時〜13時半）と夜（17時〜19時半）の枠で、その時いる場所から近くて空いている店に寄ります（予約がおすすめの店はおまかせでは選びません）。</li>
           <li><b>トイレ</b>：寄り道が一番少ない所を基本にします。</li>
           <li><b>プレミアアクセス</b>：買う乗り物は待ち10分ほど。利用時間が決まっていなければ、入園の30分後より後に入れます。去年の似た日での確かめでも同じに扱い、その日に早く受付が終わっていた乗り物だけは乗れなかったと数えます。</li>
         </ul>
-        <p>組み方は5つから選べます。「余裕を見る」は待ちを多めに、歩く時間を1.2倍＋2分で見積もります。「確実」は似た日すべてで回れるまで減らします。「必ず最優先」は「必ず」に乗れる日が減らないところまでほかを減らします。「詰める」は待ちをふつうの値で見て、受付の締め切りの近く（「必ず」は45分前・ほかは20分前）まで使います（入園の列と歩く時間は余裕を見たまま）。「楽観」はふつうの日の値で、入園の列も歩く時間も余裕なしで組みます。</p>
+        <p>組み方は5つから選べます。「余裕を見る」は待ちを多めに、歩く時間を1.2倍＋2分で見積もります。「確実」は似た日すべてで回れるまで減らします。「必ず最優先」は「必ず」に乗れる日が減らないところまでほかを減らします。「詰める」は待ちを多めでなくふつうの値で見て組みます（入園の列と歩く時間は余裕を見たまま）。「楽観」はふつうの日の値で、入園の列も歩く時間も余裕なしで組みます。</p>
       </div></details>
 
       <details class="more"><summary>「この予定は信用できるか」の確かめ方</summary><div class="inner">
@@ -1666,7 +1666,7 @@ const pct = (v, p) => v[Math.min(v.length - 1, Math.max(0, Math.round((v.length 
 const fromDay = d => d >= "2025-09-05" && d <= "2025-11-03";
 // 閉園が行く日より早かった日は、乗り物も閉園につられて早く終わっただけ。受付終了を閉園の差だけ後ろにずらす（閉園の1時間前より後に終わった日だけ。イベントで夕方に終わる乗り物はそのまま）
 const closeShift = (x, last, close) => Math.min(close, x.c && x.c < close && last >= x.c - 60 && last <= x.c ? last + (close - x.c) : last);  // 閉園のあとまで記録がある日（貸切の夜など）はずらさない。どの日も行く日の閉園まで
-let CUT_SLACK = 45, CUT_SURE = 60, CUT_Q = 0.1, CUT_NEAR = 20;  // CUT_NEAR: 時刻の決まった予定（ショー・DPA の時刻）や今の時刻から60分以内は、遅れがたまっていないので締め切りの20分前まで使う  // 受付の締め切り: 似た日の何割で表示が終わっていた時刻を締め切りとみるか（CUT_Q）、その何分前までに並び始める計画にするか（余裕を見る／確実）
+let CUT_SLACK = 0, CUT_MUST = 45, CUT_SURE = 60, CUT_Q = 0.1, CUT_NEAR = 20;  // 受付の締め切り（lastAt）は「似た日の9割はこの時刻まで並べた」（CUT_Q）。「必ず」以外はそれまでに着けばよい（CUT_SLACK=0）。「必ず」は外れると困るので CUT_MUST 分前まで（ただし時刻の決まった予定や今の時刻から60分以内は CUT_NEAR 分前まで）。「確実」は CUT_SURE 分前
 const AVG_MED = medOf(DAYS.filter(x => x.avg).map(x => x.avg));  // 記録の日の、日平均の中央値
 function buildModel(date) {
   const c = crowd(date), refs = c.refs, typ = typOf(date), [open, close] = hoursOf(date), sh = open - 480;
@@ -1938,8 +1938,8 @@ function taskOf(it) {
     let open = openAt(k), last = lastAt(k);
     if (it.pin != null) { open = it.pin; last = epOf(k) && r.src !== "show" ? (it.orig ?? it.pin) + dpaGrace() : it.pin; }  // DPA は利用時間（60分）の中なら間に合う
     if (it.pin == null && epOf(k) && r.src !== "show") open = Math.max(open, (dpaChain().at[k] ?? entryAt()) + 30);
-    const lastP = S.slack && r.src !== "ticket" && r.src !== "show" && it.pin == null ? last - (S.style === "sure" ? CUT_SURE : S.style === "lean" && !S.must.includes(k) ? 20 : CUT_SLACK) : last;
-    const lastA = lastP < last && S.style !== "sure" ? Math.max(lastP, last - CUT_NEAR) : lastP;  // ビリーヴのすぐあとのシンドバッドなど（「確実」は今までどおり）  // lean は「必ず」以外は締め切りの20分前まで使う
+    const lastP = S.slack && r.src !== "ticket" && r.src !== "show" && it.pin == null ? last - (S.style === "sure" ? CUT_SURE : S.must.includes(k) ? CUT_MUST : CUT_SLACK) : last;
+    const lastA = lastP < last && S.style !== "sure" ? Math.max(lastP, last - CUT_NEAR) : lastP;  // ビリーヴのすぐあとの「必ず」など（「確実」は今までどおり）
     if (r.src === "show") {
       // ショーは場所取りの始まり（open）に着いて、開演＋上演時間に終わる。閉園前に始まるなら終わりが閉園を越えてもよい（帰る時刻を決めたときは、それまでに終わる）
       const st = showTime(k); open = last = Math.min(open, st);
@@ -2947,7 +2947,7 @@ function paintBoost(res) {
       <button type="button" class="btn primary" data-bo="dpa">このDPAで組む</button></div>`
     : !res.ranked && !res.done ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス（有料）</b><p class="note">どれを買うと一番効くか試算しています…（${res.dpa.length}通り）</p></div></div>`
     : res.dpa.length ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセス</b><p class="note">${miss ? "DPAを買っても、入りきらないものは増えない見込みです（売り切れの目安・時刻の決まった予定のため）。" : "この予定では、DPAを買っても並ぶ時間はあまり減らない見込みです。"}</p></div></div>` : "";
-  const f = res.fast, tr = t ? t.refs : null, fastRow = f && !f.none && f.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M4 17l5 1l.75 -1.5' /> <path d='M15 21l0 -4l-4 -3l1 -6' /> <path d='M7 12l0 -3l5 -1l3 3l3 1' /></svg> 詰めて組む</b><p>待ちを多めでなく「ふつう」の値で見て、受付の締め切り（「必ず」は45分前・ほかは20分前）まで使うと → <b>${f.rides}個</b>（+${f.rides - res.cur}個）${f.allIn ? "・選んだものが全部入る" : ""}${lostT(f)}。入園の列と歩く時間は、今の予定と同じに見ています</p>
+  const f = res.fast, tr = t ? t.refs : null, fastRow = f && !f.none && f.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M4 17l5 1l.75 -1.5' /> <path d='M15 21l0 -4l-4 -3l1 -6' /> <path d='M7 12l0 -3l5 -1l3 3l3 1' /></svg> 詰めて組む</b><p>待ちを多めでなく「ふつう」の値で見て組むと → <b>${f.rides}個</b>（+${f.rides - res.cur}個）${f.allIn ? "・選んだものが全部入る" : ""}${lostT(f)}。入園の列と歩く時間は、今の予定と同じに見ています</p>
       <p class="note">似た日${f.rate.n}日の待ちで回すと、${mustNow().length ? `「必ず」を全部回れたのは<b>${f.rate.must}日</b>・` : ""}予定を全部回れたのは<b>${f.rate.ok}日</b>・平均${f.rate.avg.toFixed(1)}個${tr ? `（今の予定は${mustNow().length ? `「必ず」${tr.must}日・` : ""}全部${tr.ok}日・平均${tr.avg.toFixed(1)}個）` : ""}。${f.last ? `去年の${md(f.last.d)}の実際の待ちなら${f.last.ok ? "全部回れます" : `${f.last.miss.length ? nm(f.last.miss) : "一部"}は回れません`}。` : ""}詰めるぶん、待ちが長い日は最後の1つが閉まります</p></div>
       <button type="button" class="btn" data-bo="fast">詰めて組む</button></div>` : "";
   const d = res.dash, dashRow = d && !d.none && d.rides > res.cur ? `<div class="bopt"><div><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg> 開園前から並ぶ（開園ダッシュ）</b><p>開園と同時に入ると → <b>${d.rides}個</b>（+${d.rides - res.cur}個）${lostT(d)}${M.crowd.lv >= 3 ? "。混む日は開園の2時間前ごろから並ぶ目安" : ""}</p><p class="note">開園直後の待ちは、記録の最初の表示（開園15分後）から推した目安です</p></div>
@@ -2969,7 +2969,7 @@ function paintBoost(res) {
   [box, tz].filter(Boolean).forEach(el => el.querySelectorAll("[data-bo]").forEach(b => b.addEventListener("click", () => {
     const k = b.dataset.bo;
     if (k === "dpa" && best) { askSet("d", 1); applyDPA(best); }
-    if (k === "fast") { S.slack = true; S.style = "lean"; save(); vSig = ""; replan("詰めて組みました（待ちはふつうの値、締め切りは「必ず」45分前・ほか20分前まで）。待ちが長い日は、最後の予定が閉まることがあります（当日は今の待ちで組み直してください）。"); }
+    if (k === "fast") { S.slack = true; S.style = "lean"; save(); vSig = ""; replan("詰めて組みました（待ちを多めでなく、ふつうの値で見ています）。待ちが長い日は、最後の予定が閉まることがあります（当日は今の待ちで組み直してください）。"); }
     if (k === "dash") { askSet("e", 1); S.entryMode = "dash"; save(); vSig = ""; replan("開園ダッシュ（開園前から並んで、開園と同時に入る）で組み直しました。"); }
   })));
   box.querySelectorAll("[data-bh]").forEach(b => b.addEventListener("click", () => { focusK = b.dataset.bh; setTab("hours"); setTimeout(() => { renderDetail(); const de = document.getElementById("detail"); if (de) de.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); }));
@@ -3193,7 +3193,7 @@ function renderPlanSide() {
   document.querySelectorAll("#plansum [data-qs]").forEach(b => b.addEventListener("click", () => setStyle(b.dataset.qs)));
   document.querySelectorAll("#plansum [data-qw]").forEach(b => b.addEventListener("click", () => setSpeed(+b.dataset.qw)));
   function setStyle(v) { S.slack = v !== "fast"; S.style = v === "fast" ? "normal" : v; save();
-    replan({ normal: "余裕を見た組み方にしました。", sure: "確実な組み方にしました（待ちは多めの値で見積もり、去年の似た日すべてで回れるまで減らします）。", must: "「必ずを最優先」の組み方にしました（「必ず」に乗れる日が減らないところまで、ほかを減らします）。", lean: "詰めて組みました（待ちはふつうの値・受付の締め切りは「必ず」45分前、ほかは20分前まで使う。入園の列と歩く時間は余裕を見たまま）。", fast: "ふつうの日の値で組みました（楽観的）。" }[v]);
+    replan({ normal: "余裕を見た組み方にしました。", sure: "確実な組み方にしました（待ちは多めの値で見積もり、去年の似た日すべてで回れるまで減らします）。", must: "「必ずを最優先」の組み方にしました（「必ず」に乗れる日が減らないところまで、ほかを減らします）。", lean: "詰めて組みました（待ちを多めでなく、ふつうの値で見ています。入園の列と歩く時間は余裕を見たまま）。", fast: "ふつうの日の値で組みました（楽観的）。" }[v]);
   }
   function setSpeed(v) { const before = curSim(); S.speed = v; save(); renderPlanSide(); const after = curSim(); toast("plantoast", `歩く速さを「${spd[S.speed]}」にしました。終わり ${hm(before.end)} → ${hm(after.end)}。`); vSig = ""; renderVerdict(after); }
   document.getElementById("c-emode").addEventListener("change", e => { S.entryMode = e.target.value; if (S.entryMode === "later" && !S.entry) S.entry = 30; save(); vSig = ""; replan(`入園を「${e.target.selectedOptions[0].textContent}」にしました。`); });
@@ -3929,9 +3929,12 @@ function liveSim() { return simulate(liveRest(), { start: liveStart(), loc: live
 // 当日の変更は、前の状態を残して「元に戻す」で戻せる
 const liveSnap = () => JSON.stringify({ items: P().items, done: P().done, over: P().over, closed: P().closed || {}, opened: P().opened || {}, live: P().live, upd: P().updSrc || null, leave: P().leave ?? null, sel: S.sel, busy: P().busy || null, ack: P().ack || {} });
 function liveRestore(js) { const o = JSON.parse(js), pl = P(); Object.assign(pl, { items: o.items, done: o.done, over: o.over, closed: o.closed, opened: o.opened, live: o.live, updSrc: o.upd, leave: o.leave, busy: o.busy || null, ack: o.ack || {} }); S.sel = o.sel; save(); chCache = null; renderLiveTL(); }
+// 「元に戻す」は、そのあとに予定・済んだ印・休止・帰る時刻が変わっていたら使わない（戻すと、そのあとの操作まで消えるため）
+const undoSig = () => JSON.stringify([(P().items || []).map(x => x.id), P().done, P().closed || {}, P().leave ?? null]);
 function undoToast(html, snap) {
   toast("livetoast", `${html} <button type="button" class="btn small" id="liveundo">元に戻す</button>`);
-  document.getElementById("liveundo").addEventListener("click", () => { liveRestore(snap); toast("livetoast", "元に戻しました。"); });
+  const sig = undoSig();
+  document.getElementById("liveundo").addEventListener("click", () => { if (undoSig() !== sig) { toast("livetoast", "このあとに予定や済んだ印が変わったので、元に戻せません（戻すと、そのあとの操作も消えるため）。"); return; } liveRestore(snap); toast("livetoast", "元に戻しました。"); });
 }
 const endTxt = t => (t > M.close + 30 ? "閉園後（入りきらない）" : hm(t));
 // 変更の前と後: 終わり・乗れる数・並ぶ合計と、時刻が10分以上動いたもの・入ったもの・外れたもの
