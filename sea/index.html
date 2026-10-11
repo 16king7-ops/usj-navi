@@ -3183,6 +3183,9 @@ function renderBoost(sim) {
   paintBoost(res); setTimeout(step, 0);
 }
 // ===== この予定の手ごたえ（点数と一言）=====
+//  点数の答え合わせ（2025/10〜2026/10、前日までの記録で予定と点数を作り、その日の実際の待ちで回す。4種類の選び方×毎日＝1,496件）:
+//   80〜 534件 実際91%（平均89点）/ 70〜79 267件 78% / 55〜69 366件 66% / 〜54 329件 53%。点数≒全部回れる見込み。
+//   ほかの重み（ふつうだけ・1割だけ・厳しめ多め等）と比べ、Brier 0.173 で一番よく、AUC 0.73 も最上位と同じ（scratchpad の score_calib.cjs・calib_analyze.cjs）
 //  区切りは日本の点数の感覚に合わせる（ユーザー: 80点からがいい感じ、60点は赤点ぎりぎり回避）: 80〜◎ 70〜○ 55〜△ それ未満✕
 //  点数 = 似た日で全部回れた割合×50 ＋ 1割混んでも×30 ＋ 厳しめ（歩く1.4倍＋3分・列1.5倍・入園15分遅れ）でも×20。
 //  作った日で確かめるので「ふつう」だけだと甘い（ほぼ100点になった）。厳しめを混ぜて、予定ごとの差が出るようにしたそこに予定の特徴（早歩き・DPAの早い枠・ショー前がぎりぎり）を一言添える
@@ -3230,7 +3233,7 @@ function verdictHTML(res) {
   const v = verdictOf(res); if (!v) return "";
   return `<div class="verdict v-${v.g.k}"><div class="vd-l"><span class="vd-mark" aria-hidden="true">${v.g.mark}</span><span class="vd-sc"><small>手ごたえ</small><b>${v.sc}</b><small>点</small></span></div>
     <div class="vd-r"><b class="vd-h">${v.g.h}</b><p>${v.g.m}</p>${v.adv ? `<div class="vd-adv"><b>ナビの考え：${v.adv.h}</b><p>${v.adv.m}</p></div>` : ""}${v.tips.length ? `<ul>${v.tips.map(x => `<li>${x}</li>`).join("")}</ul>` : ""}${v.more ? `<p class="vd-more">${v.more}</p>` : ""}
-    <small class="vd-how">点数は、似た日${res.trust.refs.n}日の実際の待ちで回して全部回れた日（${res.trust.refs.ok}日）・1割混んだ場合（${res.trust.refs11.ok}日）・歩きも列も長めで入園が15分遅れた場合（${res.trust.harsh ?? 0}日）から。気持ちの目安です</small></div></div>`;
+    <small class="vd-how">点数は、似た日${res.trust.refs.n}日の実際の待ちで回して全部回れた日（${res.trust.refs.ok}日）・1割混んだ場合（${res.trust.refs11.ok}日）・歩きも列も長めで入園が15分遅れた場合（${res.trust.harsh ?? 0}日）から。点数はだいたい「全部回れる見込み（%）」です。過去1年の1,496通りの予定で確かめると、${{ a: "80点以上の予定は91%", b: "70点台の予定は78%", c: "55〜69点の予定は66%", d: "54点以下の予定は53%" }[v.g.k]}の日で、実際に全部回れました</small></div></div>`;
 }
 function paintBoost(res) {
   const tb = document.getElementById("trust"), box = document.getElementById("boost"); if (!tb || !box) return;
