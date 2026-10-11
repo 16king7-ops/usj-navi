@@ -1822,18 +1822,26 @@ const dpaHol = d => isOff(d) || inYE(d) || d.slice(5) === "12-24" || d.slice(5) 
 const soldAt = (k, d = M.date) => (RIDES[k].soldout ? RIDES[k].soldout[dpaHol(d) ? 1 : 0] : null);
 // DPA の買える順番（計画のとき）: 利用時間の決まっていないものを売り切れの早い順に、入園から60分おきに買う
 //  （次が買えるのは「60分後」か「利用開始」の早いほう。予定の前はわからないので60分で見る）。売り切れの目安より後になるものは、買えない前提でふつうに並ぶ（no）。
+//  ただし次が売り切れに間に合わないときは、前のDPAを早い枠（買って30分後から60分）で使う前提にして、その利用開始に次を買う（win・early）。
+//  「予測で買えない」と決めつけない（早い枠が取れれば買える。取れなければ当日に組み直す）
 //  当日（P().live）は、もう買ったかどうかわからないので、印のとおり DPA とみる
+const SOLD_TOL = 30;  // 売り切れの目安（解説サイトの平均的な時刻）のずれ。これより遅く買うことになるものだけ、並ぶ前提にする
 let dpaKey = [], dpaC = { no: new Set(), at: {} };
 function dpaChain() {
   const ep = P().ep || {}, lv = !!P().live, key = [ep, S.sel, S.sel.length, M.date, S.entryMode, S.entry, lv];
   if (key.every((v, i) => v === dpaKey[i])) return dpaC;
-  const c = { no: new Set(), at: {} }, so = k => soldAt(k) ?? 1e9, ks = Object.keys(ep).filter(k => RIDES[k] && S.sel.includes(k) && avail(k, M.date));
+  const c = { no: new Set(), at: {}, win: {}, early: {} }, so = k => soldAt(k) ?? 1e9, ks = Object.keys(ep).filter(k => RIDES[k] && S.sel.includes(k) && avail(k, M.date));
   // アトラクションとショーのDPAは別枠（それぞれ同時に1つずつ持てる）なので、買える時刻は別々に数える
   for (const grp of [false, true]) {
     const g = ks.filter(k => (RIDES[k].src === "show") === grp);
     let t = Math.max(entryAt(), M.open) + gateSlack();  // 入園して列を抜けてから買える。利用時間を入れた（買えた）ものは、その利用開始か60分後に次が買える
     for (const k of g.filter(k => ep[k].at != null).sort((a, b) => ep[a].at - ep[b].at)) t = Math.min(t + 60, Math.max(t, ep[k].at));
-    if (!lv) for (const k of g.filter(k => ep[k].at == null).sort((a, b) => so(a) - so(b))) { if (t > so(k)) c.no.add(k); else { c.at[k] = t; t += 60; } }
+    const L = lv ? [] : g.filter(k => ep[k].at == null).sort((a, b) => so(a) - so(b));
+    for (let i = 0; i < L.length; i++) {
+      const k = L[i], nx = L[i + 1]; if (t > so(k) + SOLD_TOL) { c.no.add(k); continue; }  // 売り切れの目安は日によってずれる。目安から SOLD_TOL 分までは「買えるかも」で DPA のまま（買う順番に注意を出す）
+      c.at[k] = t;
+      if (nx && t + 60 > so(nx) && t + 30 <= so(nx)) { c.win[k] = [t + 30, t + 90]; c.early[k] = nx; t += 30; } else t += 60;  // 早い枠で使えば、その利用開始に次が買える
+    }
   }
   dpaKey = key; dpaC = c; return c;
 }
@@ -1973,7 +1981,8 @@ function taskOf(it) {
     let open = openAt(k), last = lastAt(k);
     if (it.pin != null) { open = it.pin; last = epOf(k) && r.src !== "show" ? (it.orig ?? it.pin) + dpaGrace() : it.pin; }  // DPA は利用時間（60分）の中なら間に合う
     if (it.pin == null && epOf(k) && r.src !== "show") open = Math.max(open, (dpaChain().at[k] ?? entryAt()) + 30);
-    const lastP = S.slack && r.src !== "ticket" && r.src !== "show" && it.pin == null ? last - (S.style === "sure" ? CUT_SURE : S.must.includes(k) ? CUT_MUST : CUT_SLACK) : last;
+    const wn = it.pin == null && epOf(k) && r.src !== "show" && dpaChain().win[k]; if (wn) { open = wn[0]; last = wn[0] + dpaGrace(); }  // 早い枠で使う（次のDPAを売り切れ前に買うため）
+    const lastP = S.slack && r.src !== "ticket" && r.src !== "show" && it.pin == null && !wn ? last - (S.style === "sure" ? CUT_SURE : S.must.includes(k) ? CUT_MUST : CUT_SLACK) : last;
     const lastA = lastP < last && S.style !== "sure" ? Math.max(lastP, last - CUT_NEAR) : lastP;  // ビリーヴのすぐあとの「必ず」など（「確実」は今までどおり）
     if (r.src === "show") {
       // ショーは場所取りの始まり（open）に着いて、開演＋上演時間に終わる。閉園前に始まるなら終わりが閉園を越えてもよい（帰る時刻を決めたときは、それまでに終わる）
@@ -2592,11 +2601,15 @@ function cardMeta(k) {
   const lo = Math.min(...ok.map(x => x.med)), hi = Math.max(...ok.map(x => x.med));
   return `<em>${hi - lo < 25 ? `ほぼ一日中 ${rng(lo, hi, "分")}` : `空く ${hb.h}時台（${hb.med}分）`}</em><br>締切 ${c ? hm(c.p10) : "—"}・${r.open && r.open > M.open ? hm(r.open) + "から・" : ""}${g}${M.wide[k] ? `<br>※去年のこの時期は休止` : ""}${dp}`;
 }
+// DPA にしたのに買えない見込みのもの: 先に買うものと、次に買える時刻・売り切れの目安
+const dpaNoWhy = k => { const ch = dpaChain(); if (!ch.no.has(k)) return ""; const prev = Object.entries(ch.at).filter(([q]) => RIDES[q].src === RIDES[k].src).sort((a, b) => a[1] - b[1]), last = prev[prev.length - 1];
+  return last ? `${prev.map(([q]) => RIDES[q].short).join("・")}を先に買うと、次のDPAは60分後の${hm(last[1] + 60)}からで、${RIDES[k].short}の売り切れ（${hm(soldAt(k))}ごろ）に間に合わない見込み` : `入園してから買えるのが、売り切れ（${hm(soldAt(k))}ごろ）のあとになる見込み`; };
 const cardDpa = k => { const r = RIDES[k]; if (!(r.dpa && (!r.dpaFrom || M.date >= r.dpaFrom))) return ""; const on = !!(P().ep || {})[k];
-  return `<button type="button" class="dpabtn" data-dpa="${k}" aria-pressed="${on}">${on ? "✓ DPAで乗る" : "＋ DPA"}<small>${r.dpa.toLocaleString()}円${r.soldout ? `・${hm(soldAt(k))}ごろ売切` : ""}</small></button>`; };
+  return `<button type="button" class="dpabtn" data-dpa="${k}" aria-pressed="${on}">${on ? (dpaChain().no.has(k) ? "✓ DPA（買えない見込み・並ぶ）" : "✓ DPAで乗る") : "＋ DPA"}<small>${r.dpa.toLocaleString()}円${r.soldout ? `・${hm(soldAt(k))}ごろ売切` : ""}</small></button>`; };
 // DPA を買う・やめる（乗り物カードと、下の設定の欄で同じ）
 function setDPA(k, on) { const e2 = { ...(P().ep || {}) }; if (on) { e2[k] = { at: null }; if (!S.sel.includes(k)) S.sel.push(k); askSet("d", 1); } else delete e2[k]; P().ep = e2; save(); renderCards();
-  replan(on ? `${RIDES[k].short}をプレミアアクセスにしました（待ち10分ほど）。入園したらすぐアプリで買ってください。買えたら利用時間も入れると、その時刻で組みます。` : `${RIDES[k].short}のプレミアアクセスを外しました。`); }
+  const no = Object.keys(P().ep || {}).filter(q => dpaChain().no.has(q)), ek = Object.entries(dpaChain().early)[0];
+  replan(on ? `${RIDES[k].short}をプレミアアクセスにしました（待ち10分ほど）。入園したらすぐアプリで買ってください。買えたら利用時間も入れると、その時刻で組みます。${no.length ? `<br><b>ただし${no.map(q => RIDES[q].short).join("・")}は、${dpaNoWhy(no[0])}なので、並ぶ前提で組みました。</b>前のDPAの利用時間が売り切れより前に始まるなら、その時刻から次が買えます（利用時間を入れると組み直します）。どちらか1つに絞るのも手です。` : ""}${ek ? `<br>${RIDES[ek[1]].short}は売り切れ（${hm(soldAt(ek[1]))}ごろ）が早いので、${RIDES[ek[0]].short}を<b>${hm(dpaChain().win[ek[0]][0])}〜の早い利用時間</b>で取り、その時刻に${RIDES[ek[1]].short}を買う前提で組みました。早い枠が取れなかったら、${RIDES[ek[1]].short}は並ぶ前提で当日に組み直してください。` : ""}` : `${RIDES[k].short}のプレミアアクセスを外しました。`); }
 const mealSk = m => (S.mealAt[m] && FOOD.stores[S.mealAt[m]] ? S.mealAt[m] : null);
 const mealPh = (m, d) => { const sk = mealSk(m), g = sk && (FOOD.stores[sk].gallery || [])[0]; return PH[g] || PH[d] || PH.x_capecod; };
 const mealAtTxt = m => { const sk = mealSk(m); return `<p class="mstore">${sk ? `お店：<button type="button" class="linkbtn" data-ostore="${sk}">${FOOD.stores[sk].name}</button>　<button type="button" class="linkbtn" data-mealclr="${m}">おまかせに戻す</button>` : `お店はおまかせ　<button type="button" class="linkbtn" data-gorest="1">レストランを見て決める</button>`}</p>`; };
@@ -2812,18 +2825,20 @@ function dpaPlan(sim) {
   const t0 = Math.max(entryAt(), M.open) + gateSlack(), T = { r: t0, s: t0 }, out = [];  // アトラクションとショーは別枠。入園して列を抜けてから買える
   for (const r of rows) {
     const k = r.it.key, R = RIDES[k], g = R.src === "show" ? "s" : "r", t = T[g], use = R.src === "show" ? showTime(k) : r.start, warn = [];
-    if (so(k) < 1e9 && t > so(k)) warn.push(`売り切れの目安（${hm(so(k))}ごろ）より後なので、買えないかもしれません`);
-    if (use < t + 30 && epOf(k).at == null) warn.push(`予定の時刻（${hm(use)}）は、買える時刻のすぐあと。もっと後の利用時間になることが多いです`);
+    if (so(k) < 1e9 && t > so(k)) warn.push(`売り切れの目安（${hm(so(k))}ごろ）より後なので、売り切れていることもあります（日によっては買えます）。売り切れていたら、当日タブの「残りを組み直す」で並ぶ前提に`);
+    if (use < t + 30 && epOf(k).at == null && !dpaChain().win[k]) warn.push(`予定の時刻（${hm(use)}）は、買える時刻のすぐあと。もっと後の利用時間になることが多いです`);
+    const ek = dpaChain().early[k], wn = dpaChain().win[k];
+    if (ek && wn) warn.push(`利用時間は${hm(wn[0])}〜の早い枠を取る（その時刻から${RIDES[ek].short}が買えます。${RIDES[ek].short}は${hm(soldAt(ek))}ごろ売り切れの目安なので、早い枠が取れなくても、60分後（${hm(t + 60)}）に買えることもあります。売り切れていたら${RIDES[ek].short}は並ぶ前提で、当日タブの「残りを組み直す」で）`);
     const bad = !!r.flag; if (bad) warn.unshift(`この予定のままだと使えません（${r.flag}）。先に赤い枠を直してから買ってください`);
     out.push({ k, buy: t, use, warn, fixed: epOf(k).at != null, bad });
-    T[g] = Math.min(t + 60, Math.max(t, use));
+    T[g] = Math.min(t + 60, Math.max(t, wn ? wn[0] : use));  // 次が買えるのは利用時間の始まり（早い枠）か60分後
   }
   return out.sort((a, b) => a.buy - b.buy);
 }
 function renderDpaAdvice(sim) {
   const box = document.getElementById("tadvice"), pl = dpaPlan(sim) || [], no = [...dpaChain().no];
   if (!pl.length && !no.length) { box.innerHTML = ""; return; }
-  const cost = pl.filter(x => !x.bad).reduce((a, x) => a + RIDES[x.k].dpa, 0), noT = no.length ? `<span class="give">${no.map(k => `${RIDES[k].short}（${hm(soldAt(k))}ごろ売り切れ）`).join("・")}は、ほかのDPAを先に買うと売り切れのあとになるので、<b>並ぶ前提</b>で組みました（次のDPAは「買ってから60分後」か「買ったものの利用開始」の早いほうから。60分で見ています。ショーのDPAは別枠で、アトラクションと同時に持てます）。前のDPAの利用時間が早く取れたら、その時刻に次を買えるので間に合うこともあります。</span>` : "";
+  const cost = pl.filter(x => !x.bad).reduce((a, x) => a + RIDES[x.k].dpa, 0), noT = no.length ? `<span class="give">${no.map(k => `${RIDES[k].short}（${hm(soldAt(k))}ごろ売り切れ）`).join("・")}は、ほかのDPAを先に買うと、売り切れの目安より30分以上あとになるので、<b>並ぶ前提</b>で組みました（次のDPAは「買ってから60分後」か「買ったものの利用開始」の早いほうから。60分で見ています。ショーのDPAは別枠で、アトラクションと同時に持てます）。前のDPAの利用時間が早く取れたら、その時刻に次を買えるので間に合うこともあります。</span>` : "";
   box.innerHTML = `<div class="advice"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 5l0 2' /> <path d='M15 11l0 2' /> <path d='M15 17l0 2' /> <path d='M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2' /></svg> プレミアアクセスを買う順番</b>（1人${cost.toLocaleString()}円）<ol class="dpaol">${pl.map(x => `<li><b>${hm(x.buy)}</b> ${RIDES[x.k].short}を買う<small>（${x.fixed ? `利用 ${hm(x.use)}〜` : `予定では${hm(x.use)}ごろ使う`}${RIDES[x.k].soldout ? `・${hm(soldAt(x.k))}ごろ売り切れ` : ""}）</small>${x.warn.length ? `<span class="give">${x.warn.join("。")}</span>` : ""}</li>`).join("")}</ol>${noT}<span class="note">買えた利用時間は、計画の「プレミアアクセス」の欄に入れると、その時刻で組み直します。</span></div>`;
 }
 // モバイルオーダーの店: いつ注文するか（食事どきは受け取りの1時間前までに。混む日は枠が早く埋まるので入園してすぐ）
@@ -2835,7 +2850,7 @@ let whyOpen = false;
 function renderPlanHero(sim) {
   if (noPick()) { const b = document.getElementById("answer"); b.innerHTML = emptyPickHTML(); wireEmptyPick(b); return; }
   const c = M.crowd, box = document.getElementById("answer"), dp = dpaPlan(sim), miss = (lastMissed || []).filter(x => RIDES[x.key]).map(x => RIDES[x.key].short);
-  const sub = r => { const R = RIDES[r.it.key]; if (r.flag) return "⚠ " + r.flag; if (R) return R.src === "show" ? (epOf(r.it.key) ? "ショー（DPAの席）" : `${hm(showTime(r.it.key))}開演・${S.free[r.it.key] ? "5分前に着く" : `場所取りは${hm(showTime(r.it.key) - earlyOf(r.it.key))}〜${hm(showTime(r.it.key) - earlyMinOf(r.it.key))}のどこかで（予定は${hm(r.start)}から）`}`) : epOf(r.it.key) ? "プレミアアクセス・並ぶ10分ほど" : `乗り終わり ${hm(r.end)}${ropeCap(r.it.key, r.start) != null ? `・待ちは${S.entryMode === "happy" ? "ハッピーエントリー" : "開園ダッシュ"}で列の先頭近くの目安（表示より短い）` : ""}`;
+  const sub = r => { const R = RIDES[r.it.key]; if (r.flag) return "⚠ " + r.flag; if (R) return R.src === "show" ? (epOf(r.it.key) ? "ショー（DPAの席）" : `${hm(showTime(r.it.key))}開演・${S.free[r.it.key] ? "5分前に着く" : `場所取りは${hm(showTime(r.it.key) - earlyOf(r.it.key))}〜${hm(showTime(r.it.key) - earlyMinOf(r.it.key))}のどこかで（予定は${hm(r.start)}から）`}`) : epOf(r.it.key) ? "プレミアアクセス・並ぶ10分ほど" : (P().ep || {})[r.it.key] ? `DPAは買えない見込みで並ぶ（${dpaNoWhy(r.it.key)}）・乗り終わり ${hm(r.end)}` : `乗り終わり ${hm(r.end)}${ropeCap(r.it.key, r.start) != null ? `・待ちは${S.entryMode === "happy" ? "ハッピーエントリー" : "開園ダッシュ"}で列の先頭近くの目安（表示より短い）` : ""}`;
     if (r.it.type === "meal") return `${r.info || "近くの店"}・${isMO(r.to.slice(6)) ? moTxt(r) : `行列 ${Math.round(r.wait)}分ほど`}`; return r.info || ""; };
   const rows = sim.rows.map((r, i) => { const R = RIDES[r.it.key], img = rowImg(r);
     return `${r.walk || r.idle >= 5 ? `<li class="mv">${r.walk ? `↓ ${r.fw ? `<b class="fwl">早歩き</b>${r.walk}分（ふつうに歩くと${r.walkN}分） <button type="button" class="linkbtn" data-nofast="${r.it.key}">早歩きしない</button>` : `歩く${r.walk}分`}` : ""}${r.idle >= 5 ? `${r.walk ? "・" : ""}<b class="free">自由時間 ${dur(Math.round(r.idle))}</b>（食べ歩き・トイレ・休憩に）${idleWhy(r)} <button type="button" class="linkbtn" data-gofood="1">食べ歩きを探す</button>` : ""}</li>` : ""}<li class="${r.flag ? "bad" : ""}"><span class="t">${hm(r.start)}</span><span class="ph">${img ? `<img src="${img}" alt="" loading="lazy">` : ""}</span><span class="nm">${itemName(r.it)}${S.must.includes(r.it.key) ? '<span class="badge must">必ず</span>' : ""}${R && epOf(r.it.key) ? '<span class="badge ep">DPA</span>' : ""}<small>${sub(r)}</small></span><span>${R && R.src !== "show" && r.wait >= 1 ? wchip(r.wait) : ""}</span></li>${showRiskHTML(sim, i)}`; }).join("");
