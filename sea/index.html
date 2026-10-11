@@ -15,7 +15,7 @@ img { max-width: 100%; }
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Zen+Old+Mincho:wght@600;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Zen+Old+Mincho:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&display=swap">
 <style>
 /* Layout: 写真のヒーロー → タブ（いつ行く／計画＝選ぶ＋タイムライン＋地図／フード・トイレ／当日／時間帯）。計画はカードからタイムラインへドラッグ */
 :root {
@@ -404,46 +404,242 @@ details.set .inner { display: grid; gap: 12px; padding-bottom: 14px; }
 .verdict p { font-size: 14.5px; line-height: 1.7; }
 .verdict ul { margin: 2px 0 0; padding-left: 1.2em; font-size: 13.5px; color: var(--ink-2); line-height: 1.7; }
 .verdict .vd-more { font-size: 13.5px; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 6px 10px; }
-.verdict .vd-how { font-size: 11.5px; color: var(--ink-3); }
+.verdict .vd-how { font-size: 12.5px; color: var(--ink-3); } .verdict .vd-how summary { cursor: pointer; font-weight: 700; color: var(--ink-2); } .verdict .vd-how p { font-size: 12.5px; line-height: 1.7; margin-top: 4px; color: var(--ink-2); }
+.verdict .vd-sc small:first-child { line-height: 1.2; text-align: right; }
 .verdict .vd-adv { display: grid; gap: 2px; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--vc) 10%, var(--surface)); }
 .verdict .vd-adv > b { font-size: 15px; color: var(--ink); } .verdict .vd-adv p { font-size: 14px; }
-/* 導入 */
-.intro { display: grid; gap: 14px; max-width: 760px; margin-inline: auto; padding-block: 8px; }
-.intro p { max-width: 62ch; }
-.intro .in-q { font-family: var(--round); font-size: clamp(22px, 4.4vw, 34px); line-height: 1.45; text-wrap: balance; }
-.intro .in-l, .intro .in-c { font-size: 16.5px; line-height: 1.85; }
-.intro b { color: var(--brand); }
-.intro .in-ex { display: grid; gap: 4px; justify-items: start; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1.5px solid var(--line); border-left: 5px solid var(--sun); border-radius: 14px; padding: 12px 16px; }
-.intro .in-exh { font-size: 13.5px; font-weight: 700; color: var(--ink-2); }
-.intro .in-exr { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.intro .in-exr b { font-family: var(--round); font-weight: 400; font-size: 30px; color: var(--ink); }
-.intro .in-exr i { font-style: normal; color: var(--ink-3); }
-.intro .in-exd { font-size: 16px; font-weight: 700; } .intro .in-exd b { font-family: var(--round); font-weight: 400; font-size: 24px; color: var(--bad); }
-.intro .in-ex small { font-size: 12px; color: var(--ink-3); }
-.intro .in-r { font-weight: 900; font-size: 17px; }
-.intro .in-3 { list-style: none; counter-reset: n; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.intro .in-3 li { counter-increment: n; display: grid; gap: 6px; align-content: start; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; }
-.intro .in-3 li::before { content: counter(n); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: var(--brand-ink); font-family: var(--round); }
-.intro .in-3 b { color: var(--ink); font-size: 16px; } .intro .in-3 span { font-size: 14px; color: var(--ink-2); line-height: 1.7; }
-.intro .in-h { font-size: 13.5px; color: var(--ink-3); }
-.intro .in-top { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-.intro .in-top > li { display: grid; gap: 8px; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1.5px solid var(--line); }
-.intro .in-top > li > em { justify-self: start; font-style: normal; font-family: var(--round); font-size: 13px; letter-spacing: .08em; color: var(--sun-ink); background: var(--sun); border-radius: 999px; padding: 1px 12px; }
-.intro .in-top > li > b { font-family: var(--round); font-weight: 400; font-size: clamp(19px, 3.4vw, 24px); color: var(--ink); line-height: 1.4; }
-.intro .in-top > li > span { font-size: 14.5px; color: var(--ink-2); line-height: 1.75; }
-.intro .in-top .in-ex { background: var(--surface-2); }
-.intro .in-vs { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; width: 100%; }
-.intro .in-vs > div { display: grid; gap: 2px; padding: 8px 12px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--line); }
-.intro .in-vs > div.in-win { border-color: var(--good); box-shadow: 0 0 0 3px var(--good-soft); }
-.intro .in-vs small { font-size: 12px; color: var(--ink-3); font-weight: 700; }
-.intro .in-vs b { font-family: var(--round); font-weight: 400; font-size: clamp(20px, 4vw, 28px); color: var(--ink); font-variant-numeric: tabular-nums; }
-.intro .in-vs .in-win b { color: var(--good); }
-.intro .in-vs span { font-size: 12.5px; color: var(--ink-2); }
-.intro .in-vs i { font-style: normal; color: var(--ink-3); font-size: 18px; }
-.intro .in-who { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: 14px; font-weight: 700; color: var(--ink-2); }
-.intro .in-who span { font-weight: 700; font-size: 13.5px; color: var(--ink); background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1.5px solid var(--line); border-radius: 999px; padding: 2px 12px; }
-.intro .in-go { display: grid; gap: 10px; background: var(--brand-soft); border-radius: 14px; padding: 14px 16px; }
-@media (max-width: 700px) { .intro .in-3 { grid-template-columns: minmax(0, 1fr); } }
+/* 導入（旅雑誌の特集ふう。4案を作って審査し、仕上げた案。scratchpad/intro_designs/final）*//* ===================== intro : 旅雑誌の特集 ===================== */
+.intro{
+  --pad:clamp(22px,6vw,76px);
+  --mincho:"Zen Old Mincho",serif;
+  --figure:"Cormorant Garamond","Zen Old Mincho",serif;
+  --mark:var(--ink);
+  position:relative;background:var(--surface);color:var(--ink);
+  border-radius:22px;overflow:hidden;
+  padding:0 var(--pad);
+  font-size:16px;line-height:1.85;letter-spacing:.02em;
+}
+.intro *,.intro *::before,.intro *::after{box-sizing:border-box}
+.intro p,.intro figure,.intro ol,.intro ul{margin:0}
+.intro h2,.intro h3{margin:0;font-family:var(--mincho);font-weight:900;letter-spacing:.04em;font-feature-settings:"palt" 1}
+.intro h2,.intro h3,.intro .ivd,.intro .aside,.intro .body,.intro .q-sub,.intro .for li,.intro .close .sub,.intro .bye,.intro .ledger th{word-break:auto-phrase;text-wrap:balance}
+.intro .body,.intro .lead,.intro .irs p,.intro .turn p,.intro .note,.intro .ilg,.intro .honest,.intro .todo{word-break:auto-phrase;text-wrap:pretty}
+.intro .fig{font-family:var(--figure);font-variant-numeric:lining-nums tabular-nums;font-weight:600;letter-spacing:0}
+.intro .nw{white-space:nowrap}
+.intro img{display:block;width:100%}
+.intro .cap{position:absolute;left:0;right:0;bottom:0;margin:0;padding:72px 18px 14px;font-size:14px;letter-spacing:.06em;line-height:1.5;color:var(--hero-ink);
+  background:linear-gradient(transparent,color-mix(in srgb,var(--shade) 78%,transparent));text-shadow:0 1px 3px var(--shade)}
+
+/* ---- opening : 文字だけ ---- */
+.intro .open{padding-top:clamp(44px,6.5vw,84px)}
+.intro .q{font-size:clamp(32px,5.6vw,66px);line-height:1.34;letter-spacing:0;text-indent:-.5em;padding-left:.5em}
+.intro .q-sub{margin-top:14px;font-family:var(--mincho);font-weight:700;font-size:clamp(19px,2.3vw,26px);color:var(--ink-2);letter-spacing:.06em;font-feature-settings:"palt" 1}
+.intro .open-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:32px clamp(36px,6vw,80px);align-items:start;margin-top:clamp(36px,5vw,60px)}
+.intro .lead{font-family:var(--mincho);font-weight:600;font-size:17px;line-height:2.05;color:var(--ink)}
+.intro .lead em{font-style:normal;font-weight:700;text-decoration:underline var(--sun);text-decoration-thickness:.2em;text-underline-offset:.22em;text-decoration-skip-ink:none}
+/* こんな人に：箇条書きではなく、余白の欄に書き添えた語り口で */
+.intro .for{padding:4px 0 4px clamp(20px,2.4vw,30px);border-left:1px solid var(--ink)}
+.intro .for h3{font-size:15px;font-weight:700;letter-spacing:.14em;line-height:1.6;color:var(--ink-2)}
+.intro .for ul{list-style:none;padding:0;margin-top:6px}
+.intro .for li{margin-top:12px;font-family:var(--mincho);font-weight:600;font-size:17px;line-height:1.75;color:var(--ink);font-feature-settings:"palt" 1;letter-spacing:.04em}
+
+/* ---- TOP3 ---- */
+.intro .sec{margin-top:clamp(72px,10vw,120px)}
+.intro .sec-head{padding-bottom:16px;border-bottom:3px double var(--ink)}
+.intro .sec-head h2{font-size:clamp(30px,4.6vw,54px);line-height:1.25}
+
+.intro .irk{--rp:clamp(40px,5.4vw,64px);display:grid;grid-template-columns:clamp(104px,12vw,150px) minmax(0,1fr);gap:0 clamp(20px,4vw,52px);padding:var(--rp) 0;border-bottom:1px solid var(--line)}
+.intro .irk:last-child{border-bottom:0;padding-bottom:0}
+.intro .irk .main{min-width:0}
+.intro .irk .wide{grid-column:1 / -1;min-width:0;margin-top:clamp(28px,3.6vw,44px)}
+.intro .num{align-self:start;display:flex;align-items:flex-start;gap:8px}
+.intro .num .n{font-family:var(--figure);font-variant-numeric:lining-nums;font-style:italic;font-weight:500;font-size:clamp(96px,14vw,180px);line-height:.74;letter-spacing:-.03em;color:var(--ink)}
+.intro .num .v{writing-mode:vertical-rl;font-family:var(--mincho);font-weight:700;font-size:14px;letter-spacing:.3em;color:var(--ink-3);padding-top:4px}
+.intro .irk h3{font-size:clamp(24px,3vw,36px);line-height:1.35;margin-bottom:16px}
+.intro .body{max-width:36em;color:var(--ink-2)}
+
+/* 1位：表をカード幅いっぱいに */
+.intro .ledger table{width:100%;border-collapse:collapse}
+.intro .ledger th,.intro .ledger td{text-align:left;font-weight:500;padding:16px 0;border-bottom:1px solid var(--line);vertical-align:baseline}
+.intro .ledger thead th{font-size:14px;letter-spacing:.06em;color:var(--ink-2);padding:6px 0;border-bottom:1px solid var(--ink)}
+.intro .ledger tbody th{font-size:16px;color:var(--ink-2);padding-right:16px;width:34%;line-height:1.5}
+.intro .ledger td{padding-left:16px;font-family:var(--figure);font-variant-numeric:lining-nums tabular-nums;font-weight:600;font-size:clamp(26px,4.4vw,54px);line-height:1.05;white-space:nowrap}
+.intro .ledger td small{font-family:var(--mincho);font-size:.46em;font-weight:700;margin:0 .14em}
+.intro .ledger td small.u{font-size:.56em;margin-left:.22em}
+.intro .ledger td+td,.intro .ledger thead th:last-child{text-align:right}
+.intro .ledger thead th+th{padding-left:16px}
+.intro .ledger tr.is-pop td{color:var(--ink-3)}
+.intro .ledger .x{background:linear-gradient(var(--ink-3),var(--ink-3)) 0 58% / 100% 1px no-repeat}
+.intro .ledger tr.is-navi th{font-weight:700;color:var(--ink)}
+.intro .ledger tr.is-navi td{color:var(--brand)}
+.intro .ledger tr.is-navi th,.intro .ledger tr.is-navi td{border-bottom:1px solid var(--ink)}
+
+.intro .ivd{font-family:var(--mincho);font-weight:700;font-size:clamp(19px,2.2vw,25px);line-height:1.6;max-width:24em;letter-spacing:.05em;font-feature-settings:"palt" 1}
+.intro .ivd .fig{font-size:1.7em;line-height:1;margin:0 .06em}
+
+/* ナビの順番：番号は付けず、線と点で順を見せる */
+.intro .route{margin-top:30px}
+.intro .route .lbl{font-size:14px;font-weight:700;color:var(--ink-2);margin-bottom:10px}
+.intro .route ol{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:10px 0}
+.intro .route li{position:relative;flex:1 1 0;min-width:0;padding:22px 14px 0 0;line-height:1.35;font-weight:700;font-size:15px;color:var(--ink);word-break:auto-phrase}
+.intro .route li::before{content:"";position:absolute;top:2px;left:0;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ink);background:var(--surface)}
+.intro .route li::after{content:"";position:absolute;top:6px;left:13px;right:4px;border-top:1px solid var(--ink-3)}
+.intro .route li:last-child::after{display:none}
+.intro .route li:first-child::before{background:var(--ink)}
+.intro .note{margin-top:16px;font-size:14px;color:var(--ink-2);line-height:1.75}
+.intro .concl{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px clamp(28px,5vw,64px);align-items:end;margin-top:clamp(32px,4vw,44px)}
+.intro .aside{max-width:34em;font-family:var(--mincho);font-weight:600;font-size:16px;color:var(--ink-2);line-height:1.95}
+
+/* 2位：写真は内側の余白にそろえて置く（右端・上下ともほかの段と同じ線） */
+.intro .irk2{grid-template-columns:clamp(104px,12vw,150px) minmax(0,1fr) minmax(0,.86fr)}
+.intro .irk2 h3{font-size:clamp(24px,2.7vw,32px)}
+.intro .irk2 .photo{grid-column:3;grid-row:1;position:relative;min-height:440px;overflow:hidden}
+.intro .irk2 .photo img{position:absolute;inset:0;height:100%;object-fit:cover;object-position:55% 40%}
+.intro .ibars{margin-top:24px;max-width:480px}
+.intro .ibars .ilg{font-size:14px;color:var(--ink-2);line-height:1.6;padding-bottom:8px;border-bottom:1px solid var(--ink)}
+.intro .ibar{display:grid;grid-template-columns:4.2em minmax(0,1fr);align-items:end;gap:0 14px;padding:14px 0 12px;border-bottom:1px solid var(--line)}
+.intro .ibar .h{font-size:14px;font-weight:700;color:var(--ink-2);padding-bottom:2px}
+.intro .ibar .val{display:block;font-family:var(--figure);font-variant-numeric:lining-nums tabular-nums;font-weight:600;font-size:clamp(30px,3.6vw,42px);line-height:1;color:var(--ink-3)}
+.intro .ibar .val small{font-family:var(--mincho);font-size:.46em;font-weight:700;margin-left:.15em}
+.intro .ibar .line{position:relative;display:block;height:1px;margin:10px 0 3px;width:calc(var(--w) * (100% - 8px));min-width:2px;background:var(--ink-3)}
+.intro .ibar .line::after{content:"";position:absolute;right:-7px;top:-3.5px;width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.intro .ibar.late .h{color:var(--ink)}
+.intro .ibar.late .val{color:var(--brand)}
+.intro .ibar.late .line,.intro .ibar.late .line::after{background:var(--brand)}
+.intro .ibars .ivd{margin-top:18px}
+.intro .irk2 .aside{margin-top:22px}
+
+/* 3位：見出しと本文を左右に、図はカード幅いっぱいに */
+.intro .irk3 .main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:12px clamp(28px,4vw,52px);align-items:end}
+.intro .irk3 h3{margin-bottom:0}
+.intro .shift{position:relative;padding:26px 0 34px;--k:4.2em}
+.intro .shift .srow{display:grid;grid-template-columns:var(--k) minmax(0,1fr);align-items:center;margin-top:30px}
+.intro .shift .srow:first-child{margin-top:0}
+.intro .shift .k{font-size:14px;letter-spacing:.06em;color:var(--ink-2);font-weight:700}
+.intro .shift .trk{position:relative;height:22px}
+.intro .shift i{position:absolute;top:0;bottom:0;left:var(--x);width:var(--w);background:var(--mark)}
+.intro .shift i.late{background:repeating-linear-gradient(135deg,var(--mark) 0 2px,transparent 2px 5px);border:1px solid var(--mark)}
+.intro .shift i.lost{background:none;border:1.5px dashed var(--ink-3)}
+.intro .shift em{position:absolute;top:30px;left:var(--x);font-style:normal;font-size:14px;letter-spacing:.04em;color:var(--ink-2);white-space:nowrap;line-height:1.4}
+.intro .shift .closeline{position:absolute;top:0;bottom:0;left:calc(var(--k) + (100% - var(--k)) * .877);border-left:1px solid var(--ink)}
+.intro .shift .closeline span{position:absolute;top:-2px;left:6px;font-size:14px;color:var(--ink);white-space:nowrap;font-family:var(--mincho);font-weight:700;line-height:1.4}
+.intro .keys{list-style:none;padding:14px 0 0;display:flex;flex-wrap:wrap;gap:6px 26px;border-top:1px solid var(--line);font-size:14px;color:var(--ink-2)}
+.intro .keys li{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.intro .keys li::before{content:"";width:22px;height:10px;background:var(--mark)}
+.intro .keys .late::before{background:repeating-linear-gradient(135deg,var(--mark) 0 2px,transparent 2px 5px);border:1px solid var(--mark)}
+.intro .keys .lost::before{background:none;border:1.5px dashed var(--ink-3)}
+
+/* ---- turn : 夜の写真を敷いて、話の向きを変える ---- */
+.intro .turn{position:relative;isolation:isolate;margin:clamp(56px,7vw,84px) calc(-1 * var(--pad)) 0;padding:clamp(56px,8vw,104px) var(--pad) clamp(52px,7vw,92px);
+  min-height:clamp(420px,46vw,540px);display:flex;flex-direction:column;justify-content:flex-end;background:var(--shade);color:var(--hero-ink)}
+.intro .turn > img{position:absolute;inset:0;z-index:-2;height:100%;object-fit:cover;object-position:68% 55%}
+.intro .turn::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--shade) 92%,transparent) 0%,color-mix(in srgb,var(--shade) 74%,transparent) 46%,color-mix(in srgb,var(--shade) 12%,transparent) 100%)}
+.intro .turn h2{font-weight:900;line-height:1.3;letter-spacing:.04em}
+.intro .turn h2 .t1{display:block;font-size:clamp(20px,2.4vw,28px);font-weight:700;letter-spacing:.1em;color:var(--hero-ink-2)}
+.intro .turn h2 .t2{display:block;margin-top:.18em;font-size:clamp(40px,7.2vw,88px);line-height:1.15;letter-spacing:.02em;margin-left:-.06em}
+.intro .turn p{margin-top:clamp(22px,2.8vw,30px);max-width:30em;font-size:17px;line-height:1.95;color:var(--hero-ink-2);text-shadow:0 1px 2px var(--shade)}
+.intro .turn p em{font-style:normal;font-weight:700;color:var(--hero-ink)}
+.intro .turn .tag{position:absolute;top:18px;right:var(--pad);font-size:14px;letter-spacing:.08em;color:var(--hero-ink-2);text-shadow:0 1px 3px var(--shade)}
+
+/* ---- reasons : TOP3と同じ斜体数字の文法。数字の根拠は本文の下に ---- */
+.intro .iwhy{margin-top:clamp(72px,9vw,112px)}
+.intro .iwhy h2{font-size:clamp(28px,3.8vw,46px);line-height:1.35}
+.intro .iwhy h2 .sub{display:block;margin-top:.7em;font-size:max(17px,.46em);font-weight:700;line-height:1.5;color:var(--ink-2);letter-spacing:.08em}
+.intro .irs{list-style:none;padding:0;margin-top:clamp(28px,3.4vw,40px)}
+.intro .irs li{display:grid;grid-template-columns:clamp(64px,8vw,104px) minmax(0,1fr) minmax(0,1.25fr);gap:10px clamp(20px,3.6vw,48px);align-items:start;padding:clamp(28px,3.4vw,40px) 0;border-top:1px solid var(--line)}
+.intro .irs li:last-child{border-bottom:1px solid var(--line)}
+.intro .irs .rn{font-family:var(--figure);font-variant-numeric:lining-nums;font-style:italic;font-weight:500;font-size:clamp(64px,7.4vw,96px);line-height:.74;letter-spacing:-.03em;color:var(--ink)}
+.intro .irs h3{font-size:clamp(21px,2.3vw,27px);line-height:1.5;padding-top:.1em}
+.intro .irs p{font-size:16px;line-height:1.9;color:var(--ink-2)}
+.intro .irs .datum{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;margin-top:16px;padding-top:12px;border-top:1px solid var(--ink)}
+.intro .irs .datum b{font-family:var(--figure);font-variant-numeric:lining-nums tabular-nums;font-weight:600;font-size:clamp(40px,4.4vw,54px);letter-spacing:0;color:var(--ink);line-height:1}
+.intro .irs .datum b small{font-family:var(--mincho);font-size:.5em;font-weight:700;margin-left:.08em}
+.intro .irs .datum b i{font-style:normal;color:var(--ink-3);font-weight:500;margin:0 .22em}
+.intro .irs .datum span{font-size:14px;font-weight:700;color:var(--ink-2);line-height:1.5}
+.intro .honest{margin-top:clamp(36px,4.4vw,52px);max-width:32em;font-family:var(--mincho);font-weight:600;font-size:17px;line-height:2.05;color:var(--ink)}
+.intro .honest b{font-weight:700;text-decoration:underline var(--sun);text-decoration-thickness:.2em;text-underline-offset:.22em;text-decoration-skip-ink:none}
+
+/* ---- close ---- */
+.intro .close{margin-top:clamp(88px,11vw,140px);text-align:center;container-type:inline-size}
+.intro .close .pre{font-family:var(--mincho);font-weight:700;font-size:16px;letter-spacing:.1em;color:var(--ink-2);margin-bottom:14px}
+.intro .close h2{line-height:1.5;font-weight:900}
+.intro .close h2 .a{display:block;font-size:clamp(22px,3.2vw,38px);font-weight:700;color:var(--ink-2)}
+.intro .close h2 .b{display:block;white-space:nowrap;font-size:min(64px,calc((100cqi + 2 * var(--pad) - 24px) / 11.6));margin:.12em calc(12px - var(--pad)) 0;color:var(--ink);letter-spacing:.02em}
+.intro .close .sub{margin:26px auto 0;max-width:30em;font-family:var(--mincho);font-weight:600;font-size:17px;color:var(--ink-2);line-height:2}
+
+/* 写真で終わる：カードの下の角まで裁ち落とし、言葉とボタンを写真に置く */
+.intro .finale{position:relative;isolation:isolate;margin:clamp(56px,7vw,88px) calc(-1 * var(--pad)) 0;min-height:clamp(480px,54vw,620px);
+  display:flex;flex-direction:column;justify-content:flex-end;padding:clamp(40px,6vw,72px) var(--pad) clamp(36px,5vw,60px);color:var(--hero-ink);background:var(--shade)}
+.intro .finale > img{position:absolute;inset:0;z-index:-2;height:100%;object-fit:cover;object-position:62% 40%}
+.intro .finale::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(0deg,color-mix(in srgb,var(--shade) 92%,transparent) 0%,color-mix(in srgb,var(--shade) 70%,transparent) 44%,transparent 78%),linear-gradient(90deg,color-mix(in srgb,var(--shade) 40%,transparent),transparent 60%)}
+.intro .finale .tag{position:absolute;top:18px;right:var(--pad);font-size:14px;letter-spacing:.08em;color:var(--hero-ink);text-shadow:0 1px 3px var(--shade)}
+.intro .act{max-width:36em}
+.intro .todo{font-size:16px;line-height:1.9;color:var(--hero-ink-2);text-shadow:0 1px 2px var(--shade)}
+.intro .todo b{font-family:var(--mincho);font-weight:700;color:var(--hero-ink)}
+.intro .bye{margin-top:14px;font-family:var(--mincho);font-weight:900;font-size:clamp(30px,4.4vw,52px);line-height:1.35;letter-spacing:.04em;font-feature-settings:"palt" 1;color:var(--hero-ink);text-shadow:0 2px 12px color-mix(in srgb,var(--shade) 60%,transparent)}
+.intro .btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:clamp(22px,2.6vw,30px)}
+.intro .finale .btn{min-height:46px;padding:10px 22px;font-size:15px}
+.intro .finale .btn:not(.sun){background:color-mix(in srgb,var(--shade) 35%,transparent);color:var(--hero-ink);border-color:color-mix(in srgb,var(--hero-ink) 70%,transparent)}
+.intro .btn:focus-visible{outline:2px solid var(--sun);outline-offset:3px}
+
+/* ---- dark ---- */
+:root[data-theme="dark"] .intro{--mark:var(--ink-2)}
+:root[data-theme="dark"] .intro .irk2 .photo img{filter:brightness(.85)}
+:root[data-theme="dark"] .intro .turn{box-shadow:inset 0 1px 0 var(--line),inset 0 -1px 0 var(--line)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .intro{--mark:var(--ink-2)}
+  :root:not([data-theme="light"]) .intro .irk2 .photo img{filter:brightness(.85)}
+  :root:not([data-theme="light"]) .intro .turn{box-shadow:inset 0 1px 0 var(--line),inset 0 -1px 0 var(--line)}
+}
+
+/* ---- motion ---- */
+@media (prefers-reduced-motion: no-preference){
+  .intro .irk2 .photo img,.intro .turn > img,.intro .finale > img{animation:intro-settle 1.6s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes intro-settle{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
+}
+
+/* ---- phone ---- */
+@media (max-width:760px){
+  .intro .open{padding-top:36px}
+  .intro .open-row{grid-template-columns:minmax(0,1fr)}
+  .intro .lead{font-size:16.5px}
+  .intro .for li{font-size:16px}
+  .intro .irk,.intro .irk2{grid-template-columns:minmax(0,1fr)}
+  .intro .irk > *,.intro .irk2 .photo{grid-column:1;grid-row:auto}
+  .intro .num{margin-bottom:22px}
+  .intro .num .n{font-size:104px}
+  .intro .irk .wide{margin-top:24px}
+  .intro .irk2 .photo{order:-1;margin:0 calc(-1 * var(--pad)) 30px;min-height:0}
+  .intro .irk2 .photo img{position:static;aspect-ratio:16/10;height:auto;object-position:50% 22%}
+  .intro .ledger tbody th{width:7.4em;font-size:14.5px}
+  .intro .ledger td{font-size:24px;padding-left:10px}
+  .intro .route ol{display:block}
+  .intro .route li{padding:6px 0 6px 26px;min-width:auto;font-size:15px}
+  .intro .route li::before{top:13px}
+  .intro .route li::after{top:24px;bottom:-11px;left:4.5px;right:auto;border-top:0;border-left:1px solid var(--ink-3)}
+  .intro .concl{grid-template-columns:minmax(0,1fr)}
+  .intro .irk3 .main{grid-template-columns:minmax(0,1fr)}
+  .intro .irk3 h3{margin-bottom:4px}
+  .intro .shift{--k:3em}
+  .intro .shift .closeline span{left:auto;right:6px}
+  .intro .turn{min-height:0;padding-top:200px}
+  .intro .turn::before{background:linear-gradient(0deg,color-mix(in srgb,var(--shade) 94%,transparent) 0%,color-mix(in srgb,var(--shade) 80%,transparent) 55%,color-mix(in srgb,var(--shade) 20%,transparent) 100%)}
+  .intro .turn > img{object-position:60% 30%}
+  .intro .turn p{font-size:16px}
+  .intro .iwhy h2 .sub{margin-top:.9em}
+  .intro .irs li{grid-template-columns:auto minmax(0,1fr);gap:12px 18px}
+  .intro .irs .rn{font-size:64px}
+  .intro .irs h3{align-self:end}
+  .intro .irs li > div{grid-column:1 / -1}
+  .intro .honest{font-size:16.5px}
+  .intro .close .sub{text-wrap:pretty}
+  .intro .finale{min-height:600px}
+  .intro .finale > img{object-position:58% 30%}
+  .intro .finale::before{background:linear-gradient(0deg,color-mix(in srgb,var(--shade) 94%,transparent) 0%,color-mix(in srgb,var(--shade) 72%,transparent) 52%,transparent 82%)}
+  .intro .finale .btn{flex:1 1 100%}
+}
 .steps button { font: inherit; text-align: left; display: flex; gap: 8px; align-items: flex-start; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 14px; padding: 10px; cursor: pointer; }
 .steps button:hover { border-color: var(--brand); }
 .steps b { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: var(--brand-ink); font-family: var(--round); font-weight: 400; }
@@ -2603,31 +2799,65 @@ function renderIntro() {
   let ex = null;
   for (const k of ks) { const hr = hourRows(k), b = hr.rows.find(x => x.h === hr.best), pk = hr.rows.filter(x => x.st === "ok" && x.med != null).reduce((a, x) => (!a || x.med > a.med ? x : a), null);
     if (b && pk && pk.med - b.med >= 20 && (!ex || pk.med - b.med > ex.d)) ex = { k, b, pk, d: pk.med - b.med }; }
-  const dm = introDemo(), nDays = DAYS.filter(x => x.avg).length, have = S.sel.length > 0, sn = k => RIDES[k].short;
-  const d1 = dm && (dm.oN > dm.nN || dm.nW - dm.oW >= 20) ? `<div class="in-ex"><span class="in-exh">${md(M.date)}に、人気の${dm.ks.length}つ（${dm.ks.map(sn).join("・")}）を回ると</span>
-      <div class="in-vs"><div><small>人気の順にそのまま</small><b>${dur(Math.round(dm.nW))}</b><span>並ぶ合計・乗れるのは${dm.nN}つ</span></div><i>→</i><div class="in-win"><small>ナビの順番</small><b>${dur(Math.round(dm.oW))}</b><span>並ぶ合計・乗れるのは${dm.oN}つ</span></div></div>
-      <span class="in-exd">順番を変えるだけで、${dm.oN > dm.nN ? `<b>${dm.oN - dm.nN}つ多く</b>乗れて${dm.nW - dm.oW >= 20 ? `、並ぶ時間も <b>${dur(Math.round(dm.nW - dm.oW))}</b> 短い` : ""}` : `並ぶ時間が <b>${dur(Math.round(dm.nW - dm.oW))}</b> 短い`}</span>
-      <small>似た日の実際の待ち時間（ふつうの値）で計算。ごはん・DPAなし。ナビの順番：${dm.ord.map(sn).join(" → ")}</small></div>` : "";
-  const d2 = ex ? `<div class="in-ex"><span class="in-exh">${md(M.date)}の${sn(ex.k)}だと</span><span class="in-exr"><span>${ex.pk.h}時台 <b>${ex.pk.med}</b>分</span><i>→</i><span>${ex.b.h}時台 <b>${ex.b.med}</b>分</span></span><span class="in-exd">同じ乗り物で <b>${ex.d}分</b> の差</span><small>似た日の実際の待ち時間から（ふつうの値）</small></div>` : "";
-  box.innerHTML = `<p class="in-q">「シーは混むから、待つのは仕方ない」<br>そう思っていませんか。</p>
-    <p class="in-l">実は、待ち時間の多くは<b>「回り方」</b>で減らせます。もしかしたら、あなたもやっているかもしれない<b>「シーで損する回り方 TOP3」</b>を、${md(M.date)}の実際のデータで見てみます。</p>
-    <p class="in-who">とくにこんな人に：<span>休日・クリスマス・年末年始など混む日に行く</span><span>はじめてで、回る順番がわからない</span><span>プレミアアクセス（DPA）を買うか迷っている</span></p>
-    <ol class="in-top">
-      <li><em>第1位</em><b>思いついた順に並ぶ</b>${d1}<span>人気のものから順に並ぶと、昼のいちばん混む時間に、いちばん長い列に並ぶことになります。</span></li>
-      <li><em>第2位</em><b>人気アトラクションに、いちばん混む時間に並ぶ</b>${d2}<span>朝いちばんと夜は空くものが多い。でも、空く時間は乗り物ごとに違います。</span></li>
-      <li><em>第3位</em><b>予定が崩れても、そのまま続ける</b><span>当日は、思ったより長い列がどこかで必ず出ます。そのまま続けると後ろが全部ずれて、最後の1つ2つが閉まります。</span></li>
+  const dm = introDemo(), nDays = DAYS.filter(x => x.avg).length, have = S.sel.length > 0, sn = k => RIDES[k].short, day = md(M.date);
+  const hmF = m => { m = Math.round(m); const h = Math.floor(m / 60), mm = m % 60; return h ? `${h}<small>時間</small>${mm}<small>分</small>` : `${mm}<small>分</small>`; };
+  const hmT = m => { m = Math.round(m); const h = Math.floor(m / 60), mm = m % 60; return h ? `<span class="fig">${h}</span>時間<span class="fig">${mm}</span>分` : `<span class="fig">${mm}</span>分`; };
+  const showDemo = dm && (dm.oN > dm.nN || dm.nW - dm.oW >= 20);
+  const r1 = showDemo ? `<div class="wide"><div class="ledger"><table><thead><tr><th></th><th>並ぶ合計</th><th>乗れる数</th></tr></thead><tbody>
+      <tr class="is-pop"><th>人気の順にそのまま</th><td><span class="x">${hmF(dm.nW)}</span></td><td>${dm.nN}<small class="u">つ</small></td></tr>
+      <tr class="is-navi"><th>ナビの順番</th><td>${hmF(dm.oW)}</td><td>${dm.oN}<small class="u">つ</small></td></tr></tbody></table></div>
+    <div class="route"><p class="lbl">ナビの順番</p><ol>${dm.ord.map(k => `<li>${sn(k)}</li>`).join("")}</ol></div>
+    <p class="note">似た日の実際の待ち時間（ふつうの値）で計算。ごはん・DPAなし。</p>
+    <div class="concl"><p class="ivd">順番を変えるだけで、${dm.oN > dm.nN ? `${dm.oN - dm.nN}つ多く乗れて${dm.nW - dm.oW >= 20 ? `、並ぶ時間も<span class="nw">${hmT(dm.nW - dm.oW)}</span>短い` : ""}` : `並ぶ時間が<span class="nw">${hmT(dm.nW - dm.oW)}</span>短い`}。</p>
+      <p class="aside">人気のものから順に並ぶと、昼のいちばん混む時間に、いちばん長い列に並ぶことになります。</p></div></div>`
+    : `<div class="wide"><p class="aside">人気のものから順に並ぶと、昼のいちばん混む時間に、いちばん長い列に並ぶことになります。</p></div>`;
+  const exImg = ex ? (PH[{ "フローズン": "x_fs_frozen", "ラプンツェル": "x_fs_rapunzel", "ピーターパン": "x_fs_peter", "タワーオブテラー": "x_tot" }[ex.k]] || rideImg(ex.k) || PH.x_harbor) : PH.x_fs_frozen;
+  const mx = ex ? Math.max(ex.pk.med, ex.b.med) : 1;
+  const r2 = ex ? `<p class="body">${day}の${sn(ex.k)}だと、こうなります。</p>
+      <div class="ibars"><p class="ilg">待ち時間（似た日の実際の待ち時間から・ふつうの値）</p>
+        <div class="ibar"><span class="h">${ex.pk.h}時台</span><span class="track"><span class="val">${ex.pk.med}<small>分</small></span><span class="line" style="--w:${(ex.pk.med / mx).toFixed(2)}"></span></span></div>
+        <div class="ibar late"><span class="h">${ex.b.h}時台</span><span class="track"><span class="val">${ex.b.med}<small>分</small></span><span class="line" style="--w:${(ex.b.med / mx).toFixed(2)}"></span></span></div>
+        <p class="ivd">同じ乗り物で<span class="nw"><span class="fig">${ex.d}</span>分</span>の差。</p></div>` : "";
+  box.innerHTML = `<div class="open">
+    <h2 class="q" id="intro-q">「シーは混むから、<br>待つのは仕方ない」</h2>
+    <p class="q-sub">そう思っていませんか。</p>
+    <div class="open-row">
+      <p class="lead"><span class="nw">実は、</span><span class="nw">待ち時間の多くは</span><span class="nw"><em>「回り方」</em>で減らせます。</span><span class="nw">もしかしたら、</span><span class="nw">あなたも</span><span class="nw">やっているかもしれない</span><span class="nw">「シーで損する回り方 TOP3」を、</span><span class="nw">${day}の</span><span class="nw">実際のデータで</span><span class="nw">見てみます。</span></p>
+      <div class="for"><h3>とくに、こんな人に。</h3><ul>
+        <li><span class="nw">休日やクリスマス、</span><span class="nw">年末年始など、</span><span class="nw">混む日に行く人</span></li>
+        <li><span class="nw">はじめてで、</span><span class="nw">回る順番がわからない人</span></li>
+        <li><span class="nw">プレミアアクセス（DPA）を、</span><span class="nw">買うか迷っている人</span></li></ul></div>
+    </div></div>
+  <div class="sec"><div class="sec-head"><h2>シーで損する回り方 TOP3</h2></div>
+    <article class="irk irk1"><div class="num"><span class="n">1</span><span class="v">第一位</span></div>
+      <div class="main"><h3>思いついた順に並ぶ</h3><p class="body">${showDemo ? `${day}に、人気の${dm.ks.length}つ（${dm.ks.map(k => `<span class="nw">${sn(k)}</span>`).join("・")}）を回ると、こうなります。` : "同じ乗り物でも、回る順番で並ぶ時間は大きく変わります。"}</p></div>${r1}</article>
+    <article class="irk irk2"><div class="num"><span class="n">2</span><span class="v">第二位</span></div>
+      <figure class="photo"><img src="${exImg}" alt="" loading="lazy"><figcaption class="cap">${ex ? RIDES[ex.k].name : "ファンタジースプリングス"}</figcaption></figure>
+      <div class="main"><h3>人気アトラクションに、<br>いちばん混む時間に並ぶ</h3>${r2}<p class="aside">朝いちばんと夜は空くものが多い。でも、空く時間は乗り物ごとに違います。</p></div></article>
+    <article class="irk irk3"><div class="num"><span class="n">3</span><span class="v">第三位</span></div>
+      <div class="main"><h3><span class="nw">予定が崩れても、</span><span class="nw">そのまま続ける</span></h3><p class="body">当日は、思ったより長い列がどこかで必ず出ます。そのまま続けると後ろが全部ずれて、最後の1つ2つが閉まります。</p></div>
+      <div class="wide"><div class="shift" aria-hidden="true">
+        <div class="srow"><span class="k">予定</span><div class="trk"><i style="--x:0%;--w:15%"></i><i style="--x:16.5%;--w:16.9%"></i><i style="--x:35%;--w:13.5%"></i><i style="--x:50%;--w:17.7%"></i><i style="--x:69.2%;--w:15.4%"></i></div></div>
+        <div class="srow"><span class="k">実際</span><div class="trk"><i style="--x:0%;--w:15%"></i><i class="late" style="--x:16.5%;--w:32.3%"></i><i style="--x:50.4%;--w:13.5%"></i><i class="lost" style="--x:65.4%;--w:17.5%"></i><i class="lost" style="--x:84.4%;--w:15.2%"></i><em style="--x:16.5%">思ったより長い列</em><em style="--x:65.4%">乗れない</em></div></div>
+        <div class="closeline"><span>閉まる</span></div></div>
+        <ul class="keys" aria-hidden="true"><li>予定どおり</li><li class="late">思ったより長い列</li><li class="lost">乗れない</li></ul></div></article>
+  </div>
+  <div class="turn"><img src="${PH.x_pd_night}" alt="" loading="lazy"><span class="tag" aria-hidden="true">夜のポートディスカバリー</span>
+    <h2><span class="t1">このナビは、この3つを</span><span class="t2">全部、<wbr>ふせぎます。</span></h2>
+    <p>乗りたいものを選ぶだけで<em class="nw">「いつ・どの順で」</em>を自動で組み、当日は今の待ちを入れると、残りをその場で組み直します。</p></div>
+  <div class="iwhy"><h2><span class="nw">なぜ、</span><span class="nw">信じていいのか。</span><span class="sub">理由は3つです。</span></h2>
+    <ol class="irs">
+      <li><span class="rn" aria-hidden="true">1</span><h3>勘ではなく、<br>実際の記録</h3><div><p>1年分の、30分ごとの実際の待ち時間から、行く日に似た日を選んで予測します。</p><p class="datum"><b>${nDays}<small>日</small></b><span>使っている記録（1年分）</span></p></div></li>
+      <li><span class="rn" aria-hidden="true">2</span><h3>組んだら、<br>確かめる</h3><div><p>できた予定を、似た日の実際の待ち時間で回してみて、全部回れる見込みを%で出します。都合のいい数字だけは見せません。</p><p class="datum"><b>91<small>%</small></b><span>「◎ いい感じ」の予定が、実際に全部回れた割合（過去1年）</span></p></div></li>
+      <li><span class="rn" aria-hidden="true">3</span><h3>当日、崩れても<br>立て直せる</h3><div><p>今の待ちを3〜5個入れると、ほかの乗り物の予測も直ります。</p><p class="datum"><b>9<small>分</small><i>→</i>7<small>分</small></b><span>昼からの予測のずれ（平均）</span></p></div></li>
     </ol>
-    <p class="in-c">このナビは、この3つを<b>全部</b>ふせぎます。乗りたいものを選ぶだけで、<b>「いつ・どの順で」</b>を自動で組み、当日は今の待ちを入れると残りをその場で組み直します。</p>
-    <p class="in-r">なぜ信じていいのか。理由は3つです。</p>
-    <ol class="in-3">
-      <li><b>勘ではなく、実際の記録</b><span>1年分（${nDays}日）の、30分ごとの実際の待ち時間から、行く日に似た日を選んで予測します。</span></li>
-      <li><b>組んだら、確かめる</b><span>できた予定を、似た日の実際の待ち時間で回してみて、何日うまくいったかを出します。都合のいい数字だけは見せません。</span></li>
-      <li><b>当日、崩れても立て直せる</b><span>今の待ちを3〜5個入れると、ほかの乗り物の予測も直ります。試すと、昼からの予測のずれが平均9分→7分に縮みました。</span></li>
-    </ol>
-    <p class="in-h">正直に言うと、予測は外れることもあります（雨の日や大型連休は特に）。だから「幅」で見せて、当日に直せるようにしています。</p>
-    <p class="in-c">いちばん大事なのは、<b>「何に乗るか」より「いつ・どの順で並ぶか」</b>。そこはナビに任せて、あなたはパークを楽しむことに集中してください。</p>
-    <div class="in-go"><p>やることは2つだけ。<b>行く日を選んで、乗りたいものをタップする。</b>予定は自動でできます。ぜひ、次のシーで試してください。</p>
-      <div class="row">${have ? `<button type="button" class="btn sun" data-gotab="plan">自分の予定を見る</button>` : `<button type="button" class="btn sun" data-intro-cal="1">行く日を選ぶ</button><button type="button" class="btn" data-gotab="plan">乗りたいものを選ぶ</button>`}</div></div>`;
+    <p class="honest"><b>正直に言うと、</b>予測は外れることもあります（雨の日や大型連休は特に）。だから「幅」で見せて、当日に直せるようにしています。</p></div>
+  <div class="close"><p class="pre">いちばん大事なのは</p><h2><span class="a">「何に乗るか」より、</span><span class="b">「いつ・どの順で並ぶか」</span></h2>
+    <p class="sub"><span class="nw">そこはナビに任せて、</span><span class="nw">あなたは</span><span class="nw">パークを楽しむことに</span><span class="nw">集中してください。</span></p></div>
+  <div class="finale"><img src="${PH.x_mc_evening}" alt="夕方のホテルミラコスタ" loading="lazy"><span class="tag" aria-hidden="true">夕方のホテルミラコスタ</span>
+    <div class="act"><p class="todo"><b>やることは、2つだけ。</b><span class="nw">行く日を選んで、</span><span class="nw">乗りたいものをタップする。</span><span class="nw">予定は自動でできます。</span></p>
+      <p class="bye"><span class="nw">ぜひ、次のシーで</span><wbr><span class="nw">試してください。</span></p>
+      <div class="btns">${have ? `<button type="button" class="btn sun" data-gotab="plan">自分の予定を見る</button>` : `<button type="button" class="btn sun" data-intro-cal="1">行く日を選ぶ</button><button type="button" class="btn" data-gotab="plan">乗りたいものを選ぶ</button>`}</div></div></div>`;
   const c = box.querySelector("[data-intro-cal]"); if (c) c.addEventListener("click", () => document.getElementById("cal").scrollIntoView({ behavior: "smooth" }));
 }
 function renderDay() {
@@ -3190,6 +3420,10 @@ function renderBoost(sim) {
 //  点数 = 似た日で全部回れた割合×50 ＋ 1割混んでも×30 ＋ 厳しめ（歩く1.4倍＋3分・列1.5倍・入園15分遅れ）でも×20。
 //  作った日で確かめるので「ふつう」だけだと甘い（ほぼ100点になった）。厳しめを混ぜて、予定ごとの差が出るようにしたそこに予定の特徴（早歩き・DPAの早い枠・ショー前がぎりぎり）を一言添える
 //  「もっと回れる方法」があっても、点数が高ければ「今のままで十分いい」と言う
+// 点数 → 「全部回れる見込み（%）」。過去1年の答え合わせ（1,496件）で、点数の帯ごとに実際に全部回れた割合（平均点, 実際%）をつないだもの。
+//  35点未満は件数が少なくぶれるので35%で止める。上は95%まで（100%とは言わない）
+const PCT_TABLE = [[35, 37], [45, 52], [54, 58], [65, 69], [74, 78], [84, 88], [92, 93], [98, 95]];
+const pctOf = sc => { const T = PCT_TABLE; if (sc <= T[0][0]) return T[0][1]; for (let i = 1; i < T.length; i++) if (sc <= T[i][0]) { const [a, pa] = T[i - 1], [b, pb] = T[i]; return Math.round(pa + (pb - pa) * (sc - a) / (b - a)); } return T[T.length - 1][1]; };
 const scoreOf = (ok, ok11, okH, n) => Math.round(100 * (0.5 * ok + 0.3 * ok11 + 0.2 * (okH || 0)) / Math.max(1, n));
 // 「10日中7日だけど、減らしたほうがいい？」に答える。ナビの考え（友だちが横で言うくらいの温度で。でも数字はうそをつかない）:
 //  ・乗れなかった日も、ほかの予定は全部回れている（乗れないのはその1つだけ）なら、減らさない。うまくいく日に乗れる1つを最初から捨てることになるから。
@@ -3205,11 +3439,11 @@ function adviceOf(res, sc) {
   }
   const [k, m] = w, nm = RIDES[k].short, solo = (t.refs.solo || {})[k] || 0, d = res.drop, st = (res.at || {})[k], cut = lastAt(k);
   const when = st != null && cut > st && cut - st <= 60 ? (cut - st <= 5 ? `当日の目安：${nm}は締め切り（${hm(cut)}ごろ）ぎりぎりに入れています。少しでも遅れたら、${nm}はスパッとあきらめて次へ。` : `当日の目安：${nm}は${hm(st)}に並び始める予定で、受付は${hm(cut)}ごろまで。<b>それまでに${cut - st}分以上遅れていたら</b>、${nm}はスパッとあきらめて次へ（当日タブで組み直すと自動で外れます）。`) : "";
-  const dropT = !d ? "" : d.sc <= sc + 3 ? `ちなみに外しても、手ごたえはほとんど上がりません（${sc}→${d.sc}点）。` : `外すと手ごたえは${sc}→${d.sc}点に上がるけど、乗れるのは1つ減ります（${d.rides}つ）。`;
+  const dropT = !d ? "" : d.sc <= sc + 3 ? `ちなみに外しても、見込みはほとんど上がりません（${pctOf(sc)}%→${pctOf(d.sc)}%）。` : `外すと全部回れる見込みは${pctOf(sc)}%→${pctOf(d.sc)}%に上がるけど、乗れるのは1つ減ります（${d.rides}つ）。`;
   const chain = solo < m && ms.length > 1 ? `乗れなかった日は、どこかの列が長引いて、後ろの${ms.slice(0, 3).map(([q]) => RIDES[q].short).join("・")}のどれかが閉まった日。当日遅れたら「残りを組み直す」を押せば、間に合うほうを優先してくれます。` : "";
   if (S.must.includes(k)) return { h: `${nm}を守りたいなら、早い時間に`, m: `「必ず」の${nm}が${n}日中${n - m}日。予定の「…」で${nm}を早い時間に動かすか、ほかを1つ減らすと、ぐっと確実になります。${when}` };
   if (sc >= 70 || (m <= Math.ceil(n * 0.3) && solo === m)) return { h: "減らさなくて大丈夫！", m: `${nm}は${n}日中${n - m}日。${solo === m ? `でも乗れなかった${m}日も、<b>ほかは全部回れています</b>（逃したのは${nm}だけ）。` : chain}減らしたら、うまくいく${n - m}日の${nm}まで、最初から捨てることに。だから減らさないのがおすすめです。${dropT}${when}` };
-  if (d && (d.sc - sc >= 15 || (sc < 55 && d.sc - sc >= 8))) return { h: `${nm}は外すのがおすすめ`, m: `${nm}は${n}日中${n - m}日しか乗れていません。外すと手ごたえは${sc}→<b>${d.sc}点</b>に上がって、ほかがぐっと安定します。どうしても乗りたいなら、外さずに「必ず」にしよう（代わりにほかが1つ外れることもあります）。` };
+  if (d && (d.sc - sc >= 15 || (sc < 55 && d.sc - sc >= 8))) return { h: `${nm}は外すのがおすすめ`, m: `${nm}は${n}日中${n - m}日しか乗れていません。外すと全部回れる見込みは${pctOf(sc)}%→<b>${pctOf(d.sc)}%</b>に上がって、ほかがぐっと安定します。どうしても乗りたいなら、外さずに「必ず」にしよう（代わりにほかが1つ外れることもあります）。` };
   return { h: d && d.sc - sc >= 8 ? "どっちでもアリ。おすすめは今のまま" : "減らしても、あまり変わらないかな", m: `${nm}は${n}日中${n - m}日。${chain}${dropT || ""}今のまま行って、当日遅れていたら${nm}をあきらめる、がいちばんお得です。${when}` };
 }
 function verdictOf(res) {
@@ -3231,9 +3465,9 @@ function verdictOf(res) {
 }
 function verdictHTML(res) {
   const v = verdictOf(res); if (!v) return "";
-  return `<div class="verdict v-${v.g.k}"><div class="vd-l"><span class="vd-mark" aria-hidden="true">${v.g.mark}</span><span class="vd-sc"><small>手ごたえ</small><b>${v.sc}</b><small>点</small></span></div>
+  return `<div class="verdict v-${v.g.k}"><div class="vd-l"><span class="vd-mark" aria-hidden="true">${v.g.mark}</span><span class="vd-sc"><small>全部回れる<br>見込み</small><b>${pctOf(v.sc)}</b><small>%</small></span></div>
     <div class="vd-r"><b class="vd-h">${v.g.h}</b><p>${v.g.m}</p>${v.adv ? `<div class="vd-adv"><b>ナビの考え：${v.adv.h}</b><p>${v.adv.m}</p></div>` : ""}${v.tips.length ? `<ul>${v.tips.map(x => `<li>${x}</li>`).join("")}</ul>` : ""}${v.more ? `<p class="vd-more">${v.more}</p>` : ""}
-    <small class="vd-how">点数は、似た日${res.trust.refs.n}日の実際の待ちで回して全部回れた日（${res.trust.refs.ok}日）・1割混んだ場合（${res.trust.refs11.ok}日）・歩きも列も長めで入園が15分遅れた場合（${res.trust.harsh ?? 0}日）から。点数はだいたい「全部回れる見込み（%）」です。過去1年の1,496通りの予定で確かめると、${{ a: "80点以上の予定は91%", b: "70点台の予定は78%", c: "55〜69点の予定は66%", d: "54点以下の予定は53%" }[v.g.k]}の日で、実際に全部回れました</small></div></div>`;
+    <details class="vd-how"><summary>この「見込み」の出し方</summary><p>この予定を、行く日に似た日<b>${res.trust.refs.n}日</b>の実際の待ち時間で、ナビが回してみます。回し方は3通り：<b>ふつう</b>（全部回れたのは${res.trust.refs.ok}日）・<b>去年より1割混む</b>（${res.trust.refs11.ok}日）・<b>歩きも列も長めで、入園が15分遅れる</b>（${res.trust.harsh ?? 0}日）。この3つを5：3：2で合わせた点数を、過去1年の「実際に全部回れたか」の記録で%に直しています。</p><p>ちゃんと当たるかも確かめました。2025年10月〜2026年10月の毎日、前の日までの記録で予定と見込みを作り、その日の実際の待ち時間で回すと（1,496通り）、見込み90%前後の予定は実際に<b>9割</b>、80%前後は<b>9割弱</b>、70%台は<b>8割弱</b>、60%前後は<b>6〜7割</b>の日で全部回れていました。だいたい数字どおりです。</p><p>「全部」は、予定に入れた乗り物とショーがひとつ残らず、という厳しめの数え方です。1つ逃しても、ほかは回れている日がほとんどです。</p></details></div></div>`;
 }
 function paintBoost(res) {
   const tb = document.getElementById("trust"), box = document.getElementById("boost"); if (!tb || !box) return;
@@ -4054,7 +4288,7 @@ function perRide(k, loo) {
 function rideAdvice({ k, why, ok, N, solo }) {
   const top = Object.entries(why).sort((a, b) => b[1] - a[1])[0][0], must = S.must.includes(k);
   const miss = N - ok - why.drop;
-  if (!must && ok >= N * 0.6 && miss > 0 && solo === miss && top !== "drop") return [`乗れなかった${miss}日も、ほかは全部回れています（逃したのは${RIDES[k].short}だけ）。<b>減らさなくて大丈夫！</b>当日遅れていたら、${RIDES[k].short}だけあきらめればOK（あきらめ時の目安は上の「手ごたえ」に）。どうしても乗りたいなら↓`, `<button type="button" class="btn small" data-prfirst="${k}">早い時間に乗る</button><button type="button" class="btn small" data-prmust="${k}">★「必ず」にする</button>`];
+  if (!must && ok >= N * 0.6 && miss > 0 && solo === miss && top !== "drop") return [`乗れなかった${miss}日も、ほかは全部回れています（逃したのは${RIDES[k].short}だけ）。<b>減らさなくて大丈夫！</b>当日遅れていたら、${RIDES[k].short}だけあきらめればOK（あきらめ時の目安は上の「全部回れる見込み」の欄に）。どうしても乗りたいなら↓`, `<button type="button" class="btn small" data-prfirst="${k}">早い時間に乗る</button><button type="button" class="btn small" data-prmust="${k}">★「必ず」にする</button>`];
   if (top === "early") return [`${why.early}日は、その日だけ早く受付が終わりました（故障・天候・点検・その日の運営など。前もって分かりません）。${RIDES[k].from_ ? "夜だけの乗り物なので、夜の早い時間に入れると安全です" : "どうしても乗りたいなら早めの時間に"}`, RIDES[k].from_ ? "" : `<button type="button" class="btn small" data-prfirst="${k}">最初に乗る</button>`];
   if (top === "drop") return [`${why.drop}日は、その日の見込みだとほかと合わせて入りきりませんでした。${must ? "ほかを減らすと入ります" : "「必ず」にすると優先して入れます（代わりにほかが外れることがあります）"}`, must ? "" : `<button type="button" class="btn small" data-prmust="${k}">★「必ず」にする</button>`];
   if (top === "late") return [`${why.late}日は、待ちが長くて受付終了に間に合いませんでした。早めの時間に回すと安心です`, `<button type="button" class="btn small" data-prfirst="${k}">最初に乗る</button>${must ? "" : `<button type="button" class="btn small" data-prmust="${k}">★「必ず」にする</button>`}`];
