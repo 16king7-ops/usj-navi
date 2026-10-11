@@ -392,6 +392,43 @@ details.set .inner { display: grid; gap: 12px; padding-bottom: 14px; }
 .panel { padding: 22px; }
 @media (max-width: 600px) { .bgph { width: 85%; height: 260px; opacity: .2; } .wrap { gap: 32px; } }
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+/* 導入 */
+.intro { display: grid; gap: 14px; max-width: 760px; margin-inline: auto; padding-block: 8px; }
+.intro p { max-width: 62ch; }
+.intro .in-q { font-family: var(--round); font-size: clamp(22px, 4.4vw, 34px); line-height: 1.45; text-wrap: balance; }
+.intro .in-l, .intro .in-c { font-size: 16.5px; line-height: 1.85; }
+.intro b { color: var(--brand); }
+.intro .in-ex { display: grid; gap: 4px; justify-items: start; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1.5px solid var(--line); border-left: 5px solid var(--sun); border-radius: 14px; padding: 12px 16px; }
+.intro .in-exh { font-size: 13.5px; font-weight: 700; color: var(--ink-2); }
+.intro .in-exr { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.intro .in-exr b { font-family: var(--round); font-weight: 400; font-size: 30px; color: var(--ink); }
+.intro .in-exr i { font-style: normal; color: var(--ink-3); }
+.intro .in-exd { font-size: 16px; font-weight: 700; } .intro .in-exd b { font-family: var(--round); font-weight: 400; font-size: 24px; color: var(--bad); }
+.intro .in-ex small { font-size: 12px; color: var(--ink-3); }
+.intro .in-r { font-weight: 900; font-size: 17px; }
+.intro .in-3 { list-style: none; counter-reset: n; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.intro .in-3 li { counter-increment: n; display: grid; gap: 6px; align-content: start; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.intro .in-3 li::before { content: counter(n); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: var(--brand-ink); font-family: var(--round); }
+.intro .in-3 b { color: var(--ink); font-size: 16px; } .intro .in-3 span { font-size: 14px; color: var(--ink-2); line-height: 1.7; }
+.intro .in-h { font-size: 13.5px; color: var(--ink-3); }
+.intro .in-top { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.intro .in-top > li { display: grid; gap: 8px; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1.5px solid var(--line); }
+.intro .in-top > li > em { justify-self: start; font-style: normal; font-family: var(--round); font-size: 13px; letter-spacing: .08em; color: var(--sun-ink); background: var(--sun); border-radius: 999px; padding: 1px 12px; }
+.intro .in-top > li > b { font-family: var(--round); font-weight: 400; font-size: clamp(19px, 3.4vw, 24px); color: var(--ink); line-height: 1.4; }
+.intro .in-top > li > span { font-size: 14.5px; color: var(--ink-2); line-height: 1.75; }
+.intro .in-top .in-ex { background: var(--surface-2); }
+.intro .in-vs { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; width: 100%; }
+.intro .in-vs > div { display: grid; gap: 2px; padding: 8px 12px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--line); }
+.intro .in-vs > div.in-win { border-color: var(--good); box-shadow: 0 0 0 3px var(--good-soft); }
+.intro .in-vs small { font-size: 12px; color: var(--ink-3); font-weight: 700; }
+.intro .in-vs b { font-family: var(--round); font-weight: 400; font-size: clamp(20px, 4vw, 28px); color: var(--ink); font-variant-numeric: tabular-nums; }
+.intro .in-vs .in-win b { color: var(--good); }
+.intro .in-vs span { font-size: 12.5px; color: var(--ink-2); }
+.intro .in-vs i { font-style: normal; color: var(--ink-3); font-size: 18px; }
+.intro .in-who { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.intro .in-who span { font-weight: 700; font-size: 13.5px; color: var(--ink); background: color-mix(in srgb, var(--surface) 85%, transparent); border: 1.5px solid var(--line); border-radius: 999px; padding: 2px 12px; }
+.intro .in-go { display: grid; gap: 10px; background: var(--brand-soft); border-radius: 14px; padding: 14px 16px; }
+@media (max-width: 700px) { .intro .in-3 { grid-template-columns: minmax(0, 1fr); } }
 .steps button { font: inherit; text-align: left; display: flex; gap: 8px; align-items: flex-start; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 14px; padding: 10px; cursor: pointer; }
 .steps button:hover { border-color: var(--brand); }
 .steps b { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: var(--brand-ink); font-family: var(--round); font-weight: 400; }
@@ -1264,6 +1301,7 @@ html { scroll-padding-top: calc(var(--toph, 150px) + 8px); }
       <div class="dots" id="dots"></div>
       <span class="cap" id="herocap"></span>
     </div>
+    <div class="intro" id="intro"></div>
     <div class="steps4" id="steps4" aria-label="使い方（4ステップ）"></div>
     <div class="panel" id="dayinfo"></div>
     <div id="cal" style="display:grid;gap:6px;position:relative"><div class="bgph right" data-bg="x_fs_castle" aria-hidden="true"></div><h2 data-en="CALENDAR">カレンダー</h2><div class="legend" id="callegend"></div></div>
@@ -2526,7 +2564,59 @@ function renderSteps4() {
     else setTab(k);
   }));
 }
+// ===== 導入（はじめて開いた人に、使いたくなる流れで）=====
+//  マコなり社長の動画の型（tech-camp.in の文章版で確かめた）: 負の言い方のテーマ「〜TOP3」・読者の思い込みを突く問い・「もしかしたら、あなたも」・
+//  悪い例と良い例の対比・数字・最後に「いちばん大事なこと」と行動の呼びかけ。数字はすべて行く日の実データか、答え合わせで確かめた値（盛らない）
+let introC = { key: "", demo: null };
+function introDemo() {  // 人気の6つを「人気の順にそのまま」回る vs ナビの順番（ごはん・DPAなしで比べる）
+  const key = [M.date, S.entryMode, S.entry, S.speed].join("|"); if (introC.key === key) return introC.demo;
+  const ks = ["ソアリン", "トイストーリーマニア", "センターオブジアース", "タワーオブテラー", "ラプンツェル", "ピーターパン"].filter(k => RIDES[k] && avail(k, M.date) && M.prof[k] && shutAt(k) == null);
+  let demo = null;
+  try {
+    const ep0 = P().ep; P().ep = {};  // 比べはDPAなし
+    const its = ks.map(k => ({ id: "demo_" + k, type: "ride", key: k }));
+    const nv = simulate(its), pl = planRoute(its.map(x => ({ ...x })), [], { beam: 300 }), op = pl ? simulate(pl.order) : null;
+    P().ep = ep0;
+    const ok = s => s.rows.filter(r => RIDES[r.it.key] && !r.flag).length, wt = s => s.rows.filter(r => RIDES[r.it.key] && !r.flag).reduce((a, r) => a + r.wait, 0);
+    if (op) demo = { ks, nN: ok(nv), nW: wt(nv), nE: nv.end, oN: ok(op), oW: wt(op), oE: op.end, ord: op.rows.filter(r => RIDES[r.it.key]).map(r => r.it.key) };
+  } catch (e) { demo = null; }
+  introC = { key, demo }; return demo;
+}
+function renderIntro() {
+  const box = document.getElementById("intro"); if (!box) return;
+  const ks = ["ソアリン", "トイストーリーマニア", "センターオブジアース", "タワーオブテラー", "ラプンツェル", "ピーターパン", "フローズン"].filter(k => RIDES[k] && avail(k, M.date) && M.prof[k]);
+  let ex = null;
+  for (const k of ks) { const hr = hourRows(k), b = hr.rows.find(x => x.h === hr.best), pk = hr.rows.filter(x => x.st === "ok" && x.med != null).reduce((a, x) => (!a || x.med > a.med ? x : a), null);
+    if (b && pk && pk.med - b.med >= 20 && (!ex || pk.med - b.med > ex.d)) ex = { k, b, pk, d: pk.med - b.med }; }
+  const dm = introDemo(), nDays = DAYS.filter(x => x.avg).length, have = S.sel.length > 0, sn = k => RIDES[k].short;
+  const d1 = dm && (dm.oN > dm.nN || dm.nW - dm.oW >= 20) ? `<div class="in-ex"><span class="in-exh">${md(M.date)}に、人気の${dm.ks.length}つ（${dm.ks.map(sn).join("・")}）を回ると</span>
+      <div class="in-vs"><div><small>人気の順にそのまま</small><b>${dur(Math.round(dm.nW))}</b><span>並ぶ合計・乗れるのは${dm.nN}つ</span></div><i>→</i><div class="in-win"><small>ナビの順番</small><b>${dur(Math.round(dm.oW))}</b><span>並ぶ合計・乗れるのは${dm.oN}つ</span></div></div>
+      <span class="in-exd">順番を変えるだけで、${dm.oN > dm.nN ? `<b>${dm.oN - dm.nN}つ多く</b>乗れて${dm.nW - dm.oW >= 20 ? `、並ぶ時間も <b>${dur(Math.round(dm.nW - dm.oW))}</b> 短い` : ""}` : `並ぶ時間が <b>${dur(Math.round(dm.nW - dm.oW))}</b> 短い`}</span>
+      <small>似た日の実際の待ち時間（ふつうの値）で計算。ごはん・DPAなし。ナビの順番：${dm.ord.map(sn).join(" → ")}</small></div>` : "";
+  const d2 = ex ? `<div class="in-ex"><span class="in-exh">${md(M.date)}の${sn(ex.k)}だと</span><span class="in-exr"><span>${ex.pk.h}時台 <b>${ex.pk.med}</b>分</span><i>→</i><span>${ex.b.h}時台 <b>${ex.b.med}</b>分</span></span><span class="in-exd">同じ乗り物で <b>${ex.d}分</b> の差</span><small>似た日の実際の待ち時間から（ふつうの値）</small></div>` : "";
+  box.innerHTML = `<p class="in-q">「シーは混むから、待つのは仕方ない」<br>そう思っていませんか。</p>
+    <p class="in-l">実は、待ち時間の多くは<b>「回り方」</b>で減らせます。もしかしたら、あなたもやっているかもしれない<b>「シーで損する回り方 TOP3」</b>を、${md(M.date)}の実際のデータで見てみます。</p>
+    <p class="in-who">とくにこんな人に：<span>休日・クリスマス・年末年始など混む日に行く</span><span>はじめてで、回る順番がわからない</span><span>プレミアアクセス（DPA）を買うか迷っている</span></p>
+    <ol class="in-top">
+      <li><em>第1位</em><b>思いついた順に並ぶ</b>${d1}<span>人気のものから順に並ぶと、昼のいちばん混む時間に、いちばん長い列に並ぶことになります。</span></li>
+      <li><em>第2位</em><b>人気アトラクションに、いちばん混む時間に並ぶ</b>${d2}<span>朝いちばんと夜は空くものが多い。でも、空く時間は乗り物ごとに違います。</span></li>
+      <li><em>第3位</em><b>予定が崩れても、そのまま続ける</b><span>当日は、思ったより長い列がどこかで必ず出ます。そのまま続けると後ろが全部ずれて、最後の1つ2つが閉まります。</span></li>
+    </ol>
+    <p class="in-c">このナビは、この3つを<b>全部</b>ふせぎます。乗りたいものを選ぶだけで、<b>「いつ・どの順で」</b>を自動で組み、当日は今の待ちを入れると残りをその場で組み直します。</p>
+    <p class="in-r">なぜ信じていいのか。理由は3つです。</p>
+    <ol class="in-3">
+      <li><b>勘ではなく、実際の記録</b><span>1年分（${nDays}日）の、30分ごとの実際の待ち時間から、行く日に似た日を選んで予測します。</span></li>
+      <li><b>組んだら、確かめる</b><span>できた予定を、似た日の実際の待ち時間で回してみて、何日うまくいったかを出します。都合のいい数字だけは見せません。</span></li>
+      <li><b>当日、崩れても立て直せる</b><span>今の待ちを3〜5個入れると、ほかの乗り物の予測も直ります。試すと、昼からの予測のずれが平均9分→7分に縮みました。</span></li>
+    </ol>
+    <p class="in-h">正直に言うと、予測は外れることもあります（雨の日や大型連休は特に）。だから「幅」で見せて、当日に直せるようにしています。</p>
+    <p class="in-c">いちばん大事なのは、<b>「何に乗るか」より「いつ・どの順で並ぶか」</b>。そこはナビに任せて、あなたはパークを楽しむことに集中してください。</p>
+    <div class="in-go"><p>やることは2つだけ。<b>行く日を選んで、乗りたいものをタップする。</b>予定は自動でできます。ぜひ、次のシーで試してください。</p>
+      <div class="row">${have ? `<button type="button" class="btn sun" data-gotab="plan">自分の予定を見る</button>` : `<button type="button" class="btn sun" data-intro-cal="1">行く日を選ぶ</button><button type="button" class="btn" data-gotab="plan">乗りたいものを選ぶ</button>`}</div></div>`;
+  const c = box.querySelector("[data-intro-cal]"); if (c) c.addEventListener("click", () => document.getElementById("cal").scrollIntoView({ behavior: "smooth" }));
+}
 function renderDay() {
+  renderIntro();
   renderHero(); renderAreas(); renderSteps4();
   const c = M.crowd, ev = eventsOf(M.date);
   const c0 = crowd(M.date), near = []; for (let i = -14; i <= 14; i++) { const d = addDays(M.date, i); if (i && d >= TODAY) { const x = crowd(d); if (x.avg && c0.avg && (x.lv < c0.lv || x.avg < c0.avg - 3)) near.push([d, x]); } }
