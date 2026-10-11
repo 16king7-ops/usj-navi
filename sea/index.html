@@ -392,6 +392,19 @@ details.set .inner { display: grid; gap: 12px; padding-bottom: 14px; }
 .panel { padding: 22px; }
 @media (max-width: 600px) { .bgph { width: 85%; height: 260px; opacity: .2; } .wrap { gap: 32px; } }
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+/* この予定の手ごたえ */
+.verdict { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: start; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1.5px solid var(--line); border-left: 6px solid var(--vc, var(--good)); margin-bottom: 10px; }
+.verdict.v-a { --vc: var(--good); } .verdict.v-b { --vc: var(--brand); } .verdict.v-c { --vc: var(--warn); } .verdict.v-d { --vc: var(--bad); }
+.verdict .vd-l { display: grid; justify-items: center; gap: 2px; min-width: 64px; }
+.verdict .vd-mark { font-size: 30px; line-height: 1; color: var(--vc); font-weight: 900; }
+.verdict .vd-sc { display: flex; align-items: baseline; gap: 2px; } .verdict .vd-sc b { font-family: var(--round); font-weight: 400; font-size: 26px; color: var(--vc); font-variant-numeric: tabular-nums; }
+.verdict .vd-sc small { font-size: 11px; color: var(--ink-3); font-weight: 700; }
+.verdict .vd-r { display: grid; gap: 4px; min-width: 0; }
+.verdict .vd-h { font-family: var(--round); font-weight: 400; font-size: 20px; color: var(--ink); }
+.verdict p { font-size: 14.5px; line-height: 1.7; }
+.verdict ul { margin: 2px 0 0; padding-left: 1.2em; font-size: 13.5px; color: var(--ink-2); line-height: 1.7; }
+.verdict .vd-more { font-size: 13.5px; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 6px 10px; }
+.verdict .vd-how { font-size: 11.5px; color: var(--ink-3); }
 /* 導入 */
 .intro { display: grid; gap: 14px; max-width: 760px; margin-inline: auto; padding-block: 8px; }
 .intro p { max-width: 62ch; }
@@ -3094,7 +3107,7 @@ function lastYearOf(sim) {
   try { const r = replayLive(sim, x); return { d: ly, avg: x.avg, ok: !r.missed.length, rides: r.rides, planned: r.planned, end: r.end, miss: [...new Set(r.missed.map(m => m.k))].filter(k => RIDES[k]), unknown: [...new Set((r.unknown || []).map(u => (u && u.k) || u))].filter(k => RIDES[k]), inRefs: M.crowd.refs.some(y => y.d === ly) }; }
   finally { RAW_DAY = null; }
 }
-function trustOf(sim) { const nv = naiveSim(); return { last: lastYearOf(sim), refs: rateOf(sim), refs11: rateOf(sim, 1.1), naive: { rides: nv.rides, wait: Math.round(nv.waitTot) } }; }
+function trustOf(sim) { const nv = naiveSim(); return { last: lastYearOf(sim), refs: rateOf(sim), refs11: rateOf(sim, 1.1), harsh: M.crowd.refs.filter(x => !replayLive(sim, x, "harsh").missed.length).length, naive: { rides: nv.rides, wait: Math.round(nv.waitTot) } }; }
 // 設定を一時的に変えて組んでみる（必ず元に戻す）。自分で足したフード・トイレ・休憩も入れて組む（押したあとの予定と同じになるように）
 function tryPlan(o, rate) {
   const e0 = P().ep, sl = S.slack, st = S.style, em = S.entryMode;
@@ -3131,7 +3144,8 @@ function renderBoost(sim) {
   if (boostRes && boostRes.sig === sig) { paintBoost(boostRes); return; }
   const run = ++boostRun, missK = (lastMissed || []).filter(x => RIDES[x.key] && avail(x.key, M.date)).map(x => x.key), date = S.date;
   const curKeys = [...new Set(sim.rows.filter(r => RIDES[r.it.key] && !r.flag).map(r => r.it.key))];
-  const res = boostRes = { sig, missK, done: false, dpa: [], cur: sim.rides, curKeys, curWait: Math.round(sim.waitTot), curEnd: sim.end };
+  const res = boostRes = { sig, missK, done: false, dpa: [], cur: sim.rides, curKeys, curWait: Math.round(sim.waitTot), curEnd: sim.end,
+    fwN: sim.rows.filter(r => r.fw).length, exN: sim.rows.filter(r => r.it.ex).length, earlyDPA: Object.entries(dpaChain().early || {}), showTight: sim.rows.map((r, i) => showRiskOf(sim, i)).filter(q => q && q.ok2 < q.n).length };
   const jobs = [() => { res.trust = trustOf(sim); }];
   if (missK.length) jobs.push(() => { res.hours = missK.map(k => ({ k, b: bestBand(k) })).filter(x => x.b); });
   const ep = P().ep || {}, okDPA = k => RIDES[k] && RIDES[k].dpa && RIDES[k].src === "r" && avail(k, M.date) && (!RIDES[k].dpaFrom || M.date >= RIDES[k].dpaFrom) && !ep[k] && S.sel.includes(k);
@@ -3158,11 +3172,36 @@ function renderBoost(sim) {
   };
   paintBoost(res); setTimeout(step, 0);
 }
+// ===== この予定の手ごたえ（点数と一言）=====
+//  点数 = 似た日で全部回れた割合×50 ＋ 1割混んでも×30 ＋ 厳しめ（歩く1.4倍＋3分・列1.5倍・入園15分遅れ）でも×20。
+//  作った日で確かめるので「ふつう」だけだと甘い（ほぼ100点になった）。厳しめを混ぜて、予定ごとの差が出るようにしたそこに予定の特徴（早歩き・DPAの早い枠・ショー前がぎりぎり）を一言添える
+//  「もっと回れる方法」があっても、点数が高ければ「今のままで十分いい」と言う
+function verdictOf(res) {
+  const t = res.trust; if (!t || !t.refs.n) return null;
+  const sc = Math.round(100 * (0.5 * t.refs.ok + 0.3 * t.refs11.ok + 0.2 * (t.harsh || 0)) / t.refs.n);
+  const g = sc >= 85 ? { k: "a", mark: "◎", h: res.fwN ? "急げばいい感じ！" : "いい感じの予定！", m: "似た日のほとんどで、予定どおり全部回れています。このまま行って大丈夫。" }
+    : sc >= 62 ? { k: "b", mark: "○", h: res.fwN ? "早歩きなら、たぶんいける！" : "たぶんいける！", m: "たいていの日は回れます。どこかで列が長引いたら、当日タブで残りを組み直せば十分。" }
+    : sc >= 42 ? { k: "c", mark: "△", h: "ちょっと賭け", m: "うまくいく日と、最後の1つが閉まる日が半々くらい。最後のほうは「乗れたらラッキー」くらいの気持ちで。" }
+    : { k: "d", mark: "✕", h: "かなり賭け", m: "似た日の多くで回りきれていません。1つ減らすか、入園を早める・DPAを使うと安心です。" };
+  const tips = [];
+  if (res.fwN) tips.push(res.fwN >= 3 ? `早歩きの区間が${res.fwN}か所。<b>急ぎ足の1日</b>になります。疲れそうなら、設定の「間に合わない所は」を「組まない」に（1つ減るかわりにゆっくり回れます）` : `早歩きの区間が${res.fwN}か所。<b>そこだけちょっと急げばいける</b>予定です（予定の「早歩きしない」で外せます）`);
+  if (res.exN) tips.push(`ショーを10分早く抜ける所があります。通路側の席・場所がおすすめ`);
+  if (res.earlyDPA.length) tips.push(`${res.earlyDPA.map(([a, b]) => `${RIDES[a].short}のDPAを早い枠で取れたら${RIDES[b].short}も買える`).join("・")}、という前提があります。取れなければ当日に組み直し`);
+  if (res.showTight) tips.push(`ショーの前が少しきつい所があります（予定の「間に合うか」を見て、列が進まなければショーを優先）`);
+  const more = res.missK.length ? (sc >= 62 ? `下に「もっと回れる方法」も出していますが、<b>今のままでも十分いい予定</b>です。欲張るかどうかはお好みで。` : `下の「もっと回れる方法」で、入らなかったものを入れたり、余裕を作ったりできます。`) : "";
+  return { sc, g, tips, more };
+}
+function verdictHTML(res) {
+  const v = verdictOf(res); if (!v) return "";
+  return `<div class="verdict v-${v.g.k}"><div class="vd-l"><span class="vd-mark" aria-hidden="true">${v.g.mark}</span><span class="vd-sc"><small>手ごたえ</small><b>${v.sc}</b><small>点</small></span></div>
+    <div class="vd-r"><b class="vd-h">${v.g.h}</b><p>${v.g.m}</p>${v.tips.length ? `<ul>${v.tips.map(x => `<li>${x}</li>`).join("")}</ul>` : ""}${v.more ? `<p class="vd-more">${v.more}</p>` : ""}
+    <small class="vd-how">点数は、似た日${res.trust.refs.n}日の実際の待ちで回して全部回れた日（${res.trust.refs.ok}日）・1割混んだ場合（${res.trust.refs11.ok}日）・歩きも列も長めで入園が15分遅れた場合（${res.trust.harsh ?? 0}日）から。気持ちの目安です</small></div></div>`;
+}
 function paintBoost(res) {
   const tb = document.getElementById("trust"), box = document.getElementById("boost"); if (!tb || !box) return;
   const nm = ks => ks.filter(k => RIDES[k]).map(k => RIDES[k].short).join("・"), t = res.trust, miss = res.missK.length > 0;
   const lostOf = o => res.curKeys.filter(k => !(o.keys || []).includes(k));  // 試算で、今の予定から代わりに外れるもの
-  tb.innerHTML = !t ? `<p class="note">この予定を、去年の同じ日と似た日の待ちで確かめています…</p>` : `<ul class="trustl">
+  tb.innerHTML = !t ? `<p class="note">この予定を、去年の同じ日と似た日の待ちで確かめています…</p>` : `${verdictHTML(res)}<ul class="trustl">
     ${t.last ? `<li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0 -10 0' /> <path d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /></svg> <b>去年の${md(t.last.d)}</b>（日平均${t.last.avg}分）の<b>実際の待ち</b>でこの予定を回すと：${t.last.ok ? `<b class="good">予定どおり全部回れました</b>（終わり ${hm(t.last.end)}）` : `<b>${t.last.miss.length ? `${nm(t.last.miss)}は回れませんでした` : "予定の一部は回れませんでした"}</b>`}${t.last.inRefs || t.last.unknown.length ? `<small>${t.last.inRefs ? "この日も予測の材料に入っているので、甘めの確かめです。" : ""}${t.last.unknown.length ? `${nm(t.last.unknown)}は去年の記録がないので、予測で代用しています。` : ""}</small>` : ""}</li>` : ""}
     <li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 予定を作るのに使った似た日<b>${t.refs.n}日</b>の待ちで回すと、予定の${res.cur}個を全部回れたのは<b>${t.refs.ok}日</b>${mustNow().length ? `（「必ず」を全部は${t.refs.must}日）` : ""}。去年より<b>1割混むと${t.refs11.ok}日</b><small>作った日で確かめているので甘めです。下の「根拠」は、1日ずつ抜いて作り直して確かめています</small></li>
     ${miss ? `<li><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 9v4' /> <path d='M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z' /> <path d='M12 16h.01' /></svg> 選んだ${res.cur + res.missK.length}個のうち<b>${res.missK.length}個は、この予定に入っていません</b>（入れる方法は下）</li>` : ""}
