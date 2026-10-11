@@ -2235,15 +2235,20 @@ function interp(pts, t, ramp) {
 }
 // 検証: 予定の順番で、その日の実際の待ち時間で回す。ただし当日の人と同じように動く
 //  ・整理券やショーの時刻に間に合わなくなる乗り物は、並ばずに飛ばす
-//  ・整理券に遅れそうなごはん・食べ歩きは、整理券のあとに回す
+//  ・遅れているときのごはんは短くする（軽食・早めに食べる。最短 MEAL_MIN 分）。ショーに間に合わないなら、間に合う長さに縮める。
+//    それでも無理なら後に回す（ショーのあとに食べると次の乗り物の受付に間に合わないなら、最後に）
+//  ・ショーは時刻が動かない。場所取りに遅れても、開演に遅れても、終演の10分前までに着けば途中から見る（終わりは同じ）
+//  ・受付が終わっていたら、早歩き（ショーのすぐあとなら、ショーを10分早く抜けて早歩き）なら間に合ったかを試す
 //  ・飛ばした・受付が終わっていたで時間が空いたら、その場で（公式アプリで今の待ちを見て）予定にない乗り物のうち待ちの一番短いものに乗る。
 //    ただし、そのあとの予定を遅らせない（予定していた時間の中で・次の整理券に間に合う）ものだけ
 //  ・乗れなかった・飛ばしたものには理由（どこで何分遅れたか）を残す
 //  mode "same"  … 計画と同じ前提（歩く速さ・行列の見込み・入園時刻）で、待ち時間だけその日の実際の値
 //  mode "harsh" … さらに歩く1.4倍＋3分・行列1.5倍・入園15分遅れ（厳しめ）
 //  乗れなかった理由: late＝遅れて締め切りを過ぎた／early＝その日だけ早く受付終了（故障・天候など）／ticket＝整理券・ショーに遅れた／skip＝整理券に間に合わせるため飛ばした
+const MEAL_MIN = 25;  // 遅れているときのごはんの最短（軽食・モバイルオーダー・早めに食べる）
 function replay(sim, x, mode = "same", opt = {}) {
   const harsh = mode === "harsh";
+  const tail = []; let prevShow = null;
   let t = (sim.rows.length ? sim.rows[0].arrive - sim.rows[0].walk : M.open) + (harsh ? 15 : 0), loc = sim.rows.length ? sim.rows[0].from : GATE, tot = 0, late = 0, worst = null, rides = 0, hurry = !!opt.hurry;
   const missed = [], unknown = [], subs = [], notes = [], deferred = [], retry = [], pend = [], planned = new Set(sim.rows.map(r => r.it.key)), used = new Set();
   const wkOf2 = (a, b, it) => (!harsh && it && it.fw && fwOK(it) ? walkFast(a, b) : wkOf(a, b));
@@ -2290,15 +2295,31 @@ function replay(sim, x, mode = "same", opt = {}) {
     late = Math.max(late, Math.round(start - r.start));
     const R = RIDES[r.it.key], nf = sim.rows.slice(idx + 1).find(isFix);
     if (!R) {
-      const q = r.wait * (harsh ? 1.5 : 1), extra = q - r.wait + (harsh && r.it.type === "meal" ? 10 : 0), d = r.d + q + (harsh && r.it.type === "meal" ? 10 : 0);
-      if (nf && r.it.type !== "wc" && start + d + wkOf2(r.to, nf.to, nf.it) > due(nf)) { deferred.push({ r, d }); notes.push(`${itemName(r.it)}は${RIDES[nf.it.key].short}のあとに回した`); continue; }
+      const q = r.wait * (harsh ? 1.5 : 1), extra = q - r.wait + (harsh && r.it.type === "meal" ? 10 : 0), d0 = r.d + q + (harsh && r.it.type === "meal" ? 10 : 0), meal = r.it.type === "meal";
+      let d = d0;
+      const R2 = nf && RIDES[nf.it.key], place = R2 && R2.src === "show" && !S.free[nf.it.key] && !epOf(nf.it.key), wk2 = nf ? wkOf2(r.to, nf.to, nf.it) : 0;
+      const target = place ? showTime(nf.it.key) - earlyMinOf(nf.it.key) : nf ? due(nf) : Infinity;  // ショーの前のごはんは、場所取りの「遅くとも」の時刻に間に合わせる
+      if (nf && r.it.type !== "wc" && start + d + wk2 > target) {
+        const room = target - wk2 - start, room2 = due(nf) - wk2 - start;
+        if (meal && room >= MEAL_MIN) { d = room; notes.push(`${itemName(r.it)}は${Math.round(d)}分で済ませた（${R2.short}${place ? "の場所取り" : ""}に間に合うよう、早めに食べる）`); }
+        else if (meal && place && room2 >= 10) { d = 10; notes.push(`${itemName(r.it)}は軽食を買って、${R2.short}の場所取りをしながら食べた`); }
+        else if (start + d + wk2 > due(nf)) { deferred.push({ r, d: d0 }); notes.push(`${itemName(r.it)}は${R2.short}のあとに回した`); continue; }
+      }
       if (extra >= 10 && (!worst || extra > worst.over)) worst = { name: itemName(r.it), over: extra };
       loc = r.to; t = start + d; continue;
     }
     if (isFix(r)) {
-      if (start > due(r)) { const at = R.src === "show" ? showTime(r.it.key) : r.start; missed.push({ k: r.it.key, kind: "ticket", why: `${hm(at)}の${R.src === "show" ? "開演" : "整理券の時刻"}に${Math.round(start - at)}分遅れた（${cause()}）` }); t += wk; loc = r.to; continue; }
+      if (R.src === "show" && start > due(r) && start <= showTime(r.it.key) + R.len - 10) notes.push(`${R.short}は開演に${Math.round(start - showTime(r.it.key))}分遅れて着き、途中から見た（${cause()}）`);
+      else if (R.src === "show" && start > showTime(r.it.key) - earlyMinOf(r.it.key) + 5 && start <= due(r)) notes.push(`${R.short}は場所取りが遅れ（${hm(start)}着）、後ろのほうから見た`);
+      if (start > due(r) && !(R.src === "show" && start <= showTime(r.it.key) + R.len - 10)) { const at = R.src === "show" ? showTime(r.it.key) : r.start; missed.push({ k: r.it.key, kind: "ticket", why: `${hm(at)}の${R.src === "show" ? "開演" : "整理券の時刻"}に${Math.round(start - at)}分遅れた（${cause()}）` }); t += wk; loc = r.to; continue; }
       loc = r.to; t = R.src === "show" ? Math.max(start, showTime(r.it.key) + R.len - (r.it.ex && !harsh && fwOK(r.it) ? EX : 0)) : start + r.d; rides++;  // ショーは遅れて着いても終わりは同じ
-      while (deferred.length) { const { r: q, d } = deferred.shift(); t += wkOf(loc, q.to) + d; loc = q.to; }
+      const nxR = sim.rows.slice(idx + 1).find(q => RIDES[q.it.key] && RIDES[q.it.key].src === "r");
+      while (deferred.length) {
+        const { r: q, d } = deferred.shift();
+        if (nxR) { const a = t + wkOf(loc, q.to) + d + wkOf(q.to, nxR.to), w2 = dayWait(nxR.it.key, x, a); if (w2 && w2.closed) { tail.push({ r: q, d }); notes[notes.length - 1 - [...notes].reverse().findIndex(z => z.startsWith(itemName(q.it)))] = `${itemName(q.it)}は、${RIDES[nxR.it.key].short}の受付に間に合うよう、乗り物のあとに回した`; continue; } }
+        t += wkOf(loc, q.to) + d; loc = q.to;
+      }
+      if (R.src === "show") prevShow = { idx, t, loc, ex: !!(r.it.ex && !harsh && fwOK(r.it)), name: R.short };
       // 整理券のために飛ばした「必ず」は、整理券のあとに並び直す（次の整理券・ショーに間に合い、受付中なら）
       const nf2 = sim.rows.slice(idx + 1).find(isFix);
       while (retry.length) {
@@ -2311,9 +2332,13 @@ function replay(sim, x, mode = "same", opt = {}) {
       continue;
     }
     let w = dayWait(r.it.key, x, start);
+    if (w && w.closed && !harsh) {
+      const ps = prevShow && prevShow.t === t && prevShow.loc === loc ? prevShow : null, dep = ps && !ps.ex ? t - EX : t, alt = dep + walkFast(loc, r.to), w2 = alt < start ? dayWait(r.it.key, x, alt) : null;
+      if (w2 && !w2.closed && w2.w != null) { notes.push(`${R.short}は${ps && !ps.ex ? `${ps.name}を10分早く抜けて` : ""}早歩きで向かい、${hm(alt)}に着いて受付に間に合った`); start = alt; w = w2; }
+    }
     if (w && w.closed) {
       const c = M.cut[r.it.key], early = c && c.med && w.last < c.med - 60;
-      missed.push({ k: r.it.key, kind: early ? "early" : "late", why: early ? `この日は${hm(w.last)}で早く受付終了（ふだんは${hm(c.med)}ごろまで。故障・天候などの可能性）` : `${hm(start)}に着いたが、受付は${hm(w.last)}まで（${cause()}）` });
+      missed.push({ k: r.it.key, kind: early ? "early" : "late", why: early ? `この日は${hm(w.last)}で早く受付終了（ふだんは${hm(c.med)}ごろまで。故障・天候などの可能性）` : start >= M.close - 5 ? `閉園（${hm(M.close)}）までに着けなかった（${cause()}）` : `${hm(start)}に着いたが、受付は${hm(w.last)}まで（${cause()}）` });
       t += wk; loc = r.to; recover(r.it.key, r.start + r.wait + r.d, nf); continue;
     }
     if (!w) { w = { w: upper(waitAt(r.it.key, start)) }; unknown.push(r.it.key); }
@@ -2338,6 +2363,7 @@ function replay(sim, x, mode = "same", opt = {}) {
   }
   while (deferred.length) { const { r: q, d } = deferred.shift(); t += wkOf(loc, q.to) + d; loc = q.to; }
   if (pend.length) fitPend(M.close - 15, null);
+  for (const { r: q, d } of tail) { if (t >= M.close - 30) { notes.push(`${itemName(q.it)}は閉園後（パークの外）に`); continue; } t = Math.min(M.close, t + wkOf(loc, q.to) + d); loc = q.to; }  // 閉園後のごはんは、園内の終わりに数えない
   return { d: x.d, end: t, tot, late, missed, unknown, rides, subs, notes, planned: sim.rows.filter(r => RIDES[r.it.key]).length };
 }
 
@@ -3867,7 +3893,7 @@ function showVerdict(box, loo, musts, keys) {
       ${per.map(p => `<div class="pr ${lvl(p)}"><span class="nm">${nm(p.k)}${S.must.includes(p.k) ? '<span class="badge must">必ず</span>' : ""}</span><span class="bar"><i style="width:${Math.round(100 * p.ok / p.N)}%"></i></span><span class="n">${p.ok}/${p.N}日</span>${p.ok < p.N * 0.9 ? (([t, b]) => `<div class="adv">→ ${t}${b ? `<span class="row">${b}</span>` : ""}</div>`)(rideAdvice(p)) : ""}</div>`).join("")}
       ${out.length ? `<div class="pr bad"><span class="nm">予定に入らなかった</span><span class="n" style="grid-column:2/-1;text-align:left">${out.map(nm).join("・")}</span><div class="adv">→ 選んだけれど、1日に入りきらず今の予定に入っていません。どうしても乗りたいものは「必ず」にすると、ほかと入れ替えて入れます<span class="row">${out.map(k => `<button type="button" class="btn small" data-prmust="${k}">★ ${nm(k)}を「必ず」に</button>`).join("")}</span></div></div>` : ""}
       <p class="note">9割以上の日で乗れたものは緑。黄・赤のものには、乗れなかった一番多い理由と直し方を出しています。</p></div></details>
-    <details class="more"><summary>計算のしかた</summary><div class="inner"><p>当日の人と同じように回しています：予定どおりのうちは空く時間を待ち、ずれ始めたら（乗り物を飛ばした・15分以上遅れた）そこから先は待たずに詰めて回ります。ショーに間に合わせるために飛ばした乗り物は、残りの予定の空いている所に入れ直します（うしろの予定はその分ずれます）。1日ずつ、<b>その日を使わずに</b>作ったルートを、その日の実際の待ち時間（去年の日は、今年の水準と行く日の条件に直したもの）で回しました（歩く速さや食事の見込みは計画と同じ。違うのは待ち時間だけ）。ショーの時刻に間に合わなくなる列には並ばず飛ばします。${ends.length ? `乗り終わりは ${hm(ends[0])}〜${hm(ends[ends.length - 1])}。` : ""}</p></div></details>
+    <details class="more"><summary>計算のしかた</summary><div class="inner"><p>当日の人と同じように回しています：予定どおりのうちは空く時間を待ち、ずれ始めたら（乗り物を飛ばした・15分以上遅れた）そこから先は待たずに詰めて回ります。ショーに間に合わせるために飛ばした乗り物は、残りの予定の空いている所に入れ直します（うしろの予定はその分ずれます）。1日ずつ、<b>その日を使わずに</b>作ったルートを、その日の実際の待ち時間（去年の日は、今年の水準と行く日の条件に直したもの）で回しました（歩く速さや食事の見込みは計画と同じ。違うのは待ち時間だけ）。ショーの時刻に間に合わなくなる列には並ばず飛ばします。遅れたときは、当日の人がふつうにすることをします：ショーの前のごはんは早めに済ませる（間に合わなければ軽食を買って場所取りしながら食べる）、ショーは時刻が動かないので遅れても途中から見る、受付終了に間に合わないときはショーを10分早く抜けて早歩きで向かう。${ends.length ? `乗り終わりは ${hm(ends[0])}〜${hm(ends[ends.length - 1])}。` : ""}</p></div></details>
     ${Object.keys(K).length ? `<div class="reasons">
       ${K.late ? `<span><b>${K.late}件</b> 待ちが見込みより長く、受付終了に間に合わなかった</span>` : ""}
       ${K.early ? `<span><b>${K.early}件</b> その日だけの早じまい（故障・天候・点検など。前もって分からない）</span>` : ""}
@@ -3879,7 +3905,7 @@ function showVerdict(box, loo, musts, keys) {
       if (!subs.length && !defer) return "";
       const cnt = {}; subs.forEach(x => (cnt[x.k] = (cnt[x.k] || 0) + 1));
       const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => `${nm(k)}（${n}回）`).join("・");
-      return `<div class="recov"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0' /> <path d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /> <path d='M15 15l3.35 3.35' /> <path d='M9 15l-3.35 3.35' /> <path d='M5.65 5.65l3.35 3.35' /> <path d='M18.35 5.65l-3.35 3.35' /></svg> 崩れたときのリカバリーも試しました</b>${subs.length ? `<p>予定が崩れて時間が空いた ${gaps}回のうち <b>${subs.length}回</b> は、その場で待ちの短い別のアトラクションに乗れました。代わりに乗ったのは ${top}。あとの予定は遅らせていません（当日は公式アプリの今の待ち時間で選ぶ前提）。</p>` : ""}${defer ? `<p>${defer}日は、ショーに遅れないよう順番を入れ替えたり、飛ばした乗り物をあとの自由時間に乗ったりしました（${[...new Set(j.rs.flatMap(r => r.notes || []))].slice(0, 2).join("、")} など）。</p>` : ""}<p class="note">当日にずれたら、当日タブの「<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0' /> <path d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /> <path d='M15 15l3.35 3.35' /> <path d='M9 15l-3.35 3.35' /> <path d='M5.65 5.65l3.35 3.35' /> <path d='M18.35 5.65l-3.35 3.35' /></svg> 予定が狂った」で同じように代わりを選べます。</p></div>`;
+      return `<div class="recov"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0' /> <path d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /> <path d='M15 15l3.35 3.35' /> <path d='M9 15l-3.35 3.35' /> <path d='M5.65 5.65l3.35 3.35' /> <path d='M18.35 5.65l-3.35 3.35' /></svg> 崩れたときのリカバリーも試しました</b>${subs.length ? `<p>予定が崩れて時間が空いた ${gaps}回のうち <b>${subs.length}回</b> は、その場で待ちの短い別のアトラクションに乗れました。代わりに乗ったのは ${top}。あとの予定は遅らせていません（当日は公式アプリの今の待ち時間で選ぶ前提）。</p>` : ""}${defer ? `<p>${defer}日は、遅れた分を当日の人と同じように取り戻しました（${[...new Set(j.rs.flatMap(r => r.notes || []))].slice(0, 2).join("、")} など）。</p>` : ""}<p class="note">当日にずれたら、当日タブの「<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0' /> <path d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /> <path d='M15 15l3.35 3.35' /> <path d='M9 15l-3.35 3.35' /> <path d='M5.65 5.65l3.35 3.35' /> <path d='M18.35 5.65l-3.35 3.35' /></svg> 予定が狂った」で同じように代わりを選べます。</p></div>`;
     })()}
     ${(u => u.length ? `<p class="note">記録がない日は、「似た日の多く」の多めのほうの待ちで回しています（${u.map(([k, n]) => `${nm(k)} ${n}日`).join("・")}）。</p>` : "")(Object.entries(j.rs.reduce((a, r) => (r.unknown.forEach(k => (a[k] = (a[k] || 0) + 1)), a), {})))}
     <p class="note">去年の日数が限られるので、1〜2日の差は誤差の範囲です。早じまい（故障・天候・点検など）は前もって分からないので、どうしても乗りたいものは早めの時間に入れるのが安全です。</p>
