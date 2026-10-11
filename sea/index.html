@@ -3035,7 +3035,7 @@ function showRiskOf(sim, i) {
 function showRiskHTML(sim, i) {
   const q = showRiskOf(sim, i); if (!q) return "";
   const a = RIDES[q.k].short, b = RIDES[q.show].short, place = q.place < q.st - 10;
-  return `<li class="risk ${q.ok2 < q.n ? "bad" : "ok"}"><span></span><span class="ph"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg></span><span class="nm">${b}に間に合うか<small>前の${a}${q.via ? "（そのあとごはんなど）" : ""}が長引いた日も入れて、似た日${q.n}日のうち${place ? `<b>${q.ok1}日</b>は場所取り（遅くとも${hm(q.place)}）に、` : ""}<b>${q.ok2}日</b>は開演（${hm(q.st)}）に間に合っています。${q.ok2 < q.n ? `${a}の列が進まないときは、${a}をやめて${b}へ（当日タブで今の待ちを入れると、間に合うかが出ます）` : place && q.ok1 < q.n ? "場所取りは少し遅れる日もありますが、開演には間に合います" : "まず心配いりません"}</small></span><span></span></li>`;
+  return `<li class="risk ${q.ok2 < q.n ? "bad" : "ok"}"><span></span><span class="ph"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg></span><span class="nm">${b}に間に合うか<small>前の${a}${q.via ? "（そのあとごはんなど）" : ""}が長引いた日も入れて、似た日${q.n}日のうち${place ? `<b>${q.ok1}日</b>は場所取り（遅くとも${hm(q.place)}）に、` : ""}<b>${q.ok2}日</b>は開演（${hm(q.st)}）に間に合っています。${q.ok2 < q.n ? `${a}の列が進まないときは、迷わず${a}をやめて${b}へ！（当日タブで今の待ちを入れると、間に合うかが出ます）` : place && q.ok1 < q.n ? "場所取りが少し遅れる日もあるけど、開演には間に合います" : "まず大丈夫！"}</small></span><span></span></li>`;
 }
 // ===== 運がよければ（わんちゃん）: 予定が閉園より前に終わるとき、入らなかった選んだものに、そのあと並べるか =====
 //  似た日の実際の待ちで、その時刻にまだ受付をしていた日を数える（ふつうに歩いて向かう／ショーを10分早く抜けて急いで向かう）
@@ -3053,7 +3053,7 @@ function chanceOf(sim) {
 function chanceHTML(sim) {
   const C = chanceOf(sim); if (!C.length) return "";
   const L = sim.rows[sim.rows.length - 1], sn = C[0].show ? itemName(L.it) : "";
-  return `<li class="chance"><span class="t">${hm(L.end)}〜</span><span class="ph"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M4 17l5 1l.75 -1.5' /> <path d='M15 21l0 -4l-4 -3l1 -6' /> <path d='M7 12l0 -3l5 -1l3 3l3 1' /></svg></span><span class="nm">運がよければ（わんちゃん）<small>予定のあとも少し時間があります。受付がまだやっているかは日によります（似た日の実際）</small>
+  return `<li class="chance"><span class="t">${hm(L.end)}〜</span><span class="ph"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M13 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0' /> <path d='M4 17l5 1l.75 -1.5' /> <path d='M15 21l0 -4l-4 -3l1 -6' /> <path d='M7 12l0 -3l5 -1l3 3l3 1' /></svg></span><span class="nm">運がよければ（わんちゃん）<small>予定のあとも、ちょっと時間あり！受付がまだやっているかは日によります（似た日の実際）</small>
     ${C.map(o => `<span class="chl"><b>${RIDES[o.k].short}</b>：${o.c1.ok ? `ふつうに向かうと<b>${o.c1.n}日のうち${o.c1.ok}日</b>はまだ並べた（${hm(o.a1)}ごろ着・待ち${o.w}分ほど）` : `ふつうに向かうと、どの日も表示は終わっていた${o.lt ? `（${o.lt}日は、閉園までに乗り始められそうな待ちで、入れてくれたかも）` : ""}`}${o.c2.ok > o.c1.ok ? `。<b>${o.show ? `${sn}を10分早く抜けて急ぐ` : "急いで向かう"}と${o.c2.ok}日</b>（${hm(o.a2)}ごろ着）` : ""}</span>`).join("")}
     <small>待ち時間の表示が終わったあとも、閉園までに乗り始められそうなら入れてくれる日があります（20:53に列に入れて、乗り終わりは閉園後だった例）。ただ毎日ではなく、閉園間際でも混んでいれば、それより早く閉じます。当てにしすぎず、乗れたらラッキーくらいで。着いて受付が終わっていたら、近くの空いているものに。当日は公式アプリの待ち時間で確かめて。${C[0].show ? "ショーの終わりは人が一度に動くので、早く抜けるなら通路側に。" : ""}</small></span><span></span></li>`;
 }
@@ -3188,7 +3188,7 @@ function renderBoost(sim) {
 //  作った日で確かめるので「ふつう」だけだと甘い（ほぼ100点になった）。厳しめを混ぜて、予定ごとの差が出るようにしたそこに予定の特徴（早歩き・DPAの早い枠・ショー前がぎりぎり）を一言添える
 //  「もっと回れる方法」があっても、点数が高ければ「今のままで十分いい」と言う
 const scoreOf = (ok, ok11, okH, n) => Math.round(100 * (0.5 * ok + 0.3 * ok11 + 0.2 * (okH || 0)) / Math.max(1, n));
-// 「10日中7日だけど、減らしたほうがいい？」に答える。ナビの考え:
+// 「10日中7日だけど、減らしたほうがいい？」に答える。ナビの考え（友だちが横で言うくらいの温度で。でも数字はうそをつかない）:
 //  ・乗れなかった日も、ほかの予定は全部回れている（乗れないのはその1つだけ）なら、減らさない。うまくいく日に乗れる1つを最初から捨てることになるから。
 //    当日、遅れていたらそれだけあきらめればいい（あきらめ時の目安を出す）
 //  ・手ごたえが低く、外すと大きく上がるなら、外すか「必ず」にする
@@ -3196,32 +3196,34 @@ function adviceOf(res, sc) {
   const t = res.trust, n = t.refs.n, ms = Object.entries(t.refs.miss || {}).filter(([q]) => RIDES[q].src === "r").sort((a, b) => b[1] - a[1]), w = ms[0];
   if (!w) {
     const w11 = Object.entries(t.refs11.miss || {}).filter(([q]) => RIDES[q].src === "r").sort((a, b) => b[1] - a[1])[0];
-    if (sc >= 70 || !w11) return { h: "減らさなくて大丈夫", m: `似た日${n}日すべてで、予定の乗り物を全部回れています。このままでいきましょう。` };
+    if (sc >= 70 || !w11) return res.missK.length ? { h: "減らさなくて大丈夫！", m: `似た日${n}日、どの日も予定どおり回れています。このまま行っちゃいましょう。` } : { h: "言うことなし！", m: `似た日${n}日、どの日も選んだもの全部回れています。減らす必要はまったくなし。あとは楽しむだけ！` };
     const nm11 = RIDES[w11[0]].short;
-    return { h: "ふつうの日なら大丈夫。混んだら1つあきらめる", m: `似た日${n}日はすべて回れました。ただ、去年より1割混むと全部回れたのは${t.refs11.ok}日で、${nm11}が閉まりやすくなります。予定には余裕が少ないので、当日、昼の時点で遅れていたら${nm11}をあきらめるつもりで。最初から減らすほどではありません。` };
+    return { h: "ふつうの日なら大丈夫！混んだら1つあきらめよう", m: `似た日${n}日はぜんぶ回れました。ただ、去年より1割混むと全部回れたのは${t.refs11.ok}日で、${nm11}が閉まりがち。余裕は少なめなので、昼の時点で遅れていたら${nm11}はあきらめるつもりで。最初から減らすほどではありません。` };
   }
   const [k, m] = w, nm = RIDES[k].short, solo = (t.refs.solo || {})[k] || 0, d = res.drop, st = (res.at || {})[k], cut = lastAt(k);
-  const when = st != null && cut > st && cut - st <= 60 ? (cut - st <= 5 ? `当日の目安：${nm}は締め切り（${hm(cut)}ごろ）ぎりぎりに入れています。少しでも遅れたら、${nm}はあきらめて次へ。` : `当日の目安：${nm}は${hm(st)}に並び始める予定で、受付は${hm(cut)}ごろまで。<b>それまでに${cut - st}分以上遅れていたら</b>、${nm}はあきらめて次へ（当日タブで組み直すと自動で外れます）。`) : "";
-  const dropT = !d ? "" : d.sc <= sc + 3 ? `外しても手ごたえはほとんど上がりません（${sc}→${d.sc}点）。` : `外すと手ごたえは${sc}→${d.sc}点になりますが、乗れるのは1つ減ります（${d.rides}つ）。`;
-  const chain = solo < m && ms.length > 1 ? `乗れなかった日は、どこかで列が長引いて、後ろの${ms.slice(0, 3).map(([q]) => RIDES[q].short).join("・")}のどれかが閉まった日です。当日、遅れたら「残りを組み直す」で、間に合うほうを優先してくれます。` : "";
-  if (S.must.includes(k)) return { h: `${nm}を守るなら、早い時間へ`, m: `「必ず」の${nm}が${n}日中${n - m}日です。予定の「…」で${nm}を早い時間にするか、ほかを1つ減らすと確実になります。${when}` };
-  if (sc >= 70 || (m <= Math.ceil(n * 0.3) && solo === m)) return { h: "減らさなくて大丈夫", m: `${nm}は${n}日中${n - m}日。${solo === m ? `でも乗れなかった${m}日も、<b>ほかの予定は全部回れています</b>（乗れなかったのは${nm}だけ）。` : chain}減らすと、うまくいく${n - m}日に乗れるはずの1つを、最初から捨てることになります。${dropT}${when}` };
-  if (d && d.sc - sc >= 15) return { h: `${nm}を外すのがおすすめ`, m: `${nm}は${n}日中${n - m}日しか乗れていません。外すと手ごたえは${sc}→<b>${d.sc}点</b>、ほかが安定します。どうしても乗りたいなら、外さずに「必ず」に（ほかが1つ外れることがあります）。` };
-  return { h: d && d.sc - sc >= 8 ? "どちらでもいい。おすすめは今のまま" : "減らしても、あまり変わりません", m: `${nm}は${n}日中${n - m}日。${chain}${dropT || ""}今のまま行って、当日に遅れていたら${nm}をあきらめる、がいちばん得です。${when}` };
+  const when = st != null && cut > st && cut - st <= 60 ? (cut - st <= 5 ? `当日の目安：${nm}は締め切り（${hm(cut)}ごろ）ぎりぎりに入れています。少しでも遅れたら、${nm}はスパッとあきらめて次へ。` : `当日の目安：${nm}は${hm(st)}に並び始める予定で、受付は${hm(cut)}ごろまで。<b>それまでに${cut - st}分以上遅れていたら</b>、${nm}はスパッとあきらめて次へ（当日タブで組み直すと自動で外れます）。`) : "";
+  const dropT = !d ? "" : d.sc <= sc + 3 ? `ちなみに外しても、手ごたえはほとんど上がりません（${sc}→${d.sc}点）。` : `外すと手ごたえは${sc}→${d.sc}点に上がるけど、乗れるのは1つ減ります（${d.rides}つ）。`;
+  const chain = solo < m && ms.length > 1 ? `乗れなかった日は、どこかの列が長引いて、後ろの${ms.slice(0, 3).map(([q]) => RIDES[q].short).join("・")}のどれかが閉まった日。当日遅れたら「残りを組み直す」を押せば、間に合うほうを優先してくれます。` : "";
+  if (S.must.includes(k)) return { h: `${nm}を守りたいなら、早い時間に`, m: `「必ず」の${nm}が${n}日中${n - m}日。予定の「…」で${nm}を早い時間に動かすか、ほかを1つ減らすと、ぐっと確実になります。${when}` };
+  if (sc >= 70 || (m <= Math.ceil(n * 0.3) && solo === m)) return { h: "減らさなくて大丈夫！", m: `${nm}は${n}日中${n - m}日。${solo === m ? `でも乗れなかった${m}日も、<b>ほかは全部回れています</b>（逃したのは${nm}だけ）。` : chain}減らしたら、うまくいく${n - m}日の${nm}まで、最初から捨てることに。だから減らさないのがおすすめです。${dropT}${when}` };
+  if (d && (d.sc - sc >= 15 || (sc < 55 && d.sc - sc >= 8))) return { h: `${nm}は外すのがおすすめ`, m: `${nm}は${n}日中${n - m}日しか乗れていません。外すと手ごたえは${sc}→<b>${d.sc}点</b>に上がって、ほかがぐっと安定します。どうしても乗りたいなら、外さずに「必ず」にしよう（代わりにほかが1つ外れることもあります）。` };
+  return { h: d && d.sc - sc >= 8 ? "どっちでもアリ。おすすめは今のまま" : "減らしても、あまり変わらないかな", m: `${nm}は${n}日中${n - m}日。${chain}${dropT || ""}今のまま行って、当日遅れていたら${nm}をあきらめる、がいちばんお得です。${when}` };
 }
 function verdictOf(res) {
   const t = res.trust; if (!t || !t.refs.n) return null;
   const sc = scoreOf(t.refs.ok, t.refs11.ok, t.harsh, t.refs.n);
-  const g = sc >= 80 ? { k: "a", mark: "◎", h: res.fwN ? "急げばいい感じ！" : "いい感じの予定！", m: "似た日のほとんどで、予定どおり全部回れています。このまま行って大丈夫。" }
-    : sc >= 70 ? { k: "b", mark: "○", h: res.fwN ? "早歩きなら、たぶんいける！" : "たぶんいける！", m: "たいていの日は回れます。どこかで列が長引いたら、当日タブで残りを組み直せば十分。" }
-    : sc >= 55 ? { k: "c", mark: "△", h: "ちょっと賭け", m: t.refs.ok === t.refs.n ? "ふつうの日なら回れますが、余裕は少なめ。混んだり遅れたりすると、最後の1つが閉まります。最後のほうは「乗れたらラッキー」くらいの気持ちで。" : "うまくいく日と、最後の1つが閉まる日が半々くらい。最後のほうは「乗れたらラッキー」くらいの気持ちで。" }
-    : { k: "d", mark: "✕", h: "かなり賭け", m: "似た日の多くで回りきれていません。1つ減らすか、入園を早める・DPAを使うと安心です。" };
+  const all = !res.missK.length;  // 選んだものが全部予定に入っている
+  const g = sc >= 80 && all ? { k: "a", mark: "◎", h: res.fwN ? "ちょっと急げば、選んだもの全部回れて最高！" : "選んだもの、全部回れて最高！", m: "選んだ乗り物が全部予定に入って、似た日のほとんどで回りきれています。言うことなし！" }
+    : sc >= 80 ? { k: "a", mark: "◎", h: res.fwN ? "急げばいい感じ！" : "いい感じの予定！", m: "似た日のほとんどで、予定どおり回りきれています。このまま行っちゃって大丈夫！" }
+    : sc >= 70 ? { k: "b", mark: "○", h: res.fwN ? "早歩きなら、たぶんいける！" : "たぶんいける！", m: "だいたいの日は回れます。どこかで列が長引いても、当日タブで組み直せばなんとかなる！" }
+    : sc >= 55 ? { k: "c", mark: "△", h: "ちょっと賭け！", m: t.refs.ok === t.refs.n ? "ふつうの日ならいける。でも余裕は少なめで、混んだり遅れたりすると最後の1つが閉まりがち。そこは「乗れたらラッキー」くらいの気持ちで楽しもう！" : "うまくいくかは半々くらい。最後のほうは「乗れたらラッキー」くらいの気持ちで楽しもう！" }
+    : { k: "d", mark: "✕", h: "かなり賭け…", m: t.refs.ok >= t.refs.n * 0.7 ? "ふつうの日ならだいたい回れるけど、混んだり遅れたりにはかなり弱い予定。崩れたら当日タブで組み直す前提で、気楽にいこう。" : "このままだと、回りきれない日のほうが多そう。1つ減らすか、入園を早める・DPAを使うと、ぐっと楽になります。" };
   const tips = [];
-  if (res.fwN) tips.push(res.fwN >= 3 ? `早歩きの区間が${res.fwN}か所。<b>急ぎ足の1日</b>になります。疲れそうなら、設定の「間に合わない所は」を「組まない」に（1つ減るかわりにゆっくり回れます）` : `早歩きの区間が${res.fwN}か所。<b>そこだけちょっと急げばいける</b>予定です（予定の「早歩きしない」で外せます）`);
-  if (res.exN) tips.push(`ショーを10分早く抜ける所があります。通路側の席・場所がおすすめ`);
-  if (res.earlyDPA.length) tips.push(`${res.earlyDPA.map(([a, b]) => `${RIDES[a].short}のDPAを早い枠で取れたら${RIDES[b].short}も買える`).join("・")}、という前提があります。取れなければ当日に組み直し`);
-  if (res.showTight) tips.push(`ショーの前が少しきつい所があります（予定の「間に合うか」を見て、列が進まなければショーを優先）`);
-  const more = res.missK.length ? (sc >= 70 ? `下に「もっと回れる方法」も出していますが、<b>今のままでも十分いい予定</b>です。欲張るかどうかはお好みで。` : `下の「もっと回れる方法」で、入らなかったものを入れたり、余裕を作ったりできます。`) : "";
+  if (res.fwN) tips.push(res.fwN >= 3 ? `早歩きの区間が${res.fwN}か所。<b>わりと急ぎ足の1日</b>になりそう。のんびり派なら、設定の「間に合わない所は」を「組まない」に（1つ減るけど、ゆったり回れます）` : `早歩きの区間が${res.fwN}か所。<b>そこだけちょっと急げばいける！</b>（予定の「早歩きしない」で外せます）`);
+  if (res.exN) tips.push(`ショーを10分早く抜ける所があります。通路側の場所をとっておくとスムーズ！`);
+  if (res.earlyDPA.length) tips.push(`${res.earlyDPA.map(([a, b]) => `${RIDES[a].short}のDPAを早い枠で取れたら、${RIDES[b].short}も買える`).join("・")}作戦です。取れなかったら、当日に組み直せばOK`);
+  if (res.showTight) tips.push(`ショーの前がちょっとタイト。列が進まなかったら、迷わずショーを優先！`);
+  const more = res.missK.length ? (sc >= 70 ? `もっと回れる方法も下に出しているけど、<b>今のままでも十分いい予定！</b>欲張るかどうかはお好みで。` : `下の「もっと回れる方法」を使うと、もうひと押しできます。`) : "";
   return { sc, g, tips, more, adv: adviceOf(res, sc) };
 }
 function verdictHTML(res) {
@@ -4049,10 +4051,10 @@ function perRide(k, loo) {
 function rideAdvice({ k, why, ok, N, solo }) {
   const top = Object.entries(why).sort((a, b) => b[1] - a[1])[0][0], must = S.must.includes(k);
   const miss = N - ok - why.drop;
-  if (!must && ok >= N * 0.6 && miss > 0 && solo === miss && top !== "drop") return [`乗れなかった${miss}日も、ほかの予定は全部回れています（乗れなかったのは${RIDES[k].short}だけ）。<b>減らさなくて大丈夫</b>。当日に遅れていたら、${RIDES[k].short}だけあきらめればOK（あきらめ時の目安は上の「手ごたえ」に）。どうしても乗りたいなら↓`, `<button type="button" class="btn small" data-prfirst="${k}">早い時間に乗る</button><button type="button" class="btn small" data-prmust="${k}">★「必ず」にする</button>`];
+  if (!must && ok >= N * 0.6 && miss > 0 && solo === miss && top !== "drop") return [`乗れなかった${miss}日も、ほかは全部回れています（逃したのは${RIDES[k].short}だけ）。<b>減らさなくて大丈夫！</b>当日遅れていたら、${RIDES[k].short}だけあきらめればOK（あきらめ時の目安は上の「手ごたえ」に）。どうしても乗りたいなら↓`, `<button type="button" class="btn small" data-prfirst="${k}">早い時間に乗る</button><button type="button" class="btn small" data-prmust="${k}">★「必ず」にする</button>`];
   if (top === "early") return [`${why.early}日は、その日だけ早く受付が終わりました（故障・天候・点検・その日の運営など。前もって分かりません）。${RIDES[k].from_ ? "夜だけの乗り物なので、夜の早い時間に入れると安全です" : "どうしても乗りたいなら早めの時間に"}`, RIDES[k].from_ ? "" : `<button type="button" class="btn small" data-prfirst="${k}">最初に乗る</button>`];
   if (top === "drop") return [`${why.drop}日は、その日の見込みだとほかと合わせて入りきりませんでした。${must ? "ほかを減らすと入ります" : "「必ず」にすると優先して入れます（代わりにほかが外れることがあります）"}`, must ? "" : `<button type="button" class="btn small" data-prmust="${k}">★「必ず」にする</button>`];
-  if (top === "late") return [`${why.late}日は、待ちが長くて受付終了に間に合いませんでした。早い時間に回すと安全です`, `<button type="button" class="btn small" data-prfirst="${k}">最初に乗る</button>${must ? "" : `<button type="button" class="btn small" data-prmust="${k}">★「必ず」にする</button>`}`];
+  if (top === "late") return [`${why.late}日は、待ちが長くて受付終了に間に合いませんでした。早めの時間に回すと安心です`, `<button type="button" class="btn small" data-prfirst="${k}">最初に乗る</button>${must ? "" : `<button type="button" class="btn small" data-prmust="${k}">★「必ず」にする</button>`}`];
   return [`${why.ticket + why.skip}日は、ショーの時刻の前後で詰まりました。見る回を変えると入りやすくなります`, ""];
 }
 function showVerdict(box, loo, musts, keys) {
