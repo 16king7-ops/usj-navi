@@ -334,10 +334,13 @@ details.set .inner { display: grid; gap: 12px; padding-bottom: 14px; }
 .backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 .backdrop i { position: absolute; inset: 0; background: center / cover no-repeat; opacity: 0; transition: opacity 1.6s ease; filter: saturate(.85);
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 85%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 85%, transparent 100%); }
-.backdrop i.on { opacity: .17; }
-:root[data-theme="dark"] .backdrop i.on { opacity: .26; }
+.backdrop i.on { opacity: .3; }
+:root[data-theme="dark"] .backdrop i.on { opacity: .45; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .backdrop i.on { opacity: .45; } }
 .wrap { position: relative; z-index: 1; }
-:is(.panel, .strip, .card .body, .month, details.more, .steps button) { background: color-mix(in srgb, var(--surface) 88%, transparent); }
+:is(.panel, .strip, .card .body, .month, details.more, .steps button) { background: color-mix(in srgb, var(--surface) 80%, transparent); }
+.fact { background: color-mix(in srgb, var(--surface-2) 75%, transparent); }
+.top { backdrop-filter: none; }
 .top { background: var(--bg); }
 /* 写真の帯（画面の端から端まで。上下は地の色に溶かす） */
 .pband { margin-inline: -16px; height: clamp(150px, 26vw, 300px); background: center / cover no-repeat; -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 78%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 78%, transparent 100%); }
@@ -1013,7 +1016,7 @@ label.cl input[type=checkbox] { width: 20px; height: 20px; }
 .hs b { display: block; font-size: 14.5px; }
 .hs span { font-size: 13px; color: var(--ink-2); }
 .hs em { font-style: normal; font-weight: 900; color: var(--good); }
-.backdrop, .collage, .pband, .bgph { display: none !important; }
+.collage, .pband, .bgph { display: none !important; }  /* 背景のうすい写真（.backdrop）は出す */
 /* ===== 2026/10/9 品質チェックの直し（スマホの崩れ・読みにくさ） ===== */
 .sheet-bg { position: fixed; inset: 0; z-index: 49; background: color-mix(in srgb, var(--shade) 28%, transparent); }
 .sheet button:disabled { opacity: .4; cursor: default; }
