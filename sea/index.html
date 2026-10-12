@@ -1345,6 +1345,8 @@ ol.tips li > div > b, ol.tips li > b { display: block; font-size: 14.5px; line-h
 .hm tbody th button, .wt thead th button { line-break: strict; word-break: keep-all; overflow-wrap: anywhere; }
 /* 地図の文字: 白いふちを付けて、道やピンに重なっても読めるように */
 svg text.area, .rp-map text, .map svg text { paint-order: stroke; stroke: var(--map-halo); stroke-width: 5px; stroke-linejoin: round; }
+/* ピン（丸・四角）の中の文字は、地名用の白いフチを外す（太ってつぶれていた） */
+:is(.map, .rp-map) svg :is(circle, rect) + text:not(.nexthl text) { stroke: none; font-family: var(--font); letter-spacing: 0; font-variant-numeric: tabular-nums; }
 /* 予定の中のお店の名前: ボタンのまま中央寄せで折れていた */
 .tl-sub .linkbtn { display: inline; text-align: left; }
 /* 計画のカード: 説明は3行（PCは4行）までにし、DPAの行は切られないよう別の行に */
@@ -4530,7 +4532,10 @@ function rideAdvice({ k, why, ok, N, solo }) {
   if (top === "early") return [`${why.early}日は、その日だけ早く受付が終わりました（故障・天候・点検・その日の運営など。前もって分かりません）。${RIDES[k].from_ ? "夜だけの乗り物なので、夜の早い時間に入れると安全です" : "どうしても乗りたいなら早めの時間に"}`, RIDES[k].from_ ? "" : `<button type="button" class="btn small" data-prfirst="${k}">最初に乗る</button>`];
   if (top === "drop") return [`${why.drop}日は、その日の見込みだとほかと合わせて入りきりませんでした。${must ? "ほかを減らすと入ります" : "「必ず」にすると優先して入れます（代わりにほかが外れることがあります）"}`, must ? "" : `<button type="button" class="btn small" data-prmust="${k}">★「必ず」にする</button>`];
   if (top === "late") return [`${why.late}日は、待ちが長くて受付終了に間に合いませんでした。早めの時間に回すと安心です`, `<button type="button" class="btn small" data-prfirst="${k}">最初に乗る</button>${must ? "" : `<button type="button" class="btn small" data-prmust="${k}">★「必ず」にする</button>`}`];
-  return [`${why.ticket + why.skip}日は、ショーの時刻の前後で詰まりました。見る回を変えると入りやすくなります`, ""];
+  const shows = S.sel.filter(q => RIDES[q] && RIDES[q].src === "show" && avail(q, M.date)), multi = shows.filter(q => (RIDES[q].times || []).length > 1), one = shows.filter(q => (RIDES[q].times || []).length <= 1);
+  const nm = q => RIDES[q].short, n = why.ticket + why.skip;
+  if (multi.length && !one.length) return [`${n}日は、ショーの時刻の前後で詰まりました。${multi.map(nm).join("・")}は別の回もあるので、見る回を変えると入りやすくなります`, ""];
+  return [`${n}日は、${one.length ? one.map(nm).join("・") : "ショー"}の前後で詰まりました。${one.length ? `${one.map(nm).join("・")}は1日1回なので、` : ""}${RIDES[k].short}を早い時間に回すか、ショーのあとに回すと入りやすくなります${multi.length ? `（${multi.map(nm).join("・")}は別の回もあります）` : ""}`, `<button type="button" class="btn small" data-prfirst="${k}">最初に乗る</button>`];
 }
 function showVerdict(box, loo, musts, keys) {
   const j = judge(loo, musts, keys), nm = k => (RIDES[k] ? RIDES[k].short : k);
