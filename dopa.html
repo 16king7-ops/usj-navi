@@ -790,6 +790,47 @@ figure.amap svg { width: 100%; height: auto; border-radius: 18px; display: block
 .nsnote b { font-size: 15.5px; }
 .nsnote ul { margin: 6px 0 0; padding-left: 1.2em; }
 .nsnote a { color: #1450d2; font-weight: 700; word-break: break-all; }
+
+/* ===== 洗練（2026/10/13）: スマホは下にタブ（親指で届く）・カレンダーは1か月ずつ横にめくる・予定のカードを詰める ===== */
+.tabs .ti { display: none; }
+.mnav { display: none; }
+@media (max-width: 700px) {
+  .top { backdrop-filter: none; background: var(--bg); padding-block: 6px; }
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; overflow: visible;
+    background: var(--surface); border-top: 1px solid var(--line); padding: 2px 2px calc(env(safe-area-inset-bottom, 0px) + 2px); box-shadow: 0 -6px 20px color-mix(in srgb, var(--shade) 8%, transparent); }
+  .tabs button { display: grid; justify-items: center; align-content: center; gap: 3px; padding: 6px 0 5px; min-height: 56px; border-bottom: 0; font-size: 10.5px !important; letter-spacing: 0; color: var(--ink-3); }
+  .tabs .ti { display: block; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .tabs button[aria-selected="true"] { color: var(--brand); }
+  .tabs button[aria-selected="true"] .ti { stroke-width: 2.4; }
+  .wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .fab:not([hidden]) { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); }
+  .sheet { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); }
+  /* カレンダー: 1か月ずつ横にめくる */
+  .months { display: grid; grid-auto-flow: column; grid-auto-columns: 100%; grid-template-columns: none; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .months::-webkit-scrollbar { display: none; }
+  .months .month { scroll-snap-align: start; }
+  .mnav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .mnav b { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .mnav button { font: inherit; font-size: 22px; line-height: 1; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .mnav button:disabled { opacity: .3; cursor: default; }
+  /* 予定のカード: 時刻の列と写真を細くして、名前に幅を */
+  .tl-start, .tl-item, .tl-gap { grid-template-columns: 42px minmax(0, 1fr); gap: 6px; }
+  .tl-time { font-size: 13.5px; letter-spacing: -.02em; white-space: nowrap; }
+  .tl-card { grid-template-columns: 14px 54px minmax(0, 1fr) auto; gap: 7px; padding: 6px 4px 6px 0; border-radius: 12px; }
+  .tl-grip { font-size: 14px; padding: 10px 0; }
+  .tl-ph { width: 54px; border-radius: 8px; }
+  .tl-name { font-size: 14.5px; }
+  .tl-sub { font-size: 12.5px; }
+  .tl-acts button { width: 32px; height: 32px; }
+  .tl-gap .ln { margin-left: 32px; }
+}
+@media (max-width: 700px) { .tabs button .ic { width: 24px; height: 24px; stroke-width: 1.9; } .tabs button[aria-selected="true"] .ic { stroke-width: 2.4; } }
+@media (max-width: 700px) and (pointer: coarse) { .tl-acts button { min-width: 36px; min-height: 40px; } }
+/* 区間ごとの小さなボタンは控えめに（必要な人だけが見つければよい） */
+.tl-gap .addwc { border: 0; padding: 0; opacity: .7; font-weight: 600; text-decoration: underline dotted; text-underline-offset: 3px; min-height: 0 !important; }
+@media (max-width: 480px) { .datechip span { display: none; } .datechip { white-space: nowrap; } .top .bar > .row { flex-wrap: nowrap; } .logo { font-size: 18px; white-space: nowrap; } }
+/* 予定が画面に見えているときは「予定を見る」を出さない */
+.fab.away { display: none !important; }
 </style>
 
 <noscript><div class="nsnote"><b>この画面では、ナビが動きません</b><br>いま開いているアプリ（ファイルのプレビューなど）は JavaScript を動かさないので、カレンダー・予定・地図などが出ません。ブラウザで開いてください。<ul><li><b>Android</b>：ファイルを長押し（または「︙」）→「アプリで開く」→「Chrome」。Chrome ならネットがなくても全部動きます（写真もこのファイルに入っています）。</li><li><b>iPhone</b>：「ファイル」アプリのプレビューでは動きません。Safari で <a href="https://16king7-ops.github.io/usj-navi/dopa.html">https://16king7-ops.github.io/usj-navi/dopa.html</a> を開いてください。</li></ul></div></noscript>
@@ -828,6 +869,7 @@ figure.amap svg { width: 100%; height: auto; border-radius: 18px; display: block
     </div>
     <div class="panel" id="dayinfo"></div>
     <div id="cal" style="display:grid;gap:6px"><h2>カレンダー</h2><div class="legend" id="callegend"></div></div>
+    <div class="mnav"><button type="button" data-mv="-1" aria-label="前の月">‹</button><b id="mlabel"></b><button type="button" data-mv="1" aria-label="次の月">›</button></div>
     <div class="months" id="months"></div>
     <section class="areas" aria-labelledby="areas-h"><h2 id="areas-h" data-en="AREA GUIDE">エリアめぐり</h2><p class="lead">10のエリアの乗り物・レストラン・食べ歩きを、写真で。押すと地図と一緒に見られます。</p><div class="acards" id="acards"></div><figure class="amap" id="amap"></figure></section>
     <section class="about" id="about">
@@ -1920,9 +1962,31 @@ function renderDay() {
     const ph = PH[MONTH_PH[mo]];
     s += `<div class="month"><div class="mph">${ph ? `<img src="${ph}" alt="" loading="lazy">` : ""}<b>${+ym.slice(0, 4)}年${mo}月</b>${evs.length ? `<small>${evs.join("・")}</small>` : ""}</div><div class="cal">${cells}</div></div>`;
   }
-  document.getElementById("months").innerHTML = s;
+  const mEl = document.getElementById("months");
+  mEl.innerHTML = s;
   document.querySelectorAll("#months button[data-d]").forEach(b => b.addEventListener("click", () => goPlan(b.dataset.d)));
+  const sel = Math.max(0, Math.min(11, (dObj(M.date).getFullYear() - start.getFullYear()) * 12 + dObj(M.date).getMonth() - start.getMonth()));
+  const ch = mEl.children || [];
+  if (ch[sel]) mEl.scrollLeft = ch[sel].offsetLeft - ch[0].offsetLeft;
+  monthNav();
 }
+
+if ("IntersectionObserver" in window) {  // 予定の要約か予定の一覧が見えている間は「予定を見る」を隠す
+  const seen = new Set(), io = new IntersectionObserver(es => { es.forEach(e => (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target))); document.getElementById("fab").classList.toggle("away", seen.size > 0); });
+  ["plansum", "plantl"].forEach(id => document.getElementById(id) && io.observe(document.getElementById(id)));
+}
+// スマホのカレンダー: 1か月ずつ横にめくる（‹ › とスワイプ）
+const monthIdx = () => { const m = document.getElementById("months"); return Math.round(m.scrollLeft / Math.max(1, m.clientWidth + 12)); };
+function monthNav() {
+  const m = document.getElementById("months"), ch = m.children || [], i = monthIdx(), b = ch[i] && ch[i].querySelector(".mph b");
+  document.getElementById("mlabel").textContent = b ? `${b.textContent}（${i + 1}/${ch.length}）` : "";
+  document.querySelectorAll(".mnav [data-mv]").forEach(x => (x.disabled = +x.dataset.mv < 0 ? i <= 0 : i >= ch.length - 1));
+}
+document.getElementById("months").addEventListener("scroll", () => { clearTimeout(monthNav.t); monthNav.t = setTimeout(monthNav, 80); }, { passive: true });
+document.querySelectorAll(".mnav [data-mv]").forEach(x => x.addEventListener("click", () => {
+  const m = document.getElementById("months"), c = m.children[monthIdx() + +x.dataset.mv];
+  if (c) m.scrollTo({ left: c.offsetLeft - m.children[0].offsetLeft, behavior: "smooth" });
+}));
 
 // ================= 計画 =================
 const GROUPS = [["horror", "ホラー・期間限定", "ホラーナイトの期間だけ"], ["main", "人気の乗り物", "シングルライダーは使わない前提"], ["nintendo", "スーパー・ニンテンドー・ワールド", "エリアに入るのに整理券が要る時間あり"],
@@ -2713,7 +2777,7 @@ function showVerdict(box, loo, musts, keys) {
     })()}
     ${(u => u.length ? `<p class="note">記録がない日は、「似た日の多く」の多めのほうの待ちで回しています（${u.map(([k, n]) => `${nm(k)} ${n}日`).join("・")}。ホラー系はイベント期間の記録だけなので、その分は見込みです）。</p>` : "")(Object.entries(j.rs.reduce((a, r) => (r.unknown.forEach(k => (a[k] = (a[k] || 0) + 1)), a), {})))}
     <p class="note">去年の日数が限られるので、1〜2日の差は誤差の範囲です。早じまい（故障・天候・点検など）は前もって分からないので、どうしても乗りたいものは早めの時間に入れるのが安全です。</p>
-    <details class="more"${j.allOk < j.N ? " open" : ""}><summary>日ごとの結果（乗れなかった理由）</summary><div class="inner ox"><table class="plain vdays" style="min-width:560px"><thead><tr><th>去年の日</th><th class="r">回れた数</th><th class="r">乗り終わり</th><th>回れなかったもの・理由</th></tr></thead><tbody>
+    <details class="more"><summary>日ごとの結果（乗れなかった理由）</summary><div class="inner ox"><table class="plain vdays" style="min-width:560px"><thead><tr><th>去年の日</th><th class="r">回れた数</th><th class="r">乗り終わり</th><th>回れなかったもの・理由</th></tr></thead><tbody>
     ${j.rs.map(r => `<tr><td>${r.d.slice(2, 4)}年${md(r.d)}</td><td class="r">${r.rides}/${r.planned}</td><td class="r">${hm(r.end)}</td><td class="${r.missed.length ? "miss" : ""}">${r.missed.length ? r.missed.map(m => { const sb = (r.subs || []).find(x => x.insteadOf === m.k); return `<b>${nm(m.k)}</b>：${m.why}${sb ? `<br><span class="sub">→ 代わりに ${hm(sb.at)}から${nm(sb.k)}（待${sb.w}分）に乗った</span>` : ""}${m.kind === "early" ? `<br><span class="note">${earlyText(m.k)}</span>` : ""}`; }).join("<br>") : "なし"}${(r.notes || []).length ? `<br><span class="note">${r.notes.join("・")}</span>` : ""}</td></tr>`).join("")}
     </tbody></table></div></details>
     <div id="alts"></div>`;
@@ -3596,7 +3660,7 @@ function beep(seq) {
 const SFX = { yes: [[880, .07], [1320, .1]], no: [[240, .12]], must: [[660, .06], [880, .06], [1320, .14]], done: [[523, .07], [659, .07], [784, .07], [1047, .22]], rank: [[784, .09], [988, .09], [1175, .09], [1568, .3]] };
 const sndBtn = document.getElementById("soundbtn");
 if (sndBtn) {
-  const syncSnd = () => (sndBtn.innerHTML = snd ? "<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 8a5 5 0 0 1 0 8' /> <path d='M17.7 5a9 9 0 0 1 0 14' /> <path d='M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5' /></svg> 音ON" : "<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 8a5 5 0 0 1 1.912 4.934m-1.377 2.602a5 5 0 0 1 -.535 .464' /> <path d='M17.7 5a9 9 0 0 1 2.362 11.086m-1.676 2.299a9 9 0 0 1 -.686 .615' /> <path d='M9.069 5.054l.431 -.554a.8 .8 0 0 1 1.5 .5v2m0 4v8a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l1.294 -1.664' /> <path d='M3 3l18 18' /></svg> 音OFF");
+  const syncSnd = () => (sndBtn.innerHTML = snd ? "<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 8a5 5 0 0 1 0 8' /> <path d='M17.7 5a9 9 0 0 1 0 14' /> <path d='M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5' /></svg><span> 音ON</span>" : "<svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 8a5 5 0 0 1 1.912 4.934m-1.377 2.602a5 5 0 0 1 -.535 .464' /> <path d='M17.7 5a9 9 0 0 1 2.362 11.086m-1.676 2.299a9 9 0 0 1 -.686 .615' /> <path d='M9.069 5.054l.431 -.554a.8 .8 0 0 1 1.5 .5v2m0 4v8a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l1.294 -1.664' /> <path d='M3 3l18 18' /></svg><span> 音OFF</span>", sndBtn.setAttribute("aria-pressed", snd));
   sndBtn.addEventListener("click", () => { snd = !snd; store.set("snd", snd); syncSnd(); beep(SFX.yes); });
   syncSnd();
 }
@@ -3726,7 +3790,7 @@ renderLiveTL = function () {
     const tick2 = () => {
       const el = document.getElementById("cd"); if (!el) { clearInterval(cdTimer); return; }
       const n = new Date(), nowS = (S.date === TODAY ? n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds() : liveNow() * 60), left = Math.round(r0.start * 60 - nowS);
-      el.textContent = left > 0 ? `あと ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` : "いま！";
+      el.textContent = left <= 0 ? "いま！" : left >= 3600 ? `あと ${Math.floor(left / 3600)}時間${Math.floor(left % 3600 / 60)}分` : `あと ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
     };
     clearInterval(cdTimer); tick2(); cdTimer = setInterval(tick2, 1000);
   }
