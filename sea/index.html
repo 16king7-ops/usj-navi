@@ -1473,6 +1473,244 @@ html { scroll-padding-top: calc(var(--toph, 150px) + 8px); }
   .dropline { left: 56px; }
   .panel { padding: 16px 14px; }
 }
+
+/* ===================== 全体の作り直し（2026/10/12）: 同じ旅雑誌の別ページ =====================
+   土台（明朝の見出し・Cormorant の数字・細い罫線）＋タブごとの表情（いつ行く=暦／計画=旅程表／フード=メニュー／当日=発車標／時間帯=潮見表） */
+/* ===== 土台: 旅雑誌の文法（導入と地続き）=====
+   見出しは明朝（Zen Old Mincho）、数字と英字の小見出しは Cormorant Garamond の斜体、区切りは細い罫線、角は控えめ。
+   色はトークンだけ。導入（.intro）とヒーロー（.hero）には触らない */
+:root { --mincho: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif; --figure: "Cormorant Garamond", "Zen Old Mincho", serif; }
+
+/* 上のバー: 雑誌の柱 */
+.top { border-bottom: 1px solid var(--ink); }
+.logo { font-family: var(--mincho) !important; font-weight: 900 !important; letter-spacing: .08em; font-size: 19px; }
+.logo i { width: 22px; height: 22px; }
+.datechip { border-radius: 4px; border: 1px solid var(--ink); font-family: var(--mincho); font-weight: 700; letter-spacing: .04em; }
+.datechip span { font-family: var(--font); }
+
+/* タブ: 目次。番号は Cormorant の斜体、文字は明朝、選ばれたタブは墨の細い下線 */
+.tabs { counter-reset: tb; gap: 0; }
+.tabs button { counter-increment: tb; font-family: var(--mincho) !important; font-weight: 700 !important; letter-spacing: .1em; font-size: 15px; color: var(--ink-3); padding: 10px 14px 9px; border-bottom: 2px solid transparent; }
+.tabs button::before { content: counter(tb, decimal-leading-zero); font-family: var(--figure); font-style: italic; font-weight: 500; font-size: 15px; letter-spacing: 0; margin-right: 6px; color: var(--ink-3); }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.tabs button[aria-selected="true"]::before { color: var(--brand); }
+.tabs svg.ic { display: none; }  /* 目次に絵は要らない（文字と番号で選べる） */
+
+/* 見出し: 明朝。英字のラベル（data-en）は Cormorant の斜体で上に小さく */
+.wrap h2:not(.intro *):not(.hero *) { font-family: var(--mincho); font-weight: 900; letter-spacing: .05em; font-feature-settings: "palt" 1; }
+.wrap h2[data-en]:not(.intro *):not(.hero *)::before { content: attr(data-en); display: block; font-family: var(--figure); font-style: italic; font-weight: 500; font-size: max(13px, .46em); letter-spacing: .16em; color: var(--ink-3); margin-bottom: .15em; }
+.wrap h3:not(.intro *):not(.hero *):not(.tl-name):not(.grp h3) { font-family: var(--mincho); font-weight: 900; letter-spacing: .04em; }
+.tabhero h2 { color: var(--hero-ink); }
+.tabhero h2[data-en]::before { color: var(--hero-ink-2) !important; }
+
+/* パネル: 角を控えめにし、薄い面＋細い罫線。浮かせる影はなし */
+.panel { border-radius: 6px; border: 1px solid var(--line); border-top: 2px solid var(--ink); }
+details.more { border-radius: 6px; border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); padding: 2px 4px; background: transparent !important; }
+details.more > summary { font-family: var(--mincho); font-weight: 700; letter-spacing: .04em; }
+.note { line-height: 1.75; }
+
+/* ボタン: 形はそのまま、主ボタンだけ少し締める */
+.btn { letter-spacing: .02em; }
+.btn.primary { box-shadow: none; }
+
+/* 数字の大きい表示（日の情報・統計）は Cormorant で上品に */
+.fact .v, .stat .v { font-family: var(--figure) !important; font-weight: 600 !important; letter-spacing: 0; }
+.fact .k, .stat .k { letter-spacing: .08em; }
+
+/* Cormorant の数字は高さのそろった数字に（小文字風の数字にしない） */
+.fact .v, .stat .v, .tabs button::before, #nowbar input[type=time], #tab-live .nx .lstat b, #tab-live .nx .cmp b, #tab-live .nx .go2 b, #tab-live .nx .nowq input, #tab-live .tlc .t, #tab-live .tlc .no, #tab-day .cal button b, #tab-day .step4 em { font-variant-numeric: lining-nums tabular-nums; }
+
+/* ===== いつ行く: 暦と季節の誌面 =====
+   日の情報は誌面のデータ欄（罫線で区切った段組み）、ステップは目次、カレンダーは上質な手帳の暦、エリアは街のガイドの索引 */
+
+/* 使い方の4ステップ: 箱をやめて、罫線の目次に */
+#tab-day .steps4 { gap: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); }
+#tab-day .step4 { border: 0; border-radius: 0; background: transparent; padding: 14px 34px 14px 16px; border-left: 1px solid var(--line); min-height: 44px; }
+#tab-day .step4:first-child { border-left: 0; padding-left: 4px; }
+#tab-day .step4:hover { background: color-mix(in srgb, var(--brand-soft) 60%, transparent); }
+#tab-day .step4 em { font-family: var(--figure); font-style: italic; font-weight: 500; font-size: 15px; letter-spacing: .12em; color: var(--ink-3); }
+#tab-day .step4 b { font-family: var(--mincho); font-weight: 900; font-size: 17px; letter-spacing: .04em; }
+#tab-day .step4 .go { color: var(--ink-3); font-weight: 400; font-family: var(--figure); font-size: 24px; }
+#tab-day .step4.hot { background: transparent; box-shadow: inset 0 3px 0 var(--brand); }
+#tab-day .step4.hot em { color: var(--brand); }
+@media (max-width: 600px) { #tab-day .step4 { border-left: 0; border-top: 1px solid var(--line); padding-left: 4px; } #tab-day .step4:first-child { border-top: 0; } }
+
+/* その日の情報: データ欄。箱はやめて、上に墨の罫線、項目名は明朝の小見出し、数字は Cormorant */
+#tab-day #dayinfo { border-radius: 4px; padding: clamp(18px, 3vw, 30px); }
+#tab-day #dayinfo h2 { font-size: clamp(24px, 3.4vw, 34px); }
+#tab-day .facts { gap: 0 clamp(18px, 2.6vw, 34px); grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+#tab-day .fact { background: transparent !important; border-radius: 0; padding: 12px 0 16px; border-top: 1px solid var(--ink); }
+#tab-day .fact .k { font-family: var(--mincho); font-weight: 700; font-size: 13.5px; letter-spacing: .1em; color: var(--ink-2); }
+#tab-day .fact .v { font-size: clamp(26px, 2.6vw, 32px); line-height: 1.25; margin: 4px 0 6px; color: var(--ink); }
+#tab-day .fact .v.ev { font-family: var(--mincho) !important; font-weight: 700 !important; font-size: 18px; line-height: 1.55; }
+#tab-day .fact .s { font-size: 13.5px; line-height: 1.7; color: var(--ink-2); }
+/* 編集部からひとこと（黄色い箱をやめて、余白の注記に） */
+#tab-day #dayinfo .advice { background: transparent; border: 0; border-left: 3px solid var(--sun); border-radius: 0; padding: 4px 0 4px 16px; font-family: var(--mincho); font-weight: 600; font-size: 15.5px; line-height: 1.95; }
+#tab-day #dayinfo .advice svg { display: none; }
+
+/* カレンダー: 手帳の暦。月の写真は帯に、日付は Cormorant、混み具合の色は保ったまま角を小さく */
+#tab-day .months { gap: clamp(18px, 2.4vw, 28px); }
+#tab-day .month { border-radius: 4px; border: 1px solid var(--line); border-top: 2px solid var(--ink); background: var(--surface) !important; }
+#tab-day .month .mph { aspect-ratio: 16 / 5; }
+#tab-day .month .mph b { font-family: var(--mincho); font-weight: 900 !important; font-size: 24px; letter-spacing: .08em; }
+#tab-day .month .mph small { border-radius: 2px; background: color-mix(in srgb, var(--shade) 55%, transparent); color: var(--hero-ink); font-weight: 600; letter-spacing: .04em; }
+#tab-day .cal { gap: 2px; padding: 12px 12px 14px; }
+#tab-day .cal .wd { font-family: var(--mincho); font-weight: 700; font-size: 12px; color: var(--ink-3); padding-bottom: 4px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+#tab-day .cal button { border-radius: 3px; min-height: 46px; }
+#tab-day .cal button b { font-family: var(--figure); font-weight: 600; font-size: 18px; line-height: 1; }
+#tab-day .cal button span { font-size: 12px; }
+#tab-day .cal button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--ink); }
+#tab-day .cal button.hol b { color: var(--bad); }
+
+/* エリアめぐり: 街のガイドの索引。アーチの写真はそのまま、文字は明朝と Cormorant の英字 */
+#tab-day .acard .at { background: transparent; padding: 6px 2px 8px; border-radius: 0; border-top: 1px solid var(--ink); }
+#tab-day .acard em { font-family: var(--figure); font-style: italic; font-weight: 600; font-size: 13px; letter-spacing: .12em; color: var(--ink-3); }
+#tab-day .acard.tipsc em { color: var(--good); }
+#tab-day .acard b { font-family: var(--mincho); font-weight: 900; font-size: 16px; letter-spacing: .03em; }
+#tab-day .acard .aph { box-shadow: none; }
+#tab-day .steps4 { background: color-mix(in srgb, var(--surface) 90%, transparent); }
+
+/* ===== 計画: 旅程表と航海日誌 =====
+   攻略プランは「旅程表」。時刻は Cormorant、行き先は明朝、行の区切りは細い罫線、箱の重ねを減らす。
+   乗り物カードは写真が主役のカタログ。数字（並ぶ・歩く・終わり）は誌面の大きな数字として */
+
+/* 写真の見出し */
+#tab-plan .planhero { border-radius: 6px; }
+#tab-plan .planhero h2 { font-family: var(--mincho); font-weight: 900; letter-spacing: .05em; }
+#tab-plan .planhero .kicker { font-family: var(--figure); font-style: italic; font-weight: 600; font-size: 16px; letter-spacing: .14em; }
+#tab-plan .planhero .pills span { border-radius: 2px; font-weight: 600; }
+
+/* 攻略プランの箱: 青い太枠をやめて、上に墨の太罫＋細罫（旅程表の表紙） */
+#tab-plan .answer { border: 0; border-radius: 4px; border-top: 3px double var(--ink); box-shadow: 0 0 0 1px var(--line); padding: clamp(16px, 2.6vw, 26px); }
+#tab-plan .answer .meta { font-family: var(--figure); font-style: italic; font-weight: 600; font-size: 15px; letter-spacing: .06em; color: var(--ink-3); }
+#tab-plan .answer h2 { font-size: clamp(26px, 4vw, 38px); }
+#tab-plan .answer .kv { gap: 4px 22px; }
+#tab-plan .answer .kv b { font-family: var(--figure); font-weight: 600; font-size: 30px; font-variant-numeric: lining-nums tabular-nums; }
+
+/* 旅程（.plist）: 時刻は Cormorant、行き先は明朝、行は細い罫線で */
+#tab-plan .plist > li { border-top: 1px solid var(--line); }
+#tab-plan .plist > li .t { font-family: var(--figure); font-weight: 600; font-size: 21px; font-variant-numeric: lining-nums tabular-nums; letter-spacing: .01em; }
+#tab-plan .plist > li .nm { font-family: var(--mincho); font-weight: 900; letter-spacing: .03em; }
+#tab-plan .plist > li .nm small { font-family: var(--font); font-weight: 500; letter-spacing: 0; }
+#tab-plan .plist > li .ph img, #tab-plan .plist > li .ph { border-radius: 3px; }
+#tab-plan .wchip { border-radius: 2px; font-family: var(--figure); font-weight: 700; font-size: 15px; font-variant-numeric: lining-nums tabular-nums; }
+
+/* 手ごたえ（全部回れる見込み）: 誌面の大きな数字。左の太い色罫は細く、% を大きく */
+#tab-plan .verdict { border-radius: 4px; border: 0; border-left: 3px solid var(--vc); box-shadow: 0 0 0 1px var(--line); }
+#tab-plan .verdict .vd-sc b { font-family: var(--figure); font-weight: 600; font-size: 44px; line-height: 1; font-variant-numeric: lining-nums; }
+#tab-plan .verdict .vd-h { font-family: var(--mincho); font-weight: 900; font-size: 22px; letter-spacing: .04em; }
+#tab-plan .verdict .vd-adv { border-radius: 2px; }
+#tab-plan .verdict .vd-adv > b { font-family: var(--mincho); font-weight: 900; }
+#tab-plan .advice { border-radius: 4px; }
+
+/* 予定（ドラッグできるカード）: 角を小さく、時刻を Cormorant に。操作はそのまま */
+#tab-plan .tl-card { border-radius: 4px; border-width: 1px; border-left-width: 4px; }
+#tab-plan .tl-time { font-family: var(--figure) !important; font-weight: 600 !important; font-size: 21px; font-variant-numeric: lining-nums tabular-nums; }
+#tab-plan .tl-name { font-family: var(--mincho) !important; font-weight: 900 !important; letter-spacing: .03em; }
+#tab-plan .tl-ph { border-radius: 3px; }
+
+/* 乗り物カード: カタログ。写真の角を小さく、名前は明朝、選んだ枠は墨 */
+#tab-plan .card { border-radius: 4px; border-width: 1px; }
+#tab-plan .card.on { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+#tab-plan .card.on.is-must { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+#tab-plan .card .ph .nm { font-family: var(--mincho) !important; font-weight: 900 !important; letter-spacing: .03em; }
+#tab-plan .card .chk { border-radius: 3px; }
+#tab-plan .grp h3 { font-family: var(--mincho) !important; letter-spacing: .06em; border-bottom: 1px solid var(--ink); padding-bottom: 4px; }
+#tab-plan .gtabs button { border-radius: 2px; font-family: var(--mincho); font-weight: 700; }
+#tab-plan .gtabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+#tab-plan .fcard { border-radius: 4px; border-width: 1px; }
+#tab-plan .strip { border-radius: 4px; box-shadow: none; border-width: 1px; border-top: 2px solid var(--ink); }
+#tab-plan .strip .stat { border-radius: 2px; }
+#tab-plan .askcard, #tab-plan .asksum { border-radius: 4px; border-width: 1px; }
+#tab-plan .askcard .btn, #tab-plan .askb .btn { border-radius: 4px; }
+#tab-plan .askh { font-family: var(--mincho); font-weight: 900; letter-spacing: .04em; }
+
+/* ===== フード・トイレ: レストランのメニュー表 =====
+   お店や食べ歩きは写真を活かしたメニューページに、名前は明朝、値段・時間は Cormorant。トイレは控えめで実用的に */
+#tab-food .tabhero h2 { font-family: var(--mincho); font-weight: 900; }
+#tab-food .rcards { gap: clamp(14px, 2vw, 22px); }
+#tab-food .rcards .rp-mcard { border-radius: 4px; background: color-mix(in srgb, var(--surface) 94%, transparent); padding: 6px 6px 12px; border-bottom: 2px solid var(--ink); }
+#tab-food .rcards .rp-mcard img { border-radius: 3px; }
+#tab-food .rcards .rp-mcard b { font-family: var(--mincho); font-weight: 900; letter-spacing: .03em; }
+#tab-food .fcard { border-radius: 4px; border-width: 1px; }
+#tab-food .fcard b { font-family: var(--mincho); font-weight: 700; }
+#tab-food .wcard { border-radius: 4px; border-width: 1px; }
+#tab-food .wcard .ic { border-radius: 3px; }
+#tab-food .wcard b { font-family: var(--mincho); font-weight: 900; }
+#tab-food .panel > h3, #tab-food h3 { letter-spacing: .05em; }
+
+/* ===== 当日: 発車標と旅のチケット =====
+   「次はこれ」は駅の発車標のように、行き先を明朝で大きく、時刻は Cormorant で。屋外のスマホで一目で読めるよう、大きさと押しやすさは落とさない。
+   このあとの予定（.tlc）は時刻表のように整然と */
+
+/* 今ここ（上の帯）: 切符の端のような細い罫線 */
+#nowbar { border-top: 1px solid var(--line); }
+#nowbar .nowl { font-family: var(--mincho); letter-spacing: .06em; }
+#nowbar input[type=time] { font-family: var(--figure); font-weight: 600; font-size: 20px; border-radius: 4px; border-color: var(--ink); }
+
+/* 次はこれ: 発車標。上に墨の帯（「NEXT」と今の状況）、行き先を大きく、時刻と分を大きな数字で */
+#tab-live .nx { border: 0; border-radius: 6px; padding: 0; gap: 0; overflow: hidden; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 10px 28px color-mix(in srgb, var(--shade) 10%, transparent); }
+#tab-live .nx .lstat { background: var(--shade); color: var(--hero-ink-2); padding: 9px 16px; gap: 4px 18px; font-size: 13.5px; letter-spacing: .02em; }
+#tab-live .nx .lstat b { color: var(--sun); font-family: var(--figure); font-weight: 600; font-size: 17px; }
+#tab-live .nx > :not(.lstat) { margin-inline: 16px; }
+#tab-live .nx .nxh { margin-top: 16px; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--ink); }
+#tab-live .nx .nxh img { width: 76px; height: 76px; border-radius: 4px; }
+#tab-live .nx .nxh small { font-family: var(--figure); font-style: italic; font-weight: 600; font-size: 15px; letter-spacing: .16em; color: var(--brand); }
+#tab-live .nx .nxh small::after { content: " — NEXT"; letter-spacing: .12em; color: var(--ink-3); }
+#tab-live .nx .nxh h3 { font-family: var(--mincho); font-weight: 900; font-size: clamp(26px, 6.4vw, 34px); line-height: 1.25; letter-spacing: .04em; }
+#tab-live .nx .cmp { margin-top: 12px; gap: 6px 18px; }
+#tab-live .nx .cmp b { font-family: var(--figure); font-weight: 600; font-size: 38px; line-height: 1; }
+#tab-live .nx .nowq input { border-radius: 4px; border-color: var(--ink); font-family: var(--figure); font-size: 18px; font-weight: 600; }
+/* このまま行くと: 切符の券面（点線で切り取り） */
+#tab-live .nx .go2 { margin-top: 12px; background: color-mix(in srgb, var(--brand-soft) 70%, var(--surface)); border-radius: 4px; border: 1px dashed color-mix(in srgb, var(--brand) 45%, transparent); padding: 10px 14px; }
+#tab-live .nx .go2 b { font-family: var(--figure); font-weight: 600; font-size: 28px; letter-spacing: .01em; }
+#tab-live .nx .why { margin-top: 10px; }
+#tab-live .nx .why > b { font-family: var(--mincho); font-size: 13px; color: var(--ink); border-bottom: 2px solid var(--sun); margin-right: 8px; }
+#tab-live .nx .acts { margin-top: 14px; }
+#tab-live .nx .acts .btn { border-radius: 6px; font-weight: 700; }
+#tab-live .nx .acts .btn.primary { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+#tab-live .nx .row { margin-top: 10px; }
+#tab-live .nx .then { margin: 12px 0 0; padding: 10px 16px 14px; border-top: 1px solid var(--line); margin-inline: 0 !important; }
+#tab-live .nx > :last-child { margin-bottom: 14px; }
+
+/* このあとの予定: 時刻表。行の罫線を細く、時刻は Cormorant、次の行は墨の左罫 */
+#tab-live .tlc { border-bottom: 1px solid var(--line); }
+#tab-live .tlc .t { font-family: var(--figure) !important; font-weight: 600 !important; font-size: 18px; letter-spacing: .01em; }
+#tab-live .tlc .nm { font-family: var(--mincho); font-weight: 900; letter-spacing: .03em; }
+#tab-live .tlc .no { border-radius: 3px; font-family: var(--figure); font-size: 13px; }
+#tab-live .tlc.next { background: color-mix(in srgb, var(--brand-soft) 55%, transparent); box-shadow: inset 3px 0 0 var(--ink); }
+#tab-live .donebar { border-radius: 4px; }
+#tab-live .panel { border-radius: 6px; }
+
+/* ===== 時間帯: 潮見表とデータ誌面 =====
+   待ち時間マップは潮見表のように、セルの角を落として細い白い目地で区切り、数字は Cormorant。
+   狙い目の一覧はデータの索引（罫線の行）。色の意味（空く〜混む・◎・締め切り）はそのまま */
+#tab-hours .secth { border-bottom: 3px double var(--ink); padding-bottom: 14px; }
+#tab-hours .secth h2 { font-size: clamp(26px, 4vw, 44px); line-height: 1.3; }
+#tab-hours .secth .lead { font-family: var(--mincho); font-weight: 600; font-size: 16px; line-height: 1.95; color: var(--ink-2); max-width: 40em; }
+#tab-hours .panel { border-radius: 4px; padding: clamp(18px, 2.6vw, 28px); }
+#tab-hours .panel > h3 { font-size: clamp(20px, 2.4vw, 26px); padding-bottom: 8px; border-bottom: 1px solid var(--ink); }
+
+/* 表: 目地は細く、角は小さく。数字は Cormorant の揃った数字 */
+#tab-hours .hm { border-spacing: 1px; }
+#tab-hours .hm td { border-radius: 2px; font-family: var(--figure); font-weight: 600; font-size: 14px; font-variant-numeric: lining-nums tabular-nums; }
+#tab-hours .hm thead th { font-variant-numeric: lining-nums; font-family: var(--figure); font-style: italic; font-weight: 600; font-size: 14px; color: var(--ink-2); border-bottom: 1px solid var(--ink); padding-bottom: 2px; }
+#tab-hours .hm tbody th button { font-family: var(--mincho); font-weight: 700; letter-spacing: .02em; }
+#tab-hours .hm tr.grp th { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--ink-2); border-bottom: 1px solid var(--line); }
+#tab-hours .hm td i { font-style: normal; }
+
+/* 狙い目の一覧: 箱をやめて、罫線で区切った索引に */
+#tab-hours .hslist { gap: 0 clamp(16px, 2.4vw, 28px); }
+#tab-hours .hs { border: 0; border-radius: 0; border-top: 1px solid var(--line); background: transparent; padding: 10px 2px; min-height: 56px; }
+#tab-hours .hs:hover { background: color-mix(in srgb, var(--brand-soft) 50%, transparent); }
+#tab-hours .hs img { border-radius: 3px; }
+#tab-hours .hs b { font-family: var(--mincho); font-weight: 900; font-size: 15.5px; letter-spacing: .03em; }
+#tab-hours .hs em { font-family: var(--figure); font-weight: 600; font-size: 17px; color: var(--good); font-variant-numeric: lining-nums; }
+
+/* そのほかの数字（帯の縦棒グラフなど）も Cormorant に */
+#tab-hours .bars .lbl, #tab-hours .fact .v { font-variant-numeric: lining-nums; }
+#tab-hours details.more { margin-top: 4px; }
+
 </style>
 
 <noscript><div class="nsnote"><b>この画面では、ナビが動きません</b><br>いま開いているアプリ（ファイルのプレビューなど）は JavaScript を動かさないので、カレンダー・予定・地図などが出ません。ブラウザ（Chrome・Safari）で開いてください。</div></noscript>
