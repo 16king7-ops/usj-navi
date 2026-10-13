@@ -1687,6 +1687,19 @@ function yoyRide(k) {  // 乗り物ごとの補正 = T × (その乗り物の今
   for (const [x, ly] of P) { const v = rideMean(x, k); if (v == null) continue; const w = ly.map(z => rideMean(z, k)).filter(v => v != null); if (!w.length) continue; a += v; na++; b += w.reduce((p, q) => p + q, 0) / w.length; }
   return na < 4 || !b ? T : Math.min(1.6, Math.max(0.6, T * Math.pow(a / b / T, 0.5)));
 }
+// 朝の追加補正: 今年は開園直後の混み方が去年と違うことがある（2026年ホラーナイトは朝一が約2倍。昼以降は同じ）。1日の平均では拾えないので、
+//  直近28日の「開園から90分」の平均を、去年の同じ時期と比べ、1日の補正（yoyRide）との差を朝だけ上乗せする（1.0乗・0.7〜2.5倍）
+const MORN_MIN = 90;
+function mornMean(x, k) { const s = x.s[k]; if (!s || x.o == null) return null; const v = []; for (let i = 0; i < SLOT_M.length; i++) { const m = SLOT_M[i]; if (m >= x.o && m <= x.o + MORN_MIN) { const w = dec(s, i); if (w != null) v.push(w); } } return v.length >= 2 ? v.reduce((a, b) => a + b, 0) / v.length : null; }
+const _mc = {};
+function morningF(k) {
+  const P = yoyPairs(); if (P.length < 4) return 1;
+  const key = (cutoffDay || "") + "|" + excludeDay + "|" + k + "|" + P.length; if (_mc[key] != null) return _mc[key];
+  let a = 0, na = 0, b = 0;
+  for (const [x, ly] of P) { const v = mornMean(x, k); if (v == null) continue; const w = ly.map(z => mornMean(z, k)).filter(q => q != null); if (!w.length) continue; a += v; na++; b += w.reduce((p, q) => p + q, 0) / w.length; }
+  const r = na < 6 || !b || a < 8 * na ? 1 : Math.min(2.5, Math.max(0.7, Math.pow(a / b / yoyRide(k), 1.0)));
+  return (_mc[key] = r);
+}
 // 予測の幅: 似た日の値を log(待ち+10) にして、平均と標準偏差から「次の1日」が入る80%の範囲（似た日が少ないほど広い・t分布）。
 //  0.25 は年ごとの水準差などの上乗せ（log の標準偏差）。中央値はそのまま
 const T90 = [0, 3.08, 1.89, 1.64, 1.53, 1.48, 1.44, 1.41, 1.40, 1.38, 1.37, 1.36, 1.36, 1.35, 1.35, 1.34, 1.34, 1.33, 1.33, 1.33, 1.33];
@@ -1747,11 +1760,13 @@ function buildModel(date) {
         wide[k] = rr.length ? Math.round(dist(rr[rr.length - 1])) : null;
       }
       const cutM = (r.cut_in || []).filter(([rg]) => inR(date, [rg])).map(x => x[1])[0], SF = r.from_ ? 1 : yoyRide(src), fx = rr.map(x => relF(date, x) * (lastYr(date, x) ? SF : 1) * wxF(date, x, src));
+      const mF = r.from_ ? 1 : morningF(src), lyF = rr.map(x => lastYr(date, x));
       const pts = [], lasts = [];
       for (let i = 0; i < SLOT_M.length; i++) {
         const m = SLOT_M[i];
         if (m < (r.open ? r.open - 30 : 0) || (cutM && m > cutM)) continue;
-        const v = []; rr.forEach((x, j) => { const w = dec(x.s[src], i); if (w != null) v.push(w * fx[j]); }); v.sort((a, b) => a - b);
+        const mw = Math.max(0, Math.min(1, (MORN_MIN - (al(m) - open)) / MORN_MIN));  // 朝だけ（開園から90分でだんだん0に）
+        const v = []; rr.forEach((x, j) => { const w = dec(x.s[src], i); if (w != null) v.push(w * fx[j] * (mw > 0 && lyF[j] ? Math.pow(mF, mw) : 1)); }); v.sort((a, b) => a - b);
         if (v.length >= 3) { const [med, lo, hi] = bandOf(v, s0); pts.push([al(m), Math.round(med), Math.round(lo), Math.round(hi), v.length]); }
       }
       for (const x of rr) {
@@ -4505,7 +4520,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
 }
 // いま開いている版（更新されたかの確認用）
-{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 18:07　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 18:18　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>
