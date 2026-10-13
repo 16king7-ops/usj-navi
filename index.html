@@ -2820,8 +2820,17 @@ function paintCompact() {
     document.getElementById("cpt-on").onclick = () => { S.compact = true; save(); vSig = ""; replan(`空きを詰めて組みました（${cur.rides}個 → ${sm.rides}個）。`); };
   }, 0);
 }
+// 当日タブで入れた「今の待ち」（手入力・スクショ）が予定に反映されているときに知らせる（前の入力が残っていて、予測が変わって見えるのを防ぐ）
+function paintOverNote() {
+  const box = document.getElementById("overnote"); if (!box) return;
+  const o = P().over || {}, ks = Object.keys(o).filter(k => o[k] && o[k].v != null && RIDES[k]);
+  if (!ks.length) { box.innerHTML = ""; return; }
+  const L = todayLevel(), eg = ks.slice(0, 3).map(k => `${RIDES[k].short} ${Math.round(o[k].v)}分（${hm(o[k].from)}）`).join("・");
+  box.innerHTML = `<div class="advice"><b>当日タブで入れた「今の待ち」が${ks.length}個、予定に反映されています</b>（${eg}${ks.length > 3 ? " ほか" : ""}）。${L ? `今日は予測より${Math.abs(L.pct) < 5 ? "ほぼ同じ" : L.pct > 0 ? L.pct + "%混んでいる" : -L.pct + "%空いている"}として、あとの時間の予測を直しています。` : ""}前の入力が残っているだけなら、消すと元の予測に戻ります。 <button type="button" class="btn small" id="over-clear">今の待ちの入力を消す</button></div>`;
+  document.getElementById("over-clear").onclick = () => { P().over = {}; save(); vSig = ""; renderPlan(); renderPlanSide(); renderVerdict(curSim()); };
+}
 function renderPlanSide() {
-  const sim = curSim(); paintPct(sim); setTimeout(paintCompact, 80); setTimeout(() => paintStrip("plan"), 40);
+  const sim = curSim(); paintPct(sim); setTimeout(paintOverNote, 0); setTimeout(paintCompact, 80); setTimeout(() => paintStrip("plan"), 40);
   renderPlanHero(sim);
   const fab = document.getElementById("fab");
   fab.innerHTML = `<span>${sim.rides}個・並ぶ${dur(sim.waitTot)}・終わり${hm(sim.end)}</span><span>予定を見る ↓</span>`;
@@ -2831,7 +2840,7 @@ function renderPlanSide() {
   const firsts = S.sel.filter(k => avail(k, M.date) && RIDES[k].src !== "ticket" && RIDES[k].src !== "show");
   const ep = P().ep || {}, epKs = S.sel.filter(k => RIDES[k] && avail(k, M.date) && (RIDES[k].src === "r" || RIDES[k].src === "h")), epN = epKs.filter(k => ep[k]).length;
   const wxN = { 晴: "晴れ", 時雨: "時々雨", 後雨: "のち雨", 雨: "雨" }[(S.wx || {})[S.date]], stN = { lean: "ふつう", normal: "慎重", must: "必ず最優先", fast: "楽観" }[styleNow()];
-  document.getElementById("plansum").innerHTML = `<div id="pctcard" class="pctcard"></div>` + statsHTML(sim) + `<div id="dstrip-plan"></div><div class="quickset"><div><b>組み方</b><span class="seg">${[["lean", "ふつう"], ["normal", "慎重"], ["must", "必ず最優先"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span><small class="note">${STYLE_NOTE[styleNow()]}</small></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
+  document.getElementById("plansum").innerHTML = `<div id="overnote"></div><div id="pctcard" class="pctcard"></div>` + statsHTML(sim) + `<div id="dstrip-plan"></div><div class="quickset"><div><b>組み方</b><span class="seg">${[["lean", "ふつう"], ["normal", "慎重"], ["must", "必ず最優先"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span><small class="note">${STYLE_NOTE[styleNow()]}</small></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
     <details class="ctrlbox"${ctrlOpen ? " open" : ""}><summary><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M6 4v4' /> <path d='M6 12v8' /> <path d='M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M12 4v10' /> <path d='M12 18v2' /> <path d='M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M18 4v1' /> <path d='M18 9v11' /></svg> そのほか：天気${wxN || "未入力"}・入園${hm(M.open + S.entry)}${S.first ? `・最初に${RIDES[S.first] ? RIDES[S.first].short : ""}` : ""}</summary><div class="ctrls">
       <label>天気予報 <select id="c-wx">${[["", "入れない"], ["晴", "晴れ・くもり"], ["時雨", "時々雨"], ["後雨", "のち雨"], ["雨", "雨"]].map(([v, t]) => `<option value="${v}"${v === ((S.wx || {})[S.date] || "") ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       <label>入園 <select id="c-entry">${[0, 15, 30, 60, 90, 120].map(m => `<option value="${m}"${m === S.entry ? " selected" : ""}>${hm(M.open + m)}${m ? "" : "（開園）"}</option>`).join("")}</select></label>
@@ -4495,7 +4504,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
 }
 // いま開いている版（更新されたかの確認用）
-{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 17:50　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 17:58　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>
