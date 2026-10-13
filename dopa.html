@@ -3183,8 +3183,7 @@ const areaOfStore = sk => { const st = FOOD.stores[sk]; return st && (AREA.find(
 const areaLink = (a, fb = "") => (a ? `<button type="button" class="rp-area" data-oarea="${a.key}">${a.name}<span aria-hidden="true"> ›</span></button>` : fb ? `<span class="rp-area">${fb}</span>` : "");
 const thrillHTML = n => `<span class="rp-thrill" aria-label="スリル ${n}/5">${[1, 2, 3, 4, 5].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span>`;
 const rpGal = gal => `<div class="rp-gal">${gal.map((u, i) => `<img src="${u}" alt="" class="${i === 0 ? "on" : ""}">`).join("")}
-      ${gal.length > 1 ? `<button type="button" class="rp-nav prev" aria-label="前の写真">‹</button><button type="button" class="rp-nav next" aria-label="次の写真">›</button><div class="rp-dots">${gal.map((_, i) => `<i class="${i === 0 ? "on" : ""}"></i>`).join("")}</div>` : ""}
-      <button type="button" class="rp-close" aria-label="閉じる">×</button></div>`;
+      ${gal.length > 1 ? `<button type="button" class="rp-nav prev" aria-label="前の写真">‹</button><button type="button" class="rp-nav next" aria-label="次の写真">›</button><div class="rp-dots">${gal.map((_, i) => `<i class="${i === 0 ? "on" : ""}"></i>`).join("")}</div>` : ""}</div>`;
 const rpList = (h, xs) => (xs && xs.length ? `${h ? `<h3>${h}</h3>` : ""}<ul class="rp-tips">${xs.map(t => `<li>${t}</li>`).join("")}</ul>` : "");
 const rpMini = (img, name, sub, attr, no, cls = "") => `<button type="button" class="rp-mcard" ${attr}><span class="mph">${img ? `<img src="${img}" alt="" loading="lazy">` : ""}${no ? `<i class="mno ${cls}">${no}</i>` : ""}</span><b>${name}</b>${sub ? `<small>${sub}</small>` : ""}</button>`;
 // 時間帯ごとの待ち（この日の予測）を小さな棒で
@@ -3375,7 +3374,7 @@ function rpOpen(html, label, wire, ref) {
   const keep = rpEl && rpCur === ref ? rpEl.querySelector(".rpage").scrollTop : 0;
   rpShut(); rpCur = ref || null;
   rpEl = document.createElement("div"); rpEl.className = "rp-wrap"; rpEl.setAttribute("role", "dialog"); rpEl.setAttribute("aria-modal", "true"); rpEl.setAttribute("aria-label", label);
-  rpEl.innerHTML = `<div class="rp-back"></div><article class="rpage">${rpStack.length ? `<button type="button" class="rp-prev">‹ 戻る</button>` : ""}${html}</article>`;
+  rpEl.innerHTML = `<div class="rp-back"></div><article class="rpage"><div class="rp-bar">${rpStack.length ? `<button type="button" class="rp-prev">‹ 戻る</button>` : ""}<button type="button" class="rp-close" aria-label="閉じる">×</button></div>${html}</article>`;
   document.body.appendChild(rpEl); document.documentElement.classList.add("rp-lock");
   if (keep) rpEl.querySelector(".rpage").scrollTop = keep;
   const pv = rpEl.querySelector(".rp-prev"); if (pv) pv.addEventListener("click", rpBack);
@@ -3754,7 +3753,7 @@ function checkRewards(sim, mode = "plan") {
   const now = badgeState(sim, mode).filter(b => b.got && b.id !== "fast");
   if (acted && lastGot[mode]) {
     const neu = now.filter(b => !lastGot[mode].has(b.id));
-    if (neu.length) { confetti(90, innerWidth * 0.75, innerHeight * 0.3); beep(SFX.must); toast(mode === "live" ? "livetoast" : "plantoast", `<b>バッジGET！</b> ${neu.map(b => b.nm).join("・")}`); }
+    if (neu.length) { confetti(90, innerWidth * 0.75, innerHeight * 0.3); beep(SFX.must); if (!matchMedia("(max-width: 700px)").matches) toast(mode === "live" ? "livetoast" : "plantoast", `<b>バッジGET！</b> ${neu.map(b => b.nm).join("・")}`); }
   }
   lastGot[mode] = new Set(now.map(b => b.id));
 }
