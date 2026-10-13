@@ -1352,7 +1352,8 @@ function baseAt(k, t) {  // 今日の様子で直す前の予測（似た日か�
   if (!p || !p.length || r.src === "ticket" || r.src === "show") return { med: 0, p10: 0, p90: 0 };
   if (t <= p[0][0]) {
     const op = Math.max(M.open, r.open || 0);
-    if (r.src === "r" && !r.open && op < p[0][0]) { const g = Math.max(t - op, 0) / (p[0][0] - op); return { med: p[0][1] * g, p10: p[0][2] * g, p90: p[0][3] * g }; }
+    // 開園から最初の記録の時刻までは、0から立ち上げず、最初の記録の値のまま（実際の記録では開園15分後にもう15〜30分ある。開園前から並ぶ人がいる）。
+    //  前は直線で0から立ち上げていて、開園直後の「楽観」の予定で バックドロップ5分・ジュラパ3分 のように短すぎた
     return { med: p[0][1], p10: p[0][2], p90: p[0][3] };
   }
   const L = p[p.length - 1];
@@ -3902,7 +3903,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
 }
 // いま開いている版（更新されたかの確認用）
-{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 17:58　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 18:07　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>
