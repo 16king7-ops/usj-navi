@@ -1651,14 +1651,15 @@ function simulate(items, opt = {}) {
     } else if (it.type === "wc") {
       const b = it.wcI != null ? { loc: "wc:" + it.wcI, i: it.wcI } : bestWC(loc, t, nextLoc); dest = b.loc; d = WC_USE; info = FOOD.toilets[b.i].name;
     } else d = it.dur || 15;
-    const wk = dest === loc ? 0 : walkMin(loc, dest);
-    const arrive = t + wk;
-    let start = Math.max(arrive, it.pin ?? it.at ?? 0);
+    const qd = it.qs != null && RIDES[it.key] && RIDES[it.key].src !== "ticket" && RIDES[it.key].src !== "show" ? it : null;  // 並び始めた（当日タブの「今から並び始める」）: その時刻から、入れた待ちで進む
+    const wk = qd ? 0 : dest === loc ? 0 : walkMin(loc, dest);
+    const arrive = qd ? qd.qs : t + wk;
+    let start = qd ? qd.qs : Math.max(arrive, it.pin ?? it.at ?? 0);
     if (it.type === "meal" && it.at == null) start = Math.max(start, it.key === "昼ごはん" ? 660 : 1020);  // ごはんの窓の始まり。手で時刻を決めた（at）ときは従う
     if (RIDES[it.key]) {
       start = Math.max(start, openAt(it.key));
       const r = RIDES[it.key];
-      if (r.src !== "ticket" && r.src !== "show") wait = planWait(it.key, start);
+      if (r.src !== "ticket" && r.src !== "show") wait = qd ? qd.qw : planWait(it.key, start);
       if (start > lastAt(it.key) + (r.src === "show" ? r.early : r.src === "ticket" ? 15 : 0)) flag = r.src === "show" ? "間に合わない" : r.src === "ticket" ? "整理券の時間に遅れる" : "締め切り後";
       if (!M.prof[it.key] && r.src !== "ticket" && r.src !== "show") flag = flag || "この日は記録なし";
       if (!avail(it.key, M.date)) flag = "この日はやっていない";
@@ -3918,7 +3919,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
 }
 // いま開いている版（更新されたかの確認用）
-{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 18:18　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/14 03:02　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 // オフライン用: 一度開いたページは、電波がなくても開ける。開くたびに裏で新しい版を取りにいき、次に開いたときに新しくなる
-const VERSION = "20261013-181822", CORE = ["./", "./index.html", "./dopa.html"];
+const VERSION = "20261014-030256", CORE = ["./", "./index.html", "./dopa.html"];
 self.addEventListener("install", e => e.waitUntil(caches.open(VERSION).then(c => c.addAll(CORE.map(u => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting())));
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION && k !== "fonts" && !k.startsWith("sea-")).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", e => {

@@ -1252,6 +1252,12 @@ button { font-family: inherit; }
 .gkey i { display: inline-block; width: 12px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
 .gkey i.gi { border: 1px dashed var(--ink-3); background: transparent; }
 .dsinfo { min-height: 2.6em; font-size: 13px; }
+/* 今から並び始める */
+.qblock { display: grid; gap: 6px; padding: 10px 12px; margin: 8px 0; border-radius: 12px; background: var(--brand-soft); }
+.qblock label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; }
+.qblock input[type="number"] { width: 5.2em; min-height: 44px; font: inherit; font-size: 16px; padding: 4px 8px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); text-align: right; }
+.qblock.qon { background: color-mix(in srgb, var(--waitc) 22%, var(--surface)); }
+.qblock #qstart { min-height: 48px; }
 </style>
 
 <noscript><div class="nsnote"><b>この画面では、ナビが動きません</b><br>いま開いているアプリ（ファイルのプレビューなど）は JavaScript を動かさないので、カレンダー・予定・地図などが出ません。ブラウザで開いてください。<ul><li><b>Android</b>：ファイルを長押し（または「︙」）→「アプリで開く」→「Chrome」。Chrome ならネットがなくても全部動きます（写真もこのファイルに入っています）。</li><li><b>iPhone</b>：「ファイル」アプリのプレビューでは動きません。Safari で <a href="https://16king7-ops.github.io/usj-navi/">https://16king7-ops.github.io/usj-navi/</a> を開いてください。</li></ul></div></noscript>
@@ -1518,7 +1524,7 @@ button { font-family: inherit; }
       <div id="nextcard"></div>
       <figure class="map"><div id="livemap"></div><figcaption class="credit">地図を押すと「今ここ」になります。</figcaption></figure>
     </div>
-    <div class="panel livelist" style="gap:10px"><div class="row" style="justify-content:space-between"><h3>このあとの予定</h3><div class="seg" role="group" aria-label="予定の表示"><button type="button" data-lv="list">一覧</button><button type="button" data-lv="detail">詳しく</button></div></div><div id="dstrip-live"></div><div class="tlist" id="livetl"></div></div>
+    <div class="panel livelist" style="gap:10px"><div class="row" style="justify-content:space-between"><h3>このあとの予定</h3><div class="seg" role="group" aria-label="予定の表示"><button type="button" data-lv="list">一覧</button><button type="button" data-lv="detail">詳しく</button></div></div><div class="tlist" id="livetl"></div></div>
     <div class="tipwrap illus"><div class="panel tipboard" id="tipboard"></div></div>
     <div class="livepal" style="display:grid;gap:8px"><div class="grp"><h3>追加する</h3><small>つかんで予定に落とす（スマホは長押し）か、押すと最後に追加</small></div><div class="foodrow" id="livepal"></div></div>
   </section>
@@ -2084,14 +2090,15 @@ function simulate(items, opt = {}) {
     } else if (it.type === "wc") {
       const b = it.wcI != null ? { loc: "wc:" + it.wcI, i: it.wcI } : bestWC(loc, t, nextLoc); dest = b.loc; d = WC_USE; info = FOOD.toilets[b.i].name;
     } else d = it.dur || 15;
-    const wk = dest === loc ? 0 : walkMin(loc, dest);
-    const arrive = t + wk;
-    let start = Math.max(arrive, it.pin ?? it.at ?? 0);
+    const qd = it.qs != null && RIDES[it.key] && RIDES[it.key].src !== "ticket" && RIDES[it.key].src !== "show" ? it : null;  // 並び始めた（当日タブの「今から並び始める」）: その時刻から、入れた待ちで進む
+    const wk = qd ? 0 : dest === loc ? 0 : walkMin(loc, dest);
+    const arrive = qd ? qd.qs : t + wk;
+    let start = qd ? qd.qs : Math.max(arrive, it.pin ?? it.at ?? 0);
     if (it.type === "meal" && it.at == null) start = Math.max(start, it.key === "昼ごはん" ? 660 : 1020);  // ごはんの窓の始まり。手で時刻を決めた（at）ときは従う
     if (RIDES[it.key]) {
       start = Math.max(start, openAt(it.key));
       const r = RIDES[it.key];
-      if (r.src !== "ticket" && r.src !== "show") wait = planWait(it.key, start);
+      if (r.src !== "ticket" && r.src !== "show") wait = qd ? qd.qw : planWait(it.key, start);
       if (start > lastAt(it.key) + (r.src === "show" ? r.early : r.src === "ticket" ? 15 : 0)) flag = r.src === "show" ? "間に合わない" : r.src === "ticket" ? "整理券の時間に遅れる" : "締め切り後";
       if (!M.prof[it.key] && r.src !== "ticket" && r.src !== "show") flag = flag || "この日は記録なし";
       if (!avail(it.key, M.date)) flag = "この日はやっていない";
@@ -2786,7 +2793,7 @@ function paintStrip(mode, selId, msg) {
     let best = null, bd = 1e9;
     for (const r of sim.rows) { const a = r.arrive - r.walk, d = at < a ? a - at : at > r.end ? at - r.end : 0; if (d < bd) { bd = d; best = r; } }
     if (!best) return;
-    const R = RIDES[best.it.key], fixed = best.it.pin != null || (R && (R.src === "ticket" || R.src === "show"));
+    const R = RIDES[best.it.key], fixed = best.it.pin != null || best.it.qs != null || (R && (R.src === "ticket" || R.src === "show"));
     if (fixed) { paintStrip(mode, best.it.id, `<b>${nameTxt(best.it)}</b>は時刻が決まっているので動かせません（${hm(best.start)}）。`); return; }
     ev.preventDefault();
     const items0 = (P().items || []).map(x => ({ ...x })), id = best.it.id, s0 = best.start, x0 = ev.clientX;
@@ -3584,6 +3591,7 @@ function markDone(id) {
   const pl = P(); pl.done[id] = !pl.done[id];
   const it = pl.items.find(x => x.id === id);
   if (pl.done[id] && it && RIDES[it.key]) { S.liveLoc = locOfRide(it.key); store.set("liveloc", S.liveLoc); }  // 済んだ乗り物のところに今いるとみる
+  if (pl.done[id] && it && it.qs != null) { const nowM = (() => { const n = new Date(); return S.date === TODAY ? n.getHours() * 60 + n.getMinutes() : liveNow(); })(); document.getElementById("livetime").value = toHHMM(Math.min(Math.max(nowM, it.qs), 24 * 60 - 1)); }  // 並んでいた乗り物が済んだ: いまの時刻に進める
   save(); renderLiveTL();
   if (pl.done[id] && it) { toast("livetoast", `<b>${itemName(it)}</b>を済んだにしました。 <button type="button" class="btn small" id="undodone">取り消す</button>`); document.getElementById("undodone").addEventListener("click", () => { pl.done[id] = false; save(); renderLiveTL(); toast("livetoast", "取り消しました。"); }); }
 }
@@ -3612,6 +3620,39 @@ function renderTips() {
     insertNow(itemFor(k));
   }));
 }
+// ===== 今から並び始める（当日）=====
+//  トイレなどで遅れても、並び始めたときに押すだけで、その時刻からの実際の待ちで残りの予定を組み直す。入れた待ちは、あとの予測の補正（今日の混み具合）にも使う
+function queueBlock(r) {
+  const R = RIDES[r.it.key]; if (!R || R.src === "ticket" || R.src === "show") return "";
+  if (r.it.qs != null) {
+    const left = Math.max(0, Math.round(r.it.qs + r.it.qw - liveNow()));
+    return `<div class="qblock qon"><b>並び中：${hm(r.it.qs)}に並び始め・待ち${Math.round(r.it.qw)}分 → 乗り終わり ${hm(r.end)}ごろ</b>
+      <div class="row"><label>いま見た待ち（あと） <input type="number" id="qleft" min="0" max="300" step="5" value="${left}" inputmode="numeric" aria-label="あと何分で乗れるか"></label><button type="button" class="btn small" id="qfix">この待ちに直す</button><button type="button" class="btn small" id="qstop">並ぶのをやめる</button></div>
+      <span class="note">乗れたら下の「済んだ」を押すと、その時刻から残りを組み直します。</span></div>`;
+  }
+  return `<div class="qblock"><div class="row"><button type="button" class="btn primary" id="qstart">今から並び始める</button><label>待ち <input type="number" id="qwait" min="0" max="300" step="5" placeholder="${Math.round(r.wait)}" inputmode="numeric" aria-label="並び始めたときの待ち時間（分）"> 分</label></div>
+    <span class="note">並び始めたら押します（時刻は上の「いま」）。待ちは公式アプリの数字を入れると、あとの予定にも反映されます。空欄なら予測の${Math.round(r.wait)}分で進めます。</span></div>`;
+}
+function wireQueue(r0) {
+  if (!r0) return;
+  const set = f => { P().items = P().items.map(x => (x.id === r0.it.id ? f(x) : x)); save(); vSig = ""; };
+  const go = document.getElementById("qstart");
+  if (go) go.onclick = () => {
+    const v = document.getElementById("qwait").value, w = v === "" ? Math.round(r0.wait) : Math.max(0, +v), now = liveNow();
+    set(x => ({ ...x, qs: now, qw: w, at: undefined }));
+    if (v !== "") setOver(r0.it.key, w, now);   // 実際に見た待ちは、あとの予測の補正にも使う
+    S.liveLoc = locOfRide(r0.it.key); store.set("liveloc", S.liveLoc); save();
+    renderLiveTL(); toast("livetoast", `<b>${itemName(r0.it)}</b>に${hm(now)}から並び始め（待ち${w}分）。残りの予定を組み直しました。`);
+  };
+  const fx = document.getElementById("qfix");
+  if (fx) fx.onclick = () => {
+    const left = Math.max(0, +document.getElementById("qleft").value || 0), now = liveNow(), w = Math.max(0, now - r0.it.qs) + left;
+    set(x => ({ ...x, qw: w })); setOver(r0.it.key, Math.round(left), now); save(); renderLiveTL();
+    toast("livetoast", `いま見た待ち（あと${left}分）に直しました。`);
+  };
+  const st = document.getElementById("qstop");
+  if (st) st.onclick = () => { set(x => { const y = { ...x }; delete y.qs; delete y.qw; return y; }); renderLiveTL(); toast("livetoast", "並ぶのをやめました（予定に戻しました）。"); };
+}
 function renderLiveTL() {
   renderTips();
   const nl = document.getElementById("nclevel"); if (nl) nl.innerHTML = (() => { const L = todayLevel(); return L ? `今日は<b>${Math.abs(L.pct) < 5 ? "ほぼ予測どおり" : L.pct > 0 ? `予測より${L.pct}%混んでいます` : `予測より${-L.pct}%空いています`}</b>（${hm(L.at)}・${L.n}個から。ほかの乗り物の予測にも反映）。` : ""; })();
@@ -3619,8 +3660,10 @@ function renderLiveTL() {
   document.getElementById("nextcard").innerHTML = r0 ? `<div class="next"><div class="nph">${img0 ? `<img src="${img0}" alt="">` : ""}<div><small>次はこれ</small><h3>${itemName(r0.it)}</h3></div></div>
       <div class="nb"><div class="bigflow">${r0.walk ? `<span>歩く${r0.walk}分</span><i>→</i>` : ""}<span>${hm(r0.start)}着</span>${r0.wait >= 1 ? `<i>→</i><span>並ぶ${Math.round(r0.wait)}分</span>` : ""}<i>→</i><span>${hm(r0.end)}おわり</span></div>
       ${r0.flag ? `<div class="warnline">${r0.flag}</div>` : ""}${r1 ? `<div class="then">そのあと：<b>${itemName(r1.it)}</b>（${hm(r1.start)}〜）${sim.rows[2] ? `→ ${itemName(sim.rows[2].it)}` : ""}</div>` : ""}
+      ${queueBlock(r0)}
       <div class="row"><button type="button" class="btn small primary" id="donenext">済んだ</button><button type="button" class="btn small" id="skipnext">飛ばす</button><button type="button" class="btn small" id="wcnext">先にトイレを挟むと？</button></div>
-      <div class="note">残り${sim.rides}個・終わり ${hm(sim.end)}${sim.bad ? `・<b style="color:var(--bad)">間に合わないもの${sim.bad}件</b>` : ""}</div></div></div>` : `<div class="panel"><h3>今日の予定はすべて終わりました</h3></div>`;
+      <div class="note">残り${sim.rides}個・終わり ${hm(sim.end)}${sim.bad ? `・<b style="color:var(--bad)">間に合わないもの${sim.bad}件</b>` : ""}</div>
+      <div id="dstrip-live"></div></div></div>` : `<div class="panel"><h3>今日の予定はすべて終わりました</h3></div>`;
   if (r0 && r0.idle >= 15) {
     const o = recoverOpts(), nb = document.querySelector("#nextcard .nb");
     if (o.add.length && nb) { nb.insertAdjacentHTML("beforeend", `<div class="chs freefit"><b class="q">次の予定まで ${Math.round(r0.idle)}分 空いています。その間に乗れるもの（あとの予定はほぼ遅れない）</b>${o.add.map(c => sosBtn(c, "add")).join("")}</div>`); wireChoices(nb, "live"); }
@@ -3630,6 +3673,7 @@ function renderLiveTL() {
     document.getElementById("skipnext").addEventListener("click", () => { const before = liveSim(); P().items = P().items.filter(x => x.id !== r0.it.id); save(); renderLiveTL(); toast("livetoast", diffText(before, liveSim(), r0.it)); });
     document.getElementById("wcnext").addEventListener("click", () => { openRow = r0.it.id; previewWC("livetl", 0, "live"); document.getElementById("livetl").scrollIntoView({ behavior: "smooth", block: "start" }); });
   }
+  wireQueue(r0);
   renderLocBtns();
   document.getElementById("livemap").innerHTML = routeMap(sim, S.liveLoc || GATE);
   wireMapPins("livemap", "livetl");
@@ -4520,7 +4564,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
 }
 // いま開いている版（更新されたかの確認用）
-{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 18:18　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/14 03:02　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>
