@@ -1240,35 +1240,18 @@ button { font-family: inherit; }
 @media (max-width: 480px) { .pctcard { grid-template-columns: minmax(0, 1fr); } }
 .win { display: block; font-size: 12.5px; color: var(--ink-2); line-height: 1.5; margin-top: 2px; }
 .win b { color: var(--brand); font-variant-numeric: tabular-nums; }
-/* 横棒グラフ（1行ずつ） */
-.gantt { display: grid; gap: 3px; font-size: 12px; }
-.gax, .gr { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 6px; align-items: center; }
-.gax { color: var(--ink-3); } .gax .gt2 { position: relative; height: 16px; background: transparent; }
-.gax b { position: absolute; transform: translateX(-50%); font-weight: 500; font-size: 11px; font-variant-numeric: tabular-nums; }
-.gax b:first-child { transform: none; }
-.gl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-size: 12px; }
-.gr.bad .gl { color: var(--bad); }
-.gt2 { position: relative; display: block; height: 22px; background: var(--surface-2); border-radius: 5px; overflow: hidden; }
-.gt2 u { position: absolute; top: 0; bottom: 0; width: 1px; background: color-mix(in srgb, var(--line) 80%, transparent); }
-.gt2 i { position: absolute; top: 3px; bottom: 3px; border-radius: 3px; font-style: normal; font-size: 10.5px; line-height: 16px; color: #fff; text-align: center; overflow: hidden; white-space: nowrap; }
-.gt2 i.gw { top: 9px; bottom: 9px; background: var(--walk); }
-.gt2 i.gi { background: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--ink-3) 35%, transparent) 4px 6px); color: var(--ink-2); border: 1px dashed var(--ink-3); }
-.gt2 i.gq { background: var(--waitc); color: #2a1a00; } .gt2 i.gr { background: var(--ride); }
-.gt2 i.gm { background: var(--meal); } .gt2 i.gf { background: var(--food); } .gt2 i.gt { background: var(--toilet); }
-.gt2 em.gg { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px dotted var(--ink); opacity: .6; z-index: 2; }
+/* 1日の棒グラフ（ドラッグできる） */
+.dsbar { position: relative; height: 44px; border-radius: 10px; overflow: hidden; background: var(--free); touch-action: pan-y; cursor: ew-resize; user-select: none; }
+.dsbar span { position: absolute; top: 0; bottom: 0; }
+.dsbar span.sb { top: 5px; bottom: 5px; border-radius: 3px; }
+.dsbar span.sb.sel { outline: 2px solid var(--ink); outline-offset: 0; z-index: 2; }
+.dsbar span.sidle { top: 14px; bottom: 14px; background: repeating-linear-gradient(135deg, transparent 0 3px, color-mix(in srgb, var(--ink-3) 40%, transparent) 3px 5px); border-top: 1px dashed var(--ink-3); border-bottom: 1px dashed var(--ink-3); }
 .gh { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; align-items: baseline; margin: 4px 0; }
 .gh b { font-size: 14px; } .gh span { font-size: 12.5px; color: var(--ink-2); }
-.gh2 { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); }
 .gkey { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--ink-2); margin: 6px 0; }
 .gkey i { display: inline-block; width: 12px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
-.gkey i.gq { background: var(--waitc); } .gkey i.gr { background: var(--ride); } .gkey i.gw { background: var(--walk); } .gkey i.gm { background: var(--meal); } .gkey i.gf { background: var(--food); }
 .gkey i.gi { border: 1px dashed var(--ink-3); background: transparent; }
-details.gcmp { margin-top: 4px; }
-.gt2:has(i.dg) { cursor: ew-resize; touch-action: pan-y; }   /* 行のどこをつかんでも横に動かせる。縦のスクロールはそのまま */
-.gt2 i.dg { box-shadow: 0 0 0 1px rgba(255,255,255,.35) inset; }
-.gt2 i.gq.dg { outline: 1.5px solid color-mix(in srgb, var(--waitc) 60%, #000); }
-.gl small { color: var(--ink-3); font-variant-numeric: tabular-nums; font-size: 11px; }
-.ghint { font-size: 12.5px; }
+.dsinfo { min-height: 2.6em; font-size: 13px; }
 </style>
 
 <noscript><div class="nsnote"><b>この画面では、ナビが動きません</b><br>いま開いているアプリ（ファイルのプレビューなど）は JavaScript を動かさないので、カレンダー・予定・地図などが出ません。ブラウザで開いてください。<ul><li><b>Android</b>：ファイルを長押し（または「︙」）→「アプリで開く」→「Chrome」。Chrome ならネットがなくても全部動きます（写真もこのファイルに入っています）。</li><li><b>iPhone</b>：「ファイル」アプリのプレビューでは動きません。Safari で <a href="https://16king7-ops.github.io/usj-navi/">https://16king7-ops.github.io/usj-navi/</a> を開いてください。</li></ul></div></noscript>
@@ -1535,7 +1518,7 @@ details.gcmp { margin-top: 4px; }
       <div id="nextcard"></div>
       <figure class="map"><div id="livemap"></div><figcaption class="credit">地図を押すと「今ここ」になります。</figcaption></figure>
     </div>
-    <div class="panel livelist" style="gap:10px"><div class="row" style="justify-content:space-between"><h3>このあとの予定</h3><div class="seg" role="group" aria-label="予定の表示"><button type="button" data-lv="list">一覧</button><button type="button" data-lv="detail">詳しく</button></div></div><div id="gcmp-live"></div><div class="tlist" id="livetl"></div></div>
+    <div class="panel livelist" style="gap:10px"><div class="row" style="justify-content:space-between"><h3>このあとの予定</h3><div class="seg" role="group" aria-label="予定の表示"><button type="button" data-lv="list">一覧</button><button type="button" data-lv="detail">詳しく</button></div></div><div id="dstrip-live"></div><div class="tlist" id="livetl"></div></div>
     <div class="tipwrap illus"><div class="panel tipboard" id="tipboard"></div></div>
     <div class="livepal" style="display:grid;gap:8px"><div class="grp"><h3>追加する</h3><small>つかんで予定に落とす（スマホは長押し）か、押すと最後に追加</small></div><div class="foodrow" id="livepal"></div></div>
   </section>
@@ -2745,83 +2728,77 @@ function paintPct(sim) {
       <details class="pc-how"><summary>この見込みの出し方</summary><p>この予定を、行く日に似た日<b>${t.n}日</b>の実際の待ち時間で、ナビが回してみます。回し方は3通り：<b>ふつう</b>（全部回れたのは${t.ok}日）・<b>去年より1割混む</b>（${t.ok11}日）・<b>歩きも列も長めで、入園が15分遅れる</b>（${t.okH}日）。この3つを5：3：2で合わせた点数（${t.sc}点）を、過去1年（2025年10月〜2026年10月）780件の答え合わせで「実際に全部回れた割合」に直しています（前日までの記録で予定を作り、その日の実際の待ちで回しました）。</p></details></div>`;
   }, 60);
 }
-// ===== 横棒グラフ（1行ずつ・時間軸そろえ）と「空きを詰めたら？」の仮の比べ =====
-//  いまの予定の下に、同じ順番で「待ちが減る時刻を待たず、早く並ぶ」ようにした場合を並べる。仮なので予定は変えない。気に入ったら「この案にする」
+// ===== 1日の棒グラフ（1本）をドラッグして並び始めを動かす =====
+//  棒（計画は開園〜閉園、当日はいま〜閉園）をつかんで左右に動かすと、その予定に並び始める時刻が変わり、待ちを計算し直して、うしろの予定がずれる。
+//  動かした分は予定に反映される。「元に戻す」で、動かす前の予定に戻せる。時刻の決まったもの（整理券・ショー・固定）は動かせない
 const nameTxt = it => (RIDES[it.key] ? RIDES[it.key].short : String(itemName(it)).replace(/<[^>]+>/g, "").trim());
-function ganttHTML(sim, t0, t1, ghost, drag) {
+const strip0 = {};  // 動かす前の予定: { 計画/当日 + 日付: items }
+const stripKey = mode => mode + S.date;
+function stripBar(sim, t0, t1, sel) {
   const X = m => ((Math.min(Math.max(m, t0), t1) - t0) / (t1 - t0)) * 100;
-  const seg = (a, b, cls, tx = "") => (b > a ? `<i class="${cls}" style="left:${X(a)}%;width:${Math.max(0.4, X(b) - X(a))}%">${tx}</i>` : "");
+  const seg = (a, b, c, extra = "") => (b > a ? `<span class="${extra}" style="left:${X(a)}%;width:${Math.max(0.3, X(b) - X(a))}%;background:var(${c})"></span>` : "");
+  let b = "";
+  sim.rows.forEach(r => {
+    const R = RIDES[r.it.key], on = sel === r.it.id ? " sel" : "";
+    b += seg(r.arrive - r.walk, r.arrive, "--walk");
+    if (r.idle >= 5) b += `<span class="sidle" style="left:${X(r.arrive)}%;width:${X(r.start) - X(r.arrive)}%"></span>`;
+    if (r.it.type === "meal") b += seg(r.start, r.end, "--meal", "sb" + on);
+    else if (r.it.type === "food") b += seg(r.start, r.end, "--food", "sb" + on);
+    else if (r.it.type === "wc") b += seg(r.start, r.end, "--toilet", "sb" + on);
+    else if (R) b += seg(r.start, r.start + r.wait, "--waitc", "sb" + on) + seg(r.start + r.wait, r.end, "--ride", "sb" + on);
+  });
   const hs = []; for (let h = Math.ceil(t0 / 60); h <= Math.floor(t1 / 60); h += 2) hs.push(h);
-  const grid = hs.map(h => `<u style="left:${X(h * 60)}%"></u>`).join("");
-  const rows = sim.rows.map((r, i) => {
-    const R = RIDES[r.it.key], g = ghost && ghost[r.it.id];
-    const mv = drag && r.it.pin == null && !(R && (R.src === "ticket" || R.src === "show")), dg = mv ? " dg" : "";
-    let b = seg(r.arrive - r.walk, r.arrive, "gw") + (r.idle >= 5 ? seg(r.arrive, r.start, "gi", r.idle >= 25 ? `空き${Math.round(r.idle)}` : "") : "");
-    if (r.it.type === "meal") b += seg(r.start, r.end, "gm" + dg);
-    else if (r.it.type === "food") b += seg(r.start, r.end, "gf" + dg);
-    else if (r.it.type === "wc") b += seg(r.start, r.end, "gt" + dg);
-    else if (R) b += seg(r.start, r.start + r.wait, "gq" + dg, r.wait >= 25 ? `並ぶ${Math.round(r.wait)}` : "") + seg(r.start + r.wait, r.end, "gr" + dg);
-    return `<div class="gr${r.flag ? " bad" : ""}" data-gid="${r.it.id}"><span class="gl">${i + 1} ${nameTxt(r.it)}${drag ? ` <small>${hm(r.start)}</small>` : ""}</span><span class="gt2">${grid}${g != null && Math.abs(g - r.start) >= 3 ? `<em class="gg" style="left:${X(g)}%" title="いまの予定の開始"></em>` : ""}${b}</span></div>`;
-  }).join("");
-  return `<div class="gantt"><div class="gax"><span class="gl"></span><span class="gt2">${hs.map(h => `<b style="left:${X(h * 60)}%">${h}時</b>`).join("")}</span></div>${rows}</div>`;
+  return `<div class="dsbar" aria-label="1日の棒グラフ。左右にドラッグして並び始めを動かせます">${b}</div><div class="tlaxis" aria-hidden="true">${hs.map(h => `<span style="left:${X(h * 60)}%">${h}時</span>`).join("")}</div>`;
 }
-let ganttOpen = { plan: false, live: true };
-const gov = { plan: {}, live: {} };  // 仮のグラフで動かした「並び始め」: { 予定のid: 分 }
-function baseItems(mode) { return (mode === "live" ? restItems() : (P().items || []).filter(x => !P().done[x.id])); }
-function sandboxSim(mode, skipId) {
-  const ov = gov[mode], items = baseItems(mode).map(x => ({ ...x, at: x.id !== skipId ? ov[x.id] : undefined }));
-  const was = S.compact; S.compact = true;
-  try { return mode === "live" ? simulate(items, { start: liveNow(), loc: S.liveLoc || GATE }) : simulate(items); } finally { S.compact = was; }
-}
-function paintGantt(mode, keepOv) {
-  const box = document.getElementById(mode === "live" ? "gcmp-live" : "gcmp-plan"); if (!box) return;
-  if (!keepOv) gov[mode] = {};
-  const cur = mode === "live" ? liveSim() : curSim();
-  if (!cur.rows.length) { box.innerHTML = ""; return; }
+function paintStrip(mode, selId, msg) {
+  const box = document.getElementById(mode === "live" ? "dstrip-live" : "dstrip-plan"); if (!box) return;
+  const sim = mode === "live" ? liveSim() : curSim();
+  if (!sim.rows.length) { box.innerHTML = ""; return; }
   const t0 = mode === "live" ? Math.max(M.open, Math.floor((liveNow() - 15) / 30) * 30) : M.open, t1 = M.close;
-  const idleOf = sm => Math.round(sm.rows.reduce((a, r) => a + r.idle, 0));
-  const open = box.querySelector(".gpre-on") != null;
-  box.innerHTML = `<details class="more gcmp"${ganttOpen[mode] ? " open" : ""}><summary>横棒グラフで見る・空きを詰めたら？</summary><div class="inner">
-    <div class="gh"><b>いまの予定</b><span>${cur.rides}個・並ぶ${dur(cur.waitTot)}・空き${dur(idleOf(cur))}・終わり${hm(cur.end)}</span></div>${ganttHTML(cur, t0, t1)}
-    <div class="gkey"><span><i class="gq"></i>並ぶ</span><span><i class="gr"></i>乗る</span><span><i class="gi"></i>空き</span><span><i class="gw"></i>歩く</span><span><i class="gm"></i>食事</span><span><i class="gf"></i>フード</span></div>
-    <div id="gpre-${mode}"><button type="button" class="btn small" id="gpre-btn-${mode}">仮に空きを詰めたらどうなる？（動かして試せます）</button></div></div></details>`;
-  box.querySelector("details").addEventListener("toggle", e => (ganttOpen[mode] = e.target.open));
-  const at = {}; cur.rows.forEach(r => (at[r.it.id] = r.start));
-  const pre = document.getElementById("gpre-" + mode);
-  function drawPre() {
-    const sm = sandboxSim(mode), nOv = Object.keys(gov[mode]).length;
-    const dR = sm.rides - cur.rides, dE = Math.round(cur.end - sm.end), dI = idleOf(cur) - idleOf(sm), dW = Math.round(sm.waitTot - cur.waitTot);
-    pre.innerHTML = `<div class="gpre-on"><div class="gh gh2"><b>仮のグラフ</b><span>${sm.rides}個・並ぶ${dur(sm.waitTot)}・空き${dur(idleOf(sm))}・終わり${hm(sm.end)}</span></div>
-      <p class="note ghint"><b>行を左右にドラッグ</b>（オレンジの棒の位置を動かす）と、その乗り物に並び始める時刻を動かせます。左に動かすと左の空きが減り、待ち時間が変わって、うしろの予定がずれます（点線＝いまの予定の開始時刻）。いまは<b>${nOv ? "動かした分以外を詰めた" : "全部を詰めた"}</b>状態です。</p>
-      ${ganttHTML(sm, t0, t1, at, true)}
-      <p class="note">いまの予定との違い：${dE > 0 ? `終わりが<b>${dE}分早く</b>` : dE < 0 ? `終わりが${-dE}分遅く` : "終わりは同じ"}・${dI > 0 ? `空きが<b>${dI}分</b>後ろにまとまり` : dI < 0 ? `空きが${-dI}分増え` : "空きは同じ"}・並ぶ合計は${dW > 0 ? `${dW}分増え` : dW < 0 ? `${-dW}分減り` : "同じ"}${dR ? `・乗れる数は${dR > 0 ? `${dR}個増え` : `${-dR}個減り`}` : ""}ます。</p>
-      <div class="row"><button type="button" class="btn small primary" id="gapply-${mode}">この案にする</button>${nOv ? `<button type="button" class="btn small" id="greset-${mode}">全部詰めに戻す</button>` : ""}<button type="button" class="btn small" id="gclose-${mode}">閉じる</button></div></div>`;
-    document.getElementById("gclose-" + mode).onclick = () => paintGantt(mode);
-    const rs = document.getElementById("greset-" + mode); if (rs) rs.onclick = () => { gov[mode] = {}; drawPre(); };
-    document.getElementById("gapply-" + mode).onclick = () => {
-      const done = (P().items || []).filter(x => P().done[x.id]), ov = gov[mode], keep = baseItems(mode);
-      P().items = [...done, ...keep.map(x => ({ ...x, at: ov[x.id] ?? undefined }))];
-      if (!Object.keys(ov).length) S.compact = true;
-      save(); vSig = ""; gov[mode] = {};
-      if (mode === "live") renderLiveTL(); else replan("仮のグラフの予定にしました。");
+  const moved = !!strip0[stripKey(mode)];
+  box.innerHTML = `<div class="dstrip"><div class="gh"><b>1日の棒グラフ</b><span>${sim.rides}個・並ぶ${dur(sim.waitTot)}・終わり${hm(sim.end)}</span></div>
+    ${stripBar(sim, t0, t1, selId)}
+    <div class="gkey"><span><i style="background:var(--waitc)"></i>並ぶ</span><span><i style="background:var(--ride)"></i>乗る</span><span><i class="gi"></i>空き</span><span><i style="background:var(--walk)"></i>歩く</span><span><i style="background:var(--meal)"></i>食事</span><span><i style="background:var(--food)"></i>フード</span></div>
+    <p class="note dsinfo" aria-live="polite">${msg || "<b>棒を左右にドラッグ</b>すると、その予定に並び始める時刻を動かせます（待ちは計算し直し、うしろがずれます）。"}</p>
+    ${moved ? `<div class="row"><button type="button" class="btn small" id="dsreset-${mode}">元に戻す（動かす前の予定）</button></div>` : ""}</div>`;
+  const rb = document.getElementById("dsreset-" + mode);
+  if (rb) rb.onclick = () => { const items = strip0[stripKey(mode)]; delete strip0[stripKey(mode)]; P().items = items; save(); vSig = ""; rerenderFor(mode)(); toast(toastFor(mode), "動かす前の予定に戻しました。"); };
+  const bar = box.querySelector(".dsbar"); if (!bar) return;
+  bar.addEventListener("pointerdown", ev => {
+    const w = bar.getBoundingClientRect(), mpp = (t1 - t0) / w.width, at = t0 + (ev.clientX - w.left) * mpp;
+    // つかんだ位置に一番近い予定（歩く・並ぶ・乗るを含む）を選ぶ。時刻の決まったものは動かせない
+    let best = null, bd = 1e9;
+    for (const r of sim.rows) { const a = r.arrive - r.walk, d = at < a ? a - at : at > r.end ? at - r.end : 0; if (d < bd) { bd = d; best = r; } }
+    if (!best) return;
+    const R = RIDES[best.it.key], fixed = best.it.pin != null || (R && (R.src === "ticket" || R.src === "show"));
+    if (fixed) { paintStrip(mode, best.it.id, `<b>${nameTxt(best.it)}</b>は時刻が決まっているので動かせません（${hm(best.start)}）。`); return; }
+    ev.preventDefault();
+    const items0 = (P().items || []).map(x => ({ ...x })), id = best.it.id, s0 = best.start, x0 = ev.clientX;
+    // 左に動かしたら、うしろの予定も同じ分だけ前にずれる（空きが次の予定の前に移るだけで減らない、を防ぐ）。右に動かしたときは、うしろは着く時刻で自然にずれる
+    const build = (ov, d) => { const arr = (mode === "live" ? restItems() : (P().items || []).filter(x => !P().done[x.id])); let after = false;
+      return arr.map(x => { if (x.id === id) { after = true; return { ...x, at: ov }; } return after && d < 0 && x.pin == null && x.at != null ? { ...x, at: Math.max(0, x.at + d) } : x; }); };
+    const simWith = (ov, d = 0) => { const its = build(ov, d); return mode === "live" ? simulate(its, { start: liveNow(), loc: S.liveLoc || GATE }) : simulate(its); };
+    let last = s0, lastD = 0;
+    const row = sm => sm.rows.find(r => r.it.id === id);
+    const move = e => {
+      const min = Math.ceil(row(simWith(undefined)).arrive), v = Math.round((s0 + (e.clientX - x0) * mpp) / 5) * 5, nv = Math.max(min, Math.min(v, M.close - 10));
+      const d = nv - s0, sm = simWith(nv <= min ? undefined : nv, d), r = row(sm); last = nv <= min ? undefined : nv; lastD = d;
+      const bx = box.querySelector(".dsbar"); if (!bx) return;
+      bx.outerHTML = stripBar(sm, t0, t1, id).split('<div class="tlaxis"')[0];
+      box.querySelector(".dsinfo").innerHTML = `<b>${nameTxt(best.it)}</b>　${hm(s0)} → <b>${hm(r.start)}</b>${r.wait ? `（待ち ${Math.round(best.wait)}→${Math.round(r.wait)}分）` : ""}　終わり ${hm(sim.end)} → <b>${hm(sm.end)}</b>・${sm.rides}個${sm.bad ? `・<b style="color:var(--bad)">間に合わないもの${sm.bad}件</b>` : ""}`;
+      bindBar();
     };
-    pre.querySelectorAll(".gr[data-gid] .gt2").forEach(el => el.querySelector("i.dg") && el.addEventListener("pointerdown", ev => {
-      const row = el.closest(".gr"), id = row.dataset.gid, track = row.querySelector(".gt2"), cr = sandboxSim(mode).rows.find(r => r.it.id === id);
-      if (!cr) return;
-      ev.preventDefault();
-      const mpp = (t1 - t0) / track.clientWidth, x0 = ev.clientX, s0 = cr.start;
-      const move = e => {
-        const base = sandboxSim(mode, id).rows.find(r => r.it.id === id), min = base ? Math.ceil(base.arrive) : 0;
-        const v = Math.round((s0 + (e.clientX - x0) * mpp) / 5) * 5;
-        if (v <= min) delete gov[mode][id]; else gov[mode][id] = Math.min(v, M.close - 10);
-        drawPre();
-      };
-      const up = () => { document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up); document.removeEventListener("pointercancel", up); };
-      document.addEventListener("pointermove", move); document.addEventListener("pointerup", up); document.addEventListener("pointercancel", up);
-    }));
-  }
-  document.getElementById("gpre-btn-" + mode).onclick = drawPre;
-  if (keepOv && open) drawPre();
+    const up = () => {
+      document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up); document.removeEventListener("pointercancel", up);
+      if (last === s0 || last == null && s0 === Math.ceil(row(simWith(undefined)).arrive)) { paintStrip(mode, id); return; }
+      if (!strip0[stripKey(mode)]) strip0[stripKey(mode)] = items0;
+      { const done = (P().items || []).filter(x => P().done[x.id]), kept = build(last, lastD); P().items = [...done, ...kept]; }
+      save(); vSig = ""; rerenderFor(mode)();
+      toast(toastFor(mode), `<b>${nameTxt(best.it)}</b>の並び始めを${hm(s0)}から${last == null ? "いちばん早い時刻" : hm(last)}に動かしました。`);
+    };
+    document.addEventListener("pointermove", move); document.addEventListener("pointerup", up); document.addEventListener("pointercancel", up);
+  });
+  function bindBar() { /* 動かしている間は棒の中身だけ差し替える。つかんだ手は document 側で追っているので、付け直しは要らない */ }
 }
 // 空きを詰めると乗れる数が増えるなら提案する（ユーザー: 乗る数を増やすのが目的）。いまの予定とは別に、空きなしで組んだ予定を試算して比べる
 let cptRun = 0;
@@ -2843,7 +2820,7 @@ function paintCompact() {
   }, 0);
 }
 function renderPlanSide() {
-  const sim = curSim(); paintPct(sim); setTimeout(paintCompact, 80); setTimeout(() => paintGantt("plan"), 40);
+  const sim = curSim(); paintPct(sim); setTimeout(paintCompact, 80); setTimeout(() => paintStrip("plan"), 40);
   renderPlanHero(sim);
   const fab = document.getElementById("fab");
   fab.innerHTML = `<span>${sim.rides}個・並ぶ${dur(sim.waitTot)}・終わり${hm(sim.end)}</span><span>予定を見る ↓</span>`;
@@ -2853,7 +2830,7 @@ function renderPlanSide() {
   const firsts = S.sel.filter(k => avail(k, M.date) && RIDES[k].src !== "ticket" && RIDES[k].src !== "show");
   const ep = P().ep || {}, epKs = S.sel.filter(k => RIDES[k] && avail(k, M.date) && (RIDES[k].src === "r" || RIDES[k].src === "h")), epN = epKs.filter(k => ep[k]).length;
   const wxN = { 晴: "晴れ", 時雨: "時々雨", 後雨: "のち雨", 雨: "雨" }[(S.wx || {})[S.date]], stN = { lean: "ふつう", normal: "慎重", must: "必ず最優先", fast: "楽観" }[styleNow()];
-  document.getElementById("plansum").innerHTML = `<div id="pctcard" class="pctcard"></div>` + statsHTML(sim) + barHTML(sim) + `<div id="gcmp-plan"></div><div class="quickset"><div><b>組み方</b><span class="seg">${[["lean", "ふつう"], ["normal", "慎重"], ["must", "必ず最優先"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span><small class="note">${STYLE_NOTE[styleNow()]}</small></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
+  document.getElementById("plansum").innerHTML = `<div id="pctcard" class="pctcard"></div>` + statsHTML(sim) + `<div id="dstrip-plan"></div><div class="quickset"><div><b>組み方</b><span class="seg">${[["lean", "ふつう"], ["normal", "慎重"], ["must", "必ず最優先"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span><small class="note">${STYLE_NOTE[styleNow()]}</small></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
     <details class="ctrlbox"${ctrlOpen ? " open" : ""}><summary><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M6 4v4' /> <path d='M6 12v8' /> <path d='M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M12 4v10' /> <path d='M12 18v2' /> <path d='M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M18 4v1' /> <path d='M18 9v11' /></svg> そのほか：天気${wxN || "未入力"}・入園${hm(M.open + S.entry)}${S.first ? `・最初に${RIDES[S.first] ? RIDES[S.first].short : ""}` : ""}</summary><div class="ctrls">
       <label>天気予報 <select id="c-wx">${[["", "入れない"], ["晴", "晴れ・くもり"], ["時雨", "時々雨"], ["後雨", "のち雨"], ["雨", "雨"]].map(([v, t]) => `<option value="${v}"${v === ((S.wx || {})[S.date] || "") ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       <label>入園 <select id="c-entry">${[0, 15, 30, 60, 90, 120].map(m => `<option value="${m}"${m === S.entry ? " selected" : ""}>${hm(M.open + m)}${m ? "" : "（開園）"}</option>`).join("")}</select></label>
@@ -3632,7 +3609,7 @@ function renderLiveTL() {
   wireMapPins("livemap", "livetl");
   onMapTap(document.querySelector("#livemap svg"), loc => { S.liveLoc = loc; store.set("liveloc", loc); renderLiveTL(); toast("livetoast", "今いる場所を変えました。"); });
   renderTL("livetl", sim, "live");
-  paintGantt("live");
+  paintStrip("live");
   renderFixes("live");
   const pal = Object.keys(RIDES).filter(k => avail(k, M.date) && RIDES[k].grp !== "kids" && RIDES[k].src !== "ticket" && !P().items.some(x => x.key === k && !P().done[x.id]));
   document.getElementById("livepal").innerHTML = pal.map(k => `<button type="button" class="fcard" data-k="${k}"><span class="ph">${rideImg(k) ? `<img src="${rideImg(k)}" alt="" loading="lazy" draggable="false">` : "SHOW"}</span><b>${RIDES[k].short}</b></button>`).join("")
@@ -4517,7 +4494,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
 }
 // いま開いている版（更新されたかの確認用）
-{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 16:04　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 16:12　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>
