@@ -1560,13 +1560,13 @@ const TODAY = iso(new Date());
 const S = {
   date: store.get("date", null), sel: store.get("sel", null), must: store.get("must", null), showAt: store.get("showAt", {}),
   foods: store.get("foods", []), wc: store.get("wc", 1), entry: store.get("entry", 0), first: store.get("first", "ハリウッドドリーム"),
-  slack: store.get("slack", true), style: store.get("style", "lean"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
+  compact: store.get("compact", false), slack: store.get("slack", true), style: store.get("style", "lean"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
   lightLunch: store.get("lightLunch", false), mealAt: store.get("mealAt", {}), theme: "light", meals: store.get("meals", { lunch: true, dinner: true }),
   tab: "day", liveLoc: store.get("liveloc", null), fFrom: store.get("ffrom", null),
 };
 // 予定は日付ごとに持つ（items＝順番、done＝済み、over＝当日に入れた待ち時間、live＝当日モードで組み直した時刻と場所）
 const P = () => S.plans[S.date] || (S.plans[S.date] = { items: null, done: {}, over: {}, live: null });
-const save = () => { ["date", "sel", "must", "showAt", "foods", "wc", "entry", "first", "slack", "style", "wx", "speed", "plans", "inNin", "lightLunch", "mealAt", "meals"].forEach(k => store.set(k, S[k]));  };
+const save = () => { ["date", "sel", "must", "showAt", "foods", "wc", "entry", "first", "compact", "slack", "style", "wx", "speed", "plans", "inNin", "lightLunch", "mealAt", "meals"].forEach(k => store.set(k, S[k]));  };
 
 // ================= 混み具合（日にち） =================
 const AVGS = DAYS.filter(x => x.avg).map(x => x.avg).sort((a, b) => a - b);
@@ -1961,7 +1961,7 @@ function planRoute(items, mustKeys, opt = {}) {
   const mustIdx = tasks.map((_, i) => i).filter(i => mustMask >> i & 1);
   if (n > 30) { planErr = "選んだものが30個を超えています。いくつか外してください。"; return null; }
   planErr = "";
-  const IDLES = [0, 15, 30, 45, 60, 90, 120, 180, 240]  /* 空きは、当日の待ちの読み違いを直す余裕として使える（ユーザー）。そのかわり各乗り物に「早く着けたら○時から・遅れても○時までに並べば間に合う」の窓を出す */, CAP = 4, BEAM = opt.beam || (n > 16 ? 1000 : 2000);
+  const IDLES = S.compact ? [0] : [0, 15, 30, 45, 60, 90, 120, 180, 240]  /* 空きは、当日の待ちの読み違いを直す余裕として使える（ユーザー）。S.compact（空きを詰める）のときは入れない */, CAP = 4, BEAM = opt.beam || (n > 16 ? 1000 : 2000);
   let init = { mask: 0, fin: T0, tot: 0, val: 0, li: 0, node: null };
   const fi = opt.first ? tasks.findIndex(t => t.k === opt.first && t.it.pin == null) : -1;
   if (fi >= 0) { const tk = tasks[fi], st = Math.max(Math.round(T0 + WK[0][tk.li]), tk.open), w = W[fi][Math.min(899, st - 480)]; init = { mask: 1 << fi, fin: st + w + tk.dur, tot: C[fi][Math.min(899, st - 480)], val: tk.val, li: tk.li, node: { i: fi, st, w, prev: null } }; }
@@ -2607,7 +2607,7 @@ function statsHTML(sim) {
       <div class="stat"><div class="k">自由時間</div><div class="v">${dur(idle)}</div></div>
     </div>
     ${mustL.length ? `<div class="note"><b>必ず乗る：</b>${mustL.map(k => RIDES[k].short).join("、")}</div>` : ""}
-    ${miss.length ? `<div class="warnline">入りきらなかったもの：${miss.join("、")}</div>${(w => (w ? `<p class="note">${w}</p>` : ""))(missWhy(sim, (lastMissed || []).filter(x => RIDES[x.key] && RIDES[x.key].src !== "ticket" && RIDES[x.key].src !== "show").map(x => x.key)))}` : ""}${sim.bad ? `<div class="warnline">間に合わないものが${sim.bad}件あります（赤い予定）</div>` : ""}`;
+    <div id="cptbox"></div>${miss.length ? `<div class="warnline">入りきらなかったもの：${miss.join("、")}</div>${(w => (w ? `<p class="note">${w}</p>` : ""))(missWhy(sim, (lastMissed || []).filter(x => RIDES[x.key] && RIDES[x.key].src !== "ticket" && RIDES[x.key].src !== "show").map(x => x.key)))}` : ""}${sim.bad ? `<div class="warnline">間に合わないものが${sim.bad}件あります（赤い予定）</div>` : ""}`;
 }
 function barHTML(sim, from) {
   const t0 = Math.min(M.open, from ?? M.open), t1 = M.close, X = m => ((Math.min(Math.max(m, t0), t1) - t0) / (t1 - t0)) * 100;
@@ -2715,8 +2715,27 @@ function paintPct(sim) {
       <details class="pc-how"><summary>この見込みの出し方</summary><p>この予定を、行く日に似た日<b>${t.n}日</b>の実際の待ち時間で、ナビが回してみます。回し方は3通り：<b>ふつう</b>（全部回れたのは${t.ok}日）・<b>去年より1割混む</b>（${t.ok11}日）・<b>歩きも列も長めで、入園が15分遅れる</b>（${t.okH}日）。この3つを5：3：2で合わせた点数（${t.sc}点）を、過去1年（2025年10月〜2026年10月）780件の答え合わせで「実際に全部回れた割合」に直しています（前日までの記録で予定を作り、その日の実際の待ちで回しました）。</p></details></div>`;
   }, 60);
 }
+// 空きを詰めると乗れる数が増えるなら提案する（ユーザー: 乗る数を増やすのが目的）。いまの予定とは別に、空きなしで組んだ予定を試算して比べる
+let cptRun = 0;
+function paintCompact() {
+  const box = document.getElementById("cptbox"); if (!box) return;
+  const run = ++cptRun, cur = curSim();
+  if (S.compact) { box.innerHTML = `<div class="advice">空きを詰めた組み方にしています（待ちが減る時刻まで待たず、早く並びます）。 <button type="button" class="btn small" id="cpt-off">空きを戻す</button></div>`; document.getElementById("cpt-off").onclick = () => { S.compact = false; save(); vSig = ""; replan("空きを元に戻しました（待ちが減る時刻に並ぶ予定）。"); }; return; }
+  const miss = (lastMissed || []).filter(x => RIDES[x.key] && RIDES[x.key].src !== "ticket" && RIDES[x.key].src !== "show");
+  if (!miss.length || !cur.rows.some(r => r.idle >= 20)) { box.innerHTML = ""; return; }
+  box.innerHTML = "";
+  setTimeout(() => {
+    if (run !== cptRun || S.compact) return;
+    let p, sm; S.compact = true;
+    try { p = planMain(planItems(), mustNow(), { first: S.first }); sm = p ? simulate(p.order) : null; } finally { S.compact = false; }
+    const bx = document.getElementById("cptbox"); if (!bx || run !== cptRun || !sm || sm.rides <= cur.rides) return;
+    const was = new Set(cur.rows.map(r => r.it.key)), add = sm.rows.filter(r => RIDES[r.it.key] && !was.has(r.it.key)).map(r => RIDES[r.it.key].short);
+    bx.innerHTML = `<div class="advice"><b>空きを詰めると、${sm.rides - cur.rides}個増やせます</b>${add.length ? `（${add.join("・")}が入ります）` : ""}。いまの予定は、待ちが減る時刻に合わせて空きを入れています。そのぶん、当日の読み違いを直す余裕にはなりますが、乗る数は減ります。 <button type="button" class="btn small primary" id="cpt-on">空きを詰めて組む</button></div>`;
+    document.getElementById("cpt-on").onclick = () => { S.compact = true; save(); vSig = ""; replan(`空きを詰めて組みました（${cur.rides}個 → ${sm.rides}個）。`); };
+  }, 0);
+}
 function renderPlanSide() {
-  const sim = curSim(); paintPct(sim);
+  const sim = curSim(); paintPct(sim); setTimeout(paintCompact, 80);
   renderPlanHero(sim);
   const fab = document.getElementById("fab");
   fab.innerHTML = `<span>${sim.rides}個・並ぶ${dur(sim.waitTot)}・終わり${hm(sim.end)}</span><span>予定を見る ↓</span>`;
@@ -3222,7 +3241,7 @@ function earlyStats(k) {
 }
 const earlyText = k => { const e = earlyStats(k); if (!e) return "前もって分からないものです"; return RIDES[k].from_ ? `去年の秋の夜（${e.n}日）のうち${e.early}日（${Math.round(e.rate * 100)}%）が早く終わりました。2026年は新しいレッド・アラートなので、同じとは限りません` : `この乗り物が1時間以上早く終わった日は、1年で${e.early}日（${Math.round(e.rate * 100)}%）、直近60日では${e.recE}日。${e.rate < 0.05 ? "まれなので、気にしすぎなくて大丈夫です" : "ときどきあるので、どうしても乗りたいなら早めの時間に"}`; };
 let verdictRun = 0, vSig = "", vHTML = "", looCache = null;
-const vSigNow = () => [S.date, (S.wx || {})[S.date], S.slack, S.style, S.speed, S.sel, S.must, S.entry, S.first, S.lightLunch, JSON.stringify(S.mealAt), JSON.stringify(P().ep || {}), JSON.stringify(S.meals), JSON.stringify(S.showAt)].join("|");
+const vSigNow = () => [S.date, (S.wx || {})[S.date], S.compact, S.slack, S.style, S.speed, S.sel, S.must, S.entry, S.first, S.lightLunch, JSON.stringify(S.mealAt), JSON.stringify(P().ep || {}), JSON.stringify(S.meals), JSON.stringify(S.showAt)].join("|");
 function renderVerdict(sim) {
   const box = document.getElementById("verdict");
   if (!sim || !sim.rows.length) { box.innerHTML = ""; return; }
@@ -4204,10 +4223,11 @@ if (sndBtn) {
   syncSnd();
 }
 // 紙吹雪
+// 紙吹雪と＋1の飛び出しは出さない（重くなるため。ユーザー指示 10/13）。呼び出しは残してあるので、戻すときは false を外す
 const cv = document.createElement("canvas"); cv.className = "confetti"; document.body.appendChild(cv);
 let parts = [], raf = null;
 function confetti(n = 110, x = innerWidth / 2, y = innerHeight / 3) {
-  if (RM) return;
+  if (RM || true) return;
   cv.width = innerWidth; cv.height = innerHeight;
   const cols = getComputedStyle(document.documentElement).getPropertyValue("--confetti").split(",").map(s => s.trim()).filter(Boolean);
   for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * 15, vy: -Math.random() * 13 - 4, r: 4 + Math.random() * 5, c: cols[i % cols.length] || "#ffc21a", a: Math.random() * 6, life: 80 + Math.random() * 50 });
@@ -4220,7 +4240,7 @@ function tick() {
   raf = parts.length ? requestAnimationFrame(tick) : null;
 }
 function plus1(text, el) {
-  if (RM) return;
+  if (RM || true) return;
   const r = el ? el.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, width: 0 };
   const d = document.createElement("div"); d.className = "plus1"; d.textContent = text; d.style.left = r.left + r.width / 2 + "px"; d.style.top = r.top + "px";
   document.body.appendChild(d); setTimeout(() => d.remove(), 1200);

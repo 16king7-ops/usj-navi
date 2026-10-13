@@ -1140,13 +1140,13 @@ const TODAY = iso(new Date());
 const S = {
   date: store.get("date", null), sel: store.get("sel", null), must: store.get("must", null), showAt: store.get("showAt", {}),
   foods: store.get("foods", []), wc: store.get("wc", 1), entry: store.get("entry", 0), first: store.get("first", "ハリウッドドリーム"),
-  slack: store.get("slack", true), style: store.get("style", "lean"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
+  compact: store.get("compact", false), slack: store.get("slack", true), style: store.get("style", "lean"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
   lightLunch: store.get("lightLunch", false), mealAt: store.get("mealAt", {}), theme: "light", meals: store.get("meals", { lunch: true, dinner: true }),
   tab: "day", liveLoc: store.get("liveloc", null), fFrom: store.get("ffrom", null),
 };
 // 予定は日付ごとに持つ（items＝順番、done＝済み、over＝当日に入れた待ち時間、live＝当日モードで組み直した時刻と場所）
 const P = () => S.plans[S.date] || (S.plans[S.date] = { items: null, done: {}, over: {}, live: null });
-const save = () => { ["date", "sel", "must", "showAt", "foods", "wc", "entry", "first", "slack", "style", "wx", "speed", "plans", "inNin", "lightLunch", "mealAt", "meals"].forEach(k => store.set(k, S[k]));  };
+const save = () => { ["date", "sel", "must", "showAt", "foods", "wc", "entry", "first", "compact", "slack", "style", "wx", "speed", "plans", "inNin", "lightLunch", "mealAt", "meals"].forEach(k => store.set(k, S[k]));  };
 
 // ================= 混み具合（日にち） =================
 const AVGS = DAYS.filter(x => x.avg).map(x => x.avg).sort((a, b) => a - b);
@@ -1541,7 +1541,7 @@ function planRoute(items, mustKeys, opt = {}) {
   const mustIdx = tasks.map((_, i) => i).filter(i => mustMask >> i & 1);
   if (n > 30) { planErr = "選んだものが30個を超えています。いくつか外してください。"; return null; }
   planErr = "";
-  const IDLES = [0, 15, 30, 45, 60, 90, 120, 180, 240]  /* 空きは、当日の待ちの読み違いを直す余裕として使える（ユーザー）。そのかわり各乗り物に「早く着けたら○時から・遅れても○時までに並べば間に合う」の窓を出す */, CAP = 4, BEAM = opt.beam || (n > 16 ? 1000 : 2000);
+  const IDLES = S.compact ? [0] : [0, 15, 30, 45, 60, 90, 120, 180, 240]  /* 空きは、当日の待ちの読み違いを直す余裕として使える（ユーザー）。S.compact（空きを詰める）のときは入れない */, CAP = 4, BEAM = opt.beam || (n > 16 ? 1000 : 2000);
   let init = { mask: 0, fin: T0, tot: 0, val: 0, li: 0, node: null };
   const fi = opt.first ? tasks.findIndex(t => t.k === opt.first && t.it.pin == null) : -1;
   if (fi >= 0) { const tk = tasks[fi], st = Math.max(Math.round(T0 + WK[0][tk.li]), tk.open), w = W[fi][Math.min(899, st - 480)]; init = { mask: 1 << fi, fin: st + w + tk.dur, tot: C[fi][Math.min(899, st - 480)], val: tk.val, li: tk.li, node: { i: fi, st, w, prev: null } }; }
@@ -3680,10 +3680,11 @@ if (sndBtn) {
   syncSnd();
 }
 // 紙吹雪
+// 紙吹雪と＋1の飛び出しは出さない（重くなるため。ユーザー指示 10/13）。呼び出しは残してあるので、戻すときは false を外す
 const cv = document.createElement("canvas"); cv.className = "confetti"; document.body.appendChild(cv);
 let parts = [], raf = null;
 function confetti(n = 110, x = innerWidth / 2, y = innerHeight / 3) {
-  if (RM) return;
+  if (RM || true) return;
   cv.width = innerWidth; cv.height = innerHeight;
   const cols = getComputedStyle(document.documentElement).getPropertyValue("--confetti").split(",").map(s => s.trim()).filter(Boolean);
   for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * 15, vy: -Math.random() * 13 - 4, r: 4 + Math.random() * 5, c: cols[i % cols.length] || "#ffc21a", a: Math.random() * 6, life: 80 + Math.random() * 50 });
@@ -3696,7 +3697,7 @@ function tick() {
   raf = parts.length ? requestAnimationFrame(tick) : null;
 }
 function plus1(text, el) {
-  if (RM) return;
+  if (RM || true) return;
   const r = el ? el.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, width: 0 };
   const d = document.createElement("div"); d.className = "plus1"; d.textContent = text; d.style.left = r.left + r.width / 2 + "px"; d.style.top = r.top + "px";
   document.body.appendChild(d); setTimeout(() => d.remove(), 1200);
