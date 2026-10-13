@@ -1527,6 +1527,7 @@ details.gcmp { margin-top: 4px; }
       <div class="nowrow"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6.5 7h11' /> <path d='M6.5 17h11' /> <path d='M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1z' /> <path d='M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1z' /></svg> 今の待ち</b><button type="button" class="btn small primary" id="now-shot" hidden><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 8h.01' /> <path d='M6 13l2.644 -2.644a1.21 1.21 0 0 1 1.712 0l3.644 3.644' /> <path d='M13 13l1.644 -1.644a1.21 1.21 0 0 1 1.712 0l1.644 1.644' /> <path d='M4 8v-2a2 2 0 0 1 2 -2h2' /> <path d='M4 16v2a2 2 0 0 0 2 2h2' /> <path d='M16 4h2a2 2 0 0 1 2 2v2' /> <path d='M16 20h2a2 2 0 0 0 2 -2v-2' /></svg> 公式アプリのスクショを読む</button><input type="file" id="shotfile" accept="image/*" multiple hidden><button type="button" class="btn small" id="now-wait"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4' /> <path d='M13.5 6.5l4 4' /></svg> 手で入れる</button><span class="note" id="shotnote"></span><span id="nclevel" class="nclevel"></span></div>
       <div id="nowsub"></div>
       <div class="row"><button type="button" class="btn primary" id="replan"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4' /> <path d='M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4' /></svg> 残りを今から組み直す</button><span class="note">済んだものは、予定の ✓ を押すだけ</span></div>
+      <div class="row" id="resetrow"><button type="button" class="btn small" id="resetday">この日を最初からやり直す</button><span class="note">済んだ印・今の待ちの手入力・休止の印・今いる場所を消して、選んだものから予定を組み直します（選んだ乗り物・「必ず」・設定は残ります）</span></div>
     </div>
     <div class="toast" id="livetoast" hidden></div>
     <div id="livefix"></div>
@@ -3561,6 +3562,19 @@ document.getElementById("innin").addEventListener("change", e => { S.inNin = e.t
 
 // ================= 当日 =================
 const liveNow = () => toMin(document.getElementById("livetime").value) ?? M.open;
+// この日を最初から: 済んだ印・今の待ち・休止・今いる場所・動かした順番を消して、選んだものから組み直す（選んだ乗り物・必ず・設定・エクスプレス・パスは残す）
+function resetDay() {
+  const ep = P().ep; S.plans[S.date] = { items: null, done: {}, over: {}, live: null, ep: ep || {} };
+  S.liveLoc = null; store.set("liveloc", null); save();
+  vSig = ""; taSig = ""; lastMissed = []; chCache = null;
+  ensureItems(); setLiveNowClock(); renderPlanSide(); renderLiveTL();
+  toast("livetoast", "<b>この日を最初からにしました。</b>選んだものから予定を組み直しています。");
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("#resetday"); if (!b) return;
+  if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "本当に最初からにする（もう一度押す）"; b.classList.add("primary"); setTimeout(() => { if (b.isConnected) { b.dataset.sure = ""; b.textContent = "この日を最初からやり直す"; b.classList.remove("primary"); } }, 6000); return; }
+  resetDay();
+});
 function setLiveNowClock() { const n = new Date(); document.getElementById("livetime").value = toHHMM(Math.min(Math.max(n.getHours() * 60 + n.getMinutes(), M.open), M.close)); }
 function liveSim() { return simulate(restItems(), { start: liveNow(), loc: S.liveLoc || GATE }); }
 function markDone(id) {
@@ -4487,8 +4501,23 @@ const h0 = location.hash.slice(1);
 setTab(["day", "plan", "food", "live", "hours"].includes(h0) ? h0 : "day");
 </script>
 
+<style>.newver { position: fixed; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); z-index: 95; display: flex; gap: 10px; align-items: center; justify-content: space-between; background: #1450d2; color: #fff; border-radius: 14px; padding: 10px 14px; font: 700 14px/1.4 system-ui, "Hiragino Sans", sans-serif; box-shadow: 0 8px 26px rgba(0,0,0,.3); }
+.newver button { font: inherit; border: 0; border-radius: 999px; background: #fff; color: #1450d2; padding: 8px 16px; min-height: 40px; cursor: pointer; }
+.verline { text-align: center; font: 12px/1.5 system-ui, "Hiragino Sans", sans-serif; color: #69718c; padding: 8px 0 90px; }</style>
 <script>
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+// オフライン用: 一度開けば電波がなくても動く。新しい版が届いたら下に知らせて、押すと読み込み直す
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!had || document.querySelector(".newver")) return;
+    const d = document.createElement("div"); d.className = "newver"; d.setAttribute("role", "status");
+    d.innerHTML = '<span>新しい版があります</span><button type="button">読み込む</button>';
+    d.querySelector("button").onclick = () => location.reload(); document.body.appendChild(d);
+  });
+  navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
+}
+// いま開いている版（更新されたかの確認用）
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 16:04　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>
