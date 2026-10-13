@@ -1541,7 +1541,7 @@ function planRoute(items, mustKeys, opt = {}) {
   const mustIdx = tasks.map((_, i) => i).filter(i => mustMask >> i & 1);
   if (n > 30) { planErr = "選んだものが30個を超えています。いくつか外してください。"; return null; }
   planErr = "";
-  const IDLES = [0]  /* 自分から空きは入れない: 先に並んだ人は後から並ぶ人より先に乗れるので、待ちが減る時刻まで座って待っても得はない。空きは開く時刻・ごはんの窓・整理券の時刻を待つときだけできる */, CAP = 4, BEAM = opt.beam || (n > 16 ? 1000 : 2000);
+  const IDLES = [0, 15, 30, 45, 60, 90, 120, 180, 240]  /* 空きは、当日の待ちの読み違いを直す余裕として使える（ユーザー）。そのかわり各乗り物に「早く着けたら○時から・遅れても○時までに並べば間に合う」の窓を出す */, CAP = 4, BEAM = opt.beam || (n > 16 ? 1000 : 2000);
   let init = { mask: 0, fin: T0, tot: 0, val: 0, li: 0, node: null };
   const fi = opt.first ? tasks.findIndex(t => t.k === opt.first && t.it.pin == null) : -1;
   if (fi >= 0) { const tk = tasks[fi], st = Math.max(Math.round(T0 + WK[0][tk.li]), tk.open), w = W[fi][Math.min(899, st - 480)]; init = { mask: 1 << fi, fin: st + w + tk.dur, tot: C[fi][Math.min(899, st - 480)], val: tk.val, li: tk.li, node: { i: fi, st, w, prev: null } }; }
@@ -1653,6 +1653,13 @@ function simulate(items, opt = {}) {
     if (end > M.close && !flag) flag = "閉園後";
     rows.push({ it, from: loc, to: dest, walk: wk, arrive, start, wait, end, d, info, flag, idle: Math.max(0, start - arrive) });
     t = end; loc = dest;
+  }
+  // 各予定の窓: early＝早く着けたら並べる時刻（空きがあれば前倒しできる）／late＝遅れても、あとの予定を崩さずに並べる最後の時刻。うしろから、次の予定の late・締め切り・時刻の決まった予定から数える
+  let L = Infinity;
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i], tk = taskOf(r.it), dl = r.it.pin != null && !(RIDES[r.it.key] && epOf(r.it.key)) ? r.it.pin : tk.last;
+    const nx = rows[i + 1], cap = nx ? nx.late - nx.walk - (r.end - r.start) : Infinity;
+    r.late = Math.floor(Math.min(dl, cap)); r.early = Math.round(r.arrive); L = r.late;
   }
   const rides = rows.filter(r => RIDES[r.it.key] && !r.flag).length;
   return { rows, end: t, rides, waitTot: rows.reduce((a, r) => a + (RIDES[r.it.key] ? r.wait : 0), 0), walkTot: rows.reduce((a, r) => a + r.walk, 0), bad: rows.filter(r => r.flag).length };
