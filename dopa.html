@@ -1638,7 +1638,7 @@ function simulate(items, opt = {}) {
     const wk = dest === loc ? 0 : walkMin(loc, dest);
     const arrive = t + wk;
     let start = Math.max(arrive, it.pin ?? it.at ?? 0);
-    if (it.type === "meal") start = Math.max(start, it.key === "昼ごはん" ? 660 : 1020);
+    if (it.type === "meal" && it.at == null) start = Math.max(start, it.key === "昼ごはん" ? 660 : 1020);  // ごはんの窓の始まり。手で時刻を決めた（at）ときは従う
     if (RIDES[it.key]) {
       start = Math.max(start, openAt(it.key));
       const r = RIDES[it.key];
@@ -3902,7 +3902,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
 }
 // いま開いている版（更新されたかの確認用）
-{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 16:12　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 17:50　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>

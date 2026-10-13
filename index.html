@@ -2071,7 +2071,7 @@ function simulate(items, opt = {}) {
     const wk = dest === loc ? 0 : walkMin(loc, dest);
     const arrive = t + wk;
     let start = Math.max(arrive, it.pin ?? it.at ?? 0);
-    if (it.type === "meal") start = Math.max(start, it.key === "昼ごはん" ? 660 : 1020);
+    if (it.type === "meal" && it.at == null) start = Math.max(start, it.key === "昼ごはん" ? 660 : 1020);  // ごはんの窓の始まり。手で時刻を決めた（at）ときは従う
     if (RIDES[it.key]) {
       start = Math.max(start, openAt(it.key));
       const r = RIDES[it.key];
@@ -2782,7 +2782,8 @@ function paintStrip(mode, selId, msg) {
     const row = sm => sm.rows.find(r => r.it.id === id);
     const move = e => {
       const min = Math.ceil(row(simWith(undefined)).arrive), v = Math.round((s0 + (e.clientX - x0) * mpp) / 5) * 5, nv = Math.max(min, Math.min(v, M.close - 10));
-      const d = nv - s0, sm = simWith(nv <= min ? undefined : nv, d), r = row(sm); last = nv <= min ? undefined : nv; lastD = d;
+      const meal = best.it.type === "meal", ov = nv <= min && !meal ? undefined : nv;  // ごはんは窓の始まりより前でも、決めた時刻に入れる
+      const d = nv - s0, sm = simWith(ov, d), r = row(sm); last = ov; lastD = d;
       const bx = box.querySelector(".dsbar"); if (!bx) return;
       bx.outerHTML = stripBar(sm, t0, t1, id).split('<div class="tlaxis"')[0];
       box.querySelector(".dsinfo").innerHTML = `<b>${nameTxt(best.it)}</b>　${hm(s0)} → <b>${hm(r.start)}</b>${r.wait ? `（待ち ${Math.round(best.wait)}→${Math.round(r.wait)}分）` : ""}　終わり ${hm(sim.end)} → <b>${hm(sm.end)}</b>・${sm.rides}個${sm.bad ? `・<b style="color:var(--bad)">間に合わないもの${sm.bad}件</b>` : ""}`;
@@ -4494,7 +4495,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
 }
 // いま開いている版（更新されたかの確認用）
-{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 16:12　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/13 17:50　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>
