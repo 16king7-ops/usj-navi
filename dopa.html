@@ -1140,7 +1140,7 @@ const TODAY = iso(new Date());
 const S = {
   date: store.get("date", null), sel: store.get("sel", null), must: store.get("must", null), showAt: store.get("showAt", {}),
   foods: store.get("foods", []), wc: store.get("wc", 1), entry: store.get("entry", 0), first: store.get("first", "ハリウッドドリーム"),
-  slack: store.get("slack", true), style: store.get("style", "normal"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
+  slack: store.get("slack", true), style: store.get("style", "lean"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
   lightLunch: store.get("lightLunch", false), mealAt: store.get("mealAt", {}), theme: "light", meals: store.get("meals", { lunch: true, dinner: true }),
   tab: "day", liveLoc: store.get("liveloc", null), fFrom: store.get("ffrom", null),
 };
@@ -1400,12 +1400,12 @@ function waitAt(k, t) {
   const hw = (seen ? NC.h0 + NC.h1 * (1 - Math.exp(-h / NC.th)) : NC.hu) * (1 + NC.hl * Math.exp(-Math.max(0, (seen ? x.from : s.t1) - M.open) / NC.ts));
   return { med: Math.max(0, Math.exp(lm) - NC.c), p10: Math.max(0, Math.exp(lm - hw) - NC.c), p90: Math.max(0, Math.exp(lm + hw) - NC.c) };
 }
-// 組み方（S.style）: normal＝余裕を見る（ふつうと多めの中間）／sure＝確実（多めの値・似た日すべてで回れるまで減らす）
+// 組み方（S.style）: lean＝ふつう（待ちは似た日のふつうの値。はじめの値）／normal＝慎重（ふつうと多めの中間）／must＝必ず最優先。sure＝確実は画面から外した（シー版と同じ考え方）
 // 計画で見る「多め」: 予測の幅（p90）は正直な80%の範囲に広げたので、計画の控えめさは前と同じになるよう 0.32 を掛ける（前の上乗せ 平均12分 ÷ 今の 37分）
 const PK = 0.32, upper = w => w.med + PK * Math.max(0, w.p90 - w.med);
 // エクスプレス・パス（P().ep = { 乗り物: { at: 時間指定の時刻 or null } }。日付ごと）。専用の列なので待ちは10分ほどで見る
 const EPW = 10, epOf = k => (P().ep || {})[k] || null;
-const planWait = (k, t) => { if (epOf(k)) return EPW; const w = waitAt(k, t); return w.med + (S.style === "sure" ? 1 : S.slack ? 0.5 : 0) * PK * Math.max(0, w.p90 - w.med); };
+const planWait = (k, t) => { if (epOf(k)) return EPW; const w = waitAt(k, t); return w.med + (S.style === "sure" ? 1 : S.style === "lean" ? 0 : S.slack ? 0.5 : 0) * PK * Math.max(0, w.p90 - w.med); };
 const openAt = k => { const r = RIDES[k]; if (r.src === "show") return showTime(k) - r.early; return Math.max(M.open, r.open || 0); };
 function lastAt(k) {
   const r = RIDES[k];
@@ -1447,7 +1447,7 @@ function walkPx(a, b) {
   return via;  // 必ず通路に沿った道のり（直線で代用しない）
 }
 const walkMin = (a, b) => (a === b ? 0 : Math.round(walkPx(a, b) * MAPD.mpp / (70 * S.speed) + 1));
-const walkPlan = (a, b) => { if (a === b) return 1; const w = walkMin(a, b); return S.slack ? Math.round(w * 1.2) + 2 : w; };
+const walkPlan = (a, b) => { if (a === b) return 1; return walkMin(a, b); };  // 歩く時間はふつうに歩く速さのまま（前は1.2倍＋2分を足していた。シー版で「やりすぎ」）
 function pathPts(a, b) {
   const pa = ptOf(a), pb = ptOf(b), na = nodeOf(a), nb = nodeOf(b), out = [pa];
   let i = na; out.push(NODES[NID[i]]); while (i !== nb && i >= 0) { i = NX[i][nb]; out.push(NODES[NID[i]]); }
@@ -1508,6 +1508,7 @@ function bestMeal(from, t) {
 
 // ================= ルートを探す（ビーム探索） =================
 // タスク: ride / ticket / show（場所あり）と、meal / food / wc / rest（場所はあとで決める）
+const CUT_SLACK = 0, CUT_MUST = 45, CUT_SURE = 60;
 const VALUE = 240;  // 1個に乗る価値（待ち時間の分に換算）。混む時期でも、時間が余るなら乗る
 let planErr = "";
 function taskOf(it) {
@@ -1515,7 +1516,8 @@ function taskOf(it) {
     const k = it.key, r = RIDES[k];
     let open = openAt(k), last = lastAt(k);
     if (it.pin != null) { open = it.pin; last = it.pin; }
-    const lastP = S.slack && r.src !== "ticket" && r.src !== "show" && it.pin == null ? last - (S.style === "sure" ? 60 : 45) : last;
+    // 受付の締め切り（lastAt）は「似た日の9割はこの時刻まで並べた」見込みで、もう控えめ。「必ず」以外はそれまでに着けばよい。「必ず」は外れると困るので45分前まで（シー版と同じ）
+    const lastP = S.slack && r.src !== "ticket" && r.src !== "show" && it.pin == null ? last - (S.style === "sure" ? CUT_SURE : S.must.includes(k) ? CUT_MUST : CUT_SLACK) : last;
     return { it, k, loc: locOfRide(k), dur: durOf(k), open, last, lastP, val: r.w, buf: S.slack && r.src === "ticket" && it.pin == null ? 20 : 0, wait: r.src === "ticket" || r.src === "show" ? 0 : null, after: r.after };
   }
   const meal = it.type === "meal", lunch = it.key === "昼ごはん";
@@ -1633,7 +1635,7 @@ function simulate(items, opt = {}) {
     } else if (it.type === "wc") {
       const b = it.wcI != null ? { loc: "wc:" + it.wcI, i: it.wcI } : bestWC(loc, t, nextLoc); dest = b.loc; d = WC_USE; info = FOOD.toilets[b.i].name;
     } else d = it.dur || 15;
-    const wk = dest === loc ? 0 : Math.round(walkMin(loc, dest) * (S.slack ? 1.2 : 1)) + (S.slack && dest !== loc ? 2 : 0);
+    const wk = dest === loc ? 0 : walkMin(loc, dest);
     const arrive = t + wk;
     let start = Math.max(arrive, it.pin ?? it.at ?? 0);
     if (it.type === "meal") start = Math.max(start, it.key === "昼ごはん" ? 660 : 1020);

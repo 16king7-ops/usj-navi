@@ -1366,7 +1366,7 @@ button { font-family: inherit; }
           <li><b>決めたレストラン</b>：紹介ページで「昼ごはん（夜ごはん）をここにする」を押すと、そのお店までの道のりと行列で組みます。</li>
           <li><b>夜のストリート・ゾンビ</b>（ホラーナイトの間）：18時から先の予定で、ゾンビの出る通りを歩くかどうかを道のりから調べて、予定の下に出します。</li>
         </ul>
-        <p>組み方は4つから選べます。「余裕を見る」は待ちを多めに、歩く時間を1.2倍＋2分で見積もります。「確実」は似た日すべてで回れるまで減らします。「必ず最優先」は「必ず」に乗れる日が減らないところまでほかを減らします。「楽観」はふつうの日の値で組みます。予定に入りきらなかった乗り物は、空き時間ごとに「この時間はどれにする？」の候補として出します。</p>
+        <p>組み方は4つから選べます。はじめは「ふつう」で、待ちは似た日のふつうの値、歩く時間はふつうの速さで見積もり、受付は締め切りの見込みまでに並べば入れます（「必ず」だけは外れないよう45分前まで）。「慎重」は待ちを多めに見積もります。「必ず最優先」は「必ず」に乗れる日が減らないところまでほかを減らします。「楽観」は入園の列も見ない、いちばん楽観的な見積もりです。予定に入りきらなかった乗り物は、空き時間ごとに「この時間はどれにする？」の候補として出します。</p>
       </div></details>
 
       <details class="more"><summary>「この予定は信用できるか」の確かめ方</summary><div class="inner">
@@ -1536,7 +1536,7 @@ const TODAY = iso(new Date());
 const S = {
   date: store.get("date", null), sel: store.get("sel", null), must: store.get("must", null), showAt: store.get("showAt", {}),
   foods: store.get("foods", []), wc: store.get("wc", 1), entry: store.get("entry", 0), first: store.get("first", "ハリウッドドリーム"),
-  slack: store.get("slack", true), style: store.get("style", "normal"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
+  slack: store.get("slack", true), style: store.get("style", "lean"), wx: store.get("wx", {}), speed: store.get("speed", 1), plans: store.get("plans", {}), inNin: store.get("inNin", false),
   lightLunch: store.get("lightLunch", false), mealAt: store.get("mealAt", {}), theme: "light", meals: store.get("meals", { lunch: true, dinner: true }),
   tab: "day", liveLoc: store.get("liveloc", null), fFrom: store.get("ffrom", null),
 };
@@ -1796,12 +1796,12 @@ function waitAt(k, t) {
   const hw = (seen ? NC.h0 + NC.h1 * (1 - Math.exp(-h / NC.th)) : NC.hu) * (1 + NC.hl * Math.exp(-Math.max(0, (seen ? x.from : s.t1) - M.open) / NC.ts));
   return { med: Math.max(0, Math.exp(lm) - NC.c), p10: Math.max(0, Math.exp(lm - hw) - NC.c), p90: Math.max(0, Math.exp(lm + hw) - NC.c) };
 }
-// 組み方（S.style）: normal＝余裕を見る（ふつうと多めの中間）／sure＝確実（多めの値・似た日すべてで回れるまで減らす）
+// 組み方（S.style）: lean＝ふつう（待ちは似た日のふつうの値。はじめの値）／normal＝慎重（ふつうと多めの中間）／must＝必ず最優先。sure＝確実は画面から外した（シー版と同じ考え方）
 // 計画で見る「多め」: 予測の幅（p90）は正直な80%の範囲に広げたので、計画の控えめさは前と同じになるよう 0.32 を掛ける（前の上乗せ 平均12分 ÷ 今の 37分）
 const PK = 0.32, upper = w => w.med + PK * Math.max(0, w.p90 - w.med);
 // エクスプレス・パス（P().ep = { 乗り物: { at: 時間指定の時刻 or null } }。日付ごと）。専用の列なので待ちは10分ほどで見る
 const EPW = 10, epOf = k => (P().ep || {})[k] || null;
-const planWait = (k, t) => { if (epOf(k)) return EPW; const w = waitAt(k, t); return w.med + (S.style === "sure" ? 1 : S.slack ? 0.5 : 0) * PK * Math.max(0, w.p90 - w.med); };
+const planWait = (k, t) => { if (epOf(k)) return EPW; const w = waitAt(k, t); return w.med + (S.style === "sure" ? 1 : S.style === "lean" ? 0 : S.slack ? 0.5 : 0) * PK * Math.max(0, w.p90 - w.med); };
 const openAt = k => { const r = RIDES[k]; if (r.src === "show") return showTime(k) - r.early; return Math.max(M.open, r.open || 0); };
 function lastAt(k) {
   const r = RIDES[k];
@@ -1843,7 +1843,7 @@ function walkPx(a, b) {
   return via;  // 必ず通路に沿った道のり（直線で代用しない）
 }
 const walkMin = (a, b) => (a === b ? 0 : Math.round(walkPx(a, b) * MAPD.mpp / (70 * S.speed) + 1));
-const walkPlan = (a, b) => { if (a === b) return 1; const w = walkMin(a, b); return S.slack ? Math.round(w * 1.2) + 2 : w; };
+const walkPlan = (a, b) => { if (a === b) return 1; return walkMin(a, b); };  // 歩く時間はふつうに歩く速さのまま（前は1.2倍＋2分を足していた。シー版で「やりすぎ」）
 function pathPts(a, b) {
   const pa = ptOf(a), pb = ptOf(b), na = nodeOf(a), nb = nodeOf(b), out = [pa];
   let i = na; out.push(NODES[NID[i]]); while (i !== nb && i >= 0) { i = NX[i][nb]; out.push(NODES[NID[i]]); }
@@ -1904,6 +1904,7 @@ function bestMeal(from, t) {
 
 // ================= ルートを探す（ビーム探索） =================
 // タスク: ride / ticket / show（場所あり）と、meal / food / wc / rest（場所はあとで決める）
+const CUT_SLACK = 0, CUT_MUST = 45, CUT_SURE = 60;
 const VALUE = 240;  // 1個に乗る価値（待ち時間の分に換算）。混む時期でも、時間が余るなら乗る
 let planErr = "";
 function taskOf(it) {
@@ -1911,7 +1912,8 @@ function taskOf(it) {
     const k = it.key, r = RIDES[k];
     let open = openAt(k), last = lastAt(k);
     if (it.pin != null) { open = it.pin; last = it.pin; }
-    const lastP = S.slack && r.src !== "ticket" && r.src !== "show" && it.pin == null ? last - (S.style === "sure" ? 60 : 45) : last;
+    // 受付の締め切り（lastAt）は「似た日の9割はこの時刻まで並べた」見込みで、もう控えめ。「必ず」以外はそれまでに着けばよい。「必ず」は外れると困るので45分前まで（シー版と同じ）
+    const lastP = S.slack && r.src !== "ticket" && r.src !== "show" && it.pin == null ? last - (S.style === "sure" ? CUT_SURE : S.must.includes(k) ? CUT_MUST : CUT_SLACK) : last;
     return { it, k, loc: locOfRide(k), dur: durOf(k), open, last, lastP, val: r.w, buf: S.slack && r.src === "ticket" && it.pin == null ? 20 : 0, wait: r.src === "ticket" || r.src === "show" ? 0 : null, after: r.after };
   }
   const meal = it.type === "meal", lunch = it.key === "昼ごはん";
@@ -2029,7 +2031,7 @@ function simulate(items, opt = {}) {
     } else if (it.type === "wc") {
       const b = it.wcI != null ? { loc: "wc:" + it.wcI, i: it.wcI } : bestWC(loc, t, nextLoc); dest = b.loc; d = WC_USE; info = FOOD.toilets[b.i].name;
     } else d = it.dur || 15;
-    const wk = dest === loc ? 0 : Math.round(walkMin(loc, dest) * (S.slack ? 1.2 : 1)) + (S.slack && dest !== loc ? 2 : 0);
+    const wk = dest === loc ? 0 : walkMin(loc, dest);
     const arrive = t + wk;
     let start = Math.max(arrive, it.pin ?? it.at ?? 0);
     if (it.type === "meal") start = Math.max(start, it.key === "昼ごはん" ? 660 : 1020);
@@ -2502,7 +2504,15 @@ function replan(msg = "") {
 function ensureItems() { if (!P().items || !P().items.length) { const p = planMain(planItems(), mustNow(), { first: S.first }); P().items = p ? p.order : []; lastMissed = p ? p.missed : []; save(); } }
 function syncToggles() {}
 let ctrlOpen = false, epOpen = false;
-const styleNow = () => (!S.slack ? "fast" : S.style === "sure" || S.style === "must" ? S.style : "normal");
+const styleNow = () => (!S.slack ? "fast" : ["must", "lean"].includes(S.style) ? S.style : "normal");
+const STYLE_NOTE = {
+  lean: "待ちは似た日のふつう（真ん中）の値、歩く時間はふつうの速さ、入園の列15分で見積もり。受付は締め切りの見込みまでに並べばよい（「必ず」だけは外れないように45分前まで）。待ちが長い日は、最後の1つが閉まることもあります",
+  normal: "待ちを多めに見積もります（ふつうと多めの中間）。予定どおり回れる日は多いけれど、乗れる数は少なめ",
+  must: "「必ず」に乗れる日が減らないところまで、ほかを減らします",
+  fast: "入園の列も「必ず」の余裕も見ない、いちばん楽観的な見積もり",
+};
+// 前の版の「余裕を見る」「確実」のままの端末は、一度だけ「ふつう」に（シー版と同じ。「余裕を見る」は余裕を見すぎていた）
+if ((store.get("styleV", 0) || 0) < 1) { if (S.style === "normal" || S.style === "sure") S.style = "lean"; store.set("styleV", 1); save(); }
 function autoArrange() {
   const before = curSim(), done = P().items.filter(x => P().done[x.id]);
   const p = planMain(restItems().map(x => ({ ...x, at: undefined })), mustNow(), liveOpt());
@@ -2523,6 +2533,32 @@ function renderPlan() {
   renderPlanSide(); renderVerdict(curSim());
   if (!store.get("hint-drag", false)) { store.set("hint-drag", true); toast("plantoast", "写真をつかんで（スマホは長押し）上の帯や予定に落とすと、好きな位置に入れられます。予定から外へ出すと外せます。"); }
 }
+// 自由時間のわけ（シー版の idleWhy を広げた）。空きが細切れになる理由（夜だけの乗り物・ごはんの時間・整理券の時刻・待つほうが空く）を添える
+function idleWhy(r) {
+  if (r.idle < 10) return "";
+  const k = r.it.key, R = RIDES[k], st = Math.round(r.start), ar = Math.round(r.arrive);
+  if (r.it.type === "meal") { const w0 = k === "昼ごはん" ? Math.max(M.open, 660) : 1020; return st <= w0 + 2 ? `（${k}は${hm(w0)}から）` : ""; }
+  if (!R) return "";
+  if (R.src === "show") return `（${R.short}の${hm(showTime(k))}の開演に合わせて）`;
+  if (R.src === "ticket" || r.it.pin != null) return `（${R.short}の時刻 ${hm(st)} まで）`;
+  if (openAt(k) > ar && openAt(k) >= st - 2) return `（${R.short}は${hm(openAt(k))}から）`;
+  if (!epOf(k)) { const w0 = Math.round(planWait(k, ar)); if (w0 > r.wait + 5) return `（${R.short}は着いてすぐ並ぶと${w0}分、${hm(st)}からなら${Math.round(r.wait)}分）`; }
+  return "";
+}
+// 入りきらなかったものが、なぜ自由時間に入らないか（空きは細切れ・そのものは空く時間でも長い）
+function missWhy(sim, keys) {
+  const idle = sim.rows.reduce((a, r) => a + r.idle, 0), gaps = sim.rows.filter(r => r.idle >= 20), gap = Math.max(0, ...sim.rows.map(r => r.idle));
+  if (!keys.length || idle < 30 || !gaps.length) return "";
+  // 空きの時間帯ごとに、その時刻の待ち＋乗る時間＋行き帰り10分で入るかを見る
+  const at = keys.filter(k => M.prof[k]).map(k => { const ws = gaps.map(r => { const t = Math.round(r.arrive); return t >= openAt(k) && t <= lastAt(k) ? Math.round(planWait(k, t)) : null; }).filter(v => v != null);
+    const fits = gaps.some(r => { const t = Math.round(r.arrive); return t >= openAt(k) && t <= lastAt(k) && planWait(k, t) + durOf(k) + 10 <= r.idle; }); return { k, ws, fits }; });
+  if (!at.length) return "";
+  const big = at.filter(x => !x.fits), fit = at.filter(x => x.fits);
+  return `自由時間は合わせて${dur(idle)}ありますが、細切れです（いちばん長い空きで${dur(gap)}。夜だけの乗り物・ごはん・整理券の時刻を待つ間や、待つほうが空く乗り物の前にできる空きです）。`
+    + (big.length ? `${big.map(x => `${RIDES[x.k].short}は${x.ws.length ? `空きの時間帯には待ち${Math.min(...x.ws)}〜${Math.max(...x.ws)}分` : "空きの時間帯には受付をしていない"}`).join("、")}なので、どの空きにも入りません。` : "")
+    + (fit.length ? `${fit.map(x => RIDES[x.k].short).join("・")}は空きに入りますが、入れるとあとの予定（受付の締め切り・ごはん・整理券の時刻）に間に合わなくなります。` : "")
+    + "どうしても乗りたいものは「必ず」に（代わりにほかが外れることがあります）。";
+}
 function statsHTML(sim) {
   const idle = sim.rows.reduce((a, r) => a + r.idle, 0), mustL = mustNow();
   const miss = (lastMissed || []).filter(x => RIDES[x.key]).map(x => RIDES[x.key].short);
@@ -2534,7 +2570,7 @@ function statsHTML(sim) {
       <div class="stat"><div class="k">自由時間</div><div class="v">${dur(idle)}</div></div>
     </div>
     ${mustL.length ? `<div class="note"><b>必ず乗る：</b>${mustL.map(k => RIDES[k].short).join("、")}</div>` : ""}
-    ${miss.length ? `<div class="warnline">入りきらなかったもの：${miss.join("、")}</div>` : ""}${sim.bad ? `<div class="warnline">間に合わないものが${sim.bad}件あります（赤い予定）</div>` : ""}`;
+    ${miss.length ? `<div class="warnline">入りきらなかったもの：${miss.join("、")}</div>${(w => (w ? `<p class="note">${w}</p>` : ""))(missWhy(sim, (lastMissed || []).filter(x => RIDES[x.key] && RIDES[x.key].src !== "ticket" && RIDES[x.key].src !== "show").map(x => x.key)))}` : ""}${sim.bad ? `<div class="warnline">間に合わないものが${sim.bad}件あります（赤い予定）</div>` : ""}`;
 }
 function barHTML(sim, from) {
   const t0 = Math.min(M.open, from ?? M.open), t1 = M.close, X = m => ((Math.min(Math.max(m, t0), t1) - t0) / (t1 - t0)) * 100;
@@ -2624,8 +2660,8 @@ function renderPlanSide() {
   const spd = { 0.8: "ゆっくり", 1: "ふつう", 1.25: "早歩き" };
   const firsts = S.sel.filter(k => avail(k, M.date) && RIDES[k].src !== "ticket" && RIDES[k].src !== "show");
   const ep = P().ep || {}, epKs = S.sel.filter(k => RIDES[k] && avail(k, M.date) && (RIDES[k].src === "r" || RIDES[k].src === "h")), epN = epKs.filter(k => ep[k]).length;
-  const wxN = { 晴: "晴れ", 時雨: "時々雨", 後雨: "のち雨", 雨: "雨" }[(S.wx || {})[S.date]], stN = { normal: "余裕を見る", sure: "確実", must: "必ず最優先", fast: "楽観" }[styleNow()];
-  document.getElementById("plansum").innerHTML = statsHTML(sim) + barHTML(sim) + `<div class="quickset"><div><b>組み方</b><span class="seg">${[["normal", "余裕を見る"], ["sure", "確実"], ["must", "必ず最優先"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
+  const wxN = { 晴: "晴れ", 時雨: "時々雨", 後雨: "のち雨", 雨: "雨" }[(S.wx || {})[S.date]], stN = { lean: "ふつう", normal: "慎重", must: "必ず最優先", fast: "楽観" }[styleNow()];
+  document.getElementById("plansum").innerHTML = statsHTML(sim) + barHTML(sim) + `<div class="quickset"><div><b>組み方</b><span class="seg">${[["lean", "ふつう"], ["normal", "慎重"], ["must", "必ず最優先"], ["fast", "楽観"]].map(([v, t]) => `<button type="button" data-qs="${v}" aria-pressed="${v === styleNow()}">${t}</button>`).join("")}</span><small class="note">${STYLE_NOTE[styleNow()]}</small></div><div><b>歩く</b><span class="seg">${[[0.8, "ゆっくり"], [1, "ふつう"], [1.25, "早歩き"]].map(([v, t]) => `<button type="button" data-qw="${v}" aria-pressed="${v === S.speed}">${t}</button>`).join("")}</span></div></div>
     <details class="ctrlbox"${ctrlOpen ? " open" : ""}><summary><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M6 4v4' /> <path d='M6 12v8' /> <path d='M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M12 4v10' /> <path d='M12 18v2' /> <path d='M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M18 4v1' /> <path d='M18 9v11' /></svg> そのほか：天気${wxN || "未入力"}・入園${hm(M.open + S.entry)}${S.first ? `・最初に${RIDES[S.first] ? RIDES[S.first].short : ""}` : ""}</summary><div class="ctrls">
       <label>天気予報 <select id="c-wx">${[["", "入れない"], ["晴", "晴れ・くもり"], ["時雨", "時々雨"], ["後雨", "のち雨"], ["雨", "雨"]].map(([v, t]) => `<option value="${v}"${v === ((S.wx || {})[S.date] || "") ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       <label>入園 <select id="c-entry">${[0, 15, 30, 60, 90, 120].map(m => `<option value="${m}"${m === S.entry ? " selected" : ""}>${hm(M.open + m)}${m ? "" : "（開園）"}</option>`).join("")}</select></label>
@@ -2643,7 +2679,7 @@ function renderPlanSide() {
   document.querySelectorAll("#plansum [data-qs]").forEach(b => b.addEventListener("click", () => setStyle(b.dataset.qs)));
   document.querySelectorAll("#plansum [data-qw]").forEach(b => b.addEventListener("click", () => setSpeed(+b.dataset.qw)));
   function setStyle(v) { S.slack = v !== "fast"; S.style = v === "fast" ? "normal" : v; save();
-    replan({ normal: "余裕を見た組み方にしました。", sure: "確実な組み方にしました（待ちは多めの値で見積もり、去年の似た日すべてで回れるまで減らします）。", must: "「必ずを最優先」の組み方にしました（「必ず」に乗れる日が減らないところまで、ほかを減らします）。", fast: "ふつうの日の値で組みました（楽観的）。" }[v]);
+    replan({ lean: "ふつうの組み方にしました（待ちは似た日のふつうの値。待ちが長い日は、最後の1つが閉まることもあります）。", normal: "慎重な組み方にしました（待ちを多めに見積もります。予定どおり回れる日は多いけれど、乗れる数は少なめ）。", must: "「必ずを最優先」の組み方にしました（「必ず」に乗れる日が減らないところまで、ほかを減らします）。", fast: "ふつうの日の値で組みました（楽観的）。" }[v]);
   }
   function setSpeed(v) { const before = curSim(); S.speed = v; save(); renderPlanSide(); const after = curSim(); toast("plantoast", `歩く速さを「${spd[S.speed]}」にしました。終わり ${hm(before.end)} → ${hm(after.end)}。`); vSig = ""; renderVerdict(after); }
   document.getElementById("c-entry").addEventListener("change", e => { S.entry = +e.target.value; save(); replan(`入園を${hm(M.open + S.entry)}にしました。`); });
@@ -2780,7 +2816,7 @@ function renderTL(boxId, sim, mode) {
   sim.rows.forEach((r, i) => {
     const hint = r.idle >= 10 ? (() => { const b = bestWC(r.from, r.arrive - r.walk, r.to); return b && b.detour + b.q + WC_USE <= r.idle + 3 ? `<button type="button" class="hint" data-wcmap="${b.i}" data-from="${r.from}"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6 10m-3 0a3 7 0 1 0 6 0a3 7 0 1 0 -6 0' /> <path d='M21 10c0 -3.866 -1.343 -7 -3 -7' /> <path d='M6 3h12' /> <path d='M21 10v10l-3 -1l-3 2l-3 -3l-3 2v-10' /> <path d='M6 10h.01' /></svg> トイレ可：${FOOD.toilets[b.i].name}（寄り道${Math.max(0, b.detour)}分${FOOD.toilets[b.i].ana ? "・穴場" : ""}）</button>` : ""; })() : "";
     const pv = previewAt && previewAt.list === boxId && previewAt.idx === i ? `<span class="preview" id="pv-${boxId}"></span>` : "";
-    s += `<div class="tl-gap"><div></div><div class="ln">${r.walk >= 2 ? `<span>歩く ${r.walk}分（約${distM(r.from, r.to)}m）</span>` : ""}${r.idle >= 10 ? `<span>自由時間 ${dur(r.idle)}</span>` : ""}${hint}<button type="button" class="addwc" data-wcat="${i}">＋トイレを挟むと？</button>${pv}${chAddHTML(CH, i)}</div></div>`;
+    s += `<div class="tl-gap"><div></div><div class="ln">${r.walk >= 2 ? `<span>歩く ${r.walk}分（約${distM(r.from, r.to)}m）</span>` : ""}${r.idle >= 10 ? `<span>自由時間 ${dur(r.idle)}${idleWhy(r)}</span>` : ""}${hint}<button type="button" class="addwc" data-wcat="${i}">＋トイレを挟むと？</button>${pv}${chAddHTML(CH, i)}</div></div>`;
     const R = RIDES[r.it.key], cls = R ? (R.src === "show" ? "show" : R.src === "ticket" ? "ticket" : "") : r.it.type, img = rowImg(r), done = !!P().done[r.it.id];
     s += `<div class="tl-item" data-id="${r.it.id}" data-i="${i}"><div class="tl-time">${hm(r.start)}</div><div class="tl-card ${cls}${r.flag ? " bad" : ""}${done ? " done" : ""}">
       <div class="tl-grip" title="つかんで並べ替え">⋮⋮</div><div class="tl-ph">${img ? `<img src="${img}" alt="" draggable="false">` : r.it.type === "wc" ? "WC" : r.it.type === "meal" ? "食" : "休"}</div>
