@@ -1959,7 +1959,7 @@ function planRoute(items, mustKeys, opt = {}) {
   const mustIdx = tasks.map((_, i) => i).filter(i => mustMask >> i & 1);
   if (n > 30) { planErr = "選んだものが30個を超えています。いくつか外してください。"; return null; }
   planErr = "";
-  const IDLES = [0, 15, 30, 45, 60, 90, 120, 180, 240], CAP = 4, BEAM = opt.beam || (n > 16 ? 1000 : 2000);
+  const IDLES = [0]  /* 自分から空きは入れない: 先に並んだ人は後から並ぶ人より先に乗れるので、待ちが減る時刻まで座って待っても得はない。空きは開く時刻・ごはんの窓・整理券の時刻を待つときだけできる */, CAP = 4, BEAM = opt.beam || (n > 16 ? 1000 : 2000);
   let init = { mask: 0, fin: T0, tot: 0, val: 0, li: 0, node: null };
   const fi = opt.first ? tasks.findIndex(t => t.k === opt.first && t.it.pin == null) : -1;
   if (fi >= 0) { const tk = tasks[fi], st = Math.max(Math.round(T0 + WK[0][tk.li]), tk.open), w = W[fi][Math.min(899, st - 480)]; init = { mask: 1 << fi, fin: st + w + tk.dur, tot: C[fi][Math.min(899, st - 480)], val: tk.val, li: tk.li, node: { i: fi, st, w, prev: null } }; }
@@ -2571,7 +2571,6 @@ function idleWhy(r) {
   if (R.src === "show") return `（${R.short}の${hm(showTime(k))}の開演に合わせて）`;
   if (R.src === "ticket" || r.it.pin != null) return `（${R.short}の時刻 ${hm(st)} まで）`;
   if (openAt(k) > ar && openAt(k) >= st - 2) return `（${R.short}は${hm(openAt(k))}から）`;
-  if (!epOf(k)) { const w0 = Math.round(planWait(k, ar)); if (w0 > r.wait + 5) return `（${R.short}は着いてすぐ並ぶと${w0}分、${hm(st)}からなら${Math.round(r.wait)}分）`; }
   return "";
 }
 // 入りきらなかったものが、なぜ自由時間に入らないか（空きは細切れ・そのものは空く時間でも長い）
