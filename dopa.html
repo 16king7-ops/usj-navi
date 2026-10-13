@@ -1674,10 +1674,17 @@ function troughShare(k, h) {
   return out.length >= 3 ? out.filter(Boolean).length / out.length : null;
 }
 // ================= 去年の実際の日に当てはめる =================
+// WAIT_SCALE: 答え合わせで「去年より1割混んだら」を試すとき、実際の待ちを一律に何倍かする（シー版と同じ）
+let WAIT_SCALE = 1;
 function dayWait(k, x, t) {
-  const w = dayWait0(k, x, t);
+  let w = dayWait0(k, x, t);
+  if (WAIT_SCALE !== 1 && w && !w.closed && w.w != null) w = { ...w, w: w.w * WAIT_SCALE };
   return epOf(k) && !(w && w.closed) ? { w: EPW } : w;
 }
+// 予定の点数（シー版と同じ考え方）: 似た日（1日ずつ抜いて作り直した予定）で、ふつう×50＋1割混む×30＋厳しめ×20。looRun の結果から
+const scoreOfLoo = (loo, keys) => { const N = loo.length, c = key => loo.filter(l => l[key] && l.order && keys.every(k => l.order.some(o => o.key === k) && !l[key].missed.some(m => m.k === k))).length;
+  return N ? { sc: Math.round(100 * (0.5 * c("same") + 0.3 * c("s11") + 0.2 * c("harsh")) / N), ok: c("same"), ok11: c("s11"), okH: c("harsh"), N } : null; };
+const replay11 = (sm, x) => { WAIT_SCALE = 1.1; try { return replayLive(sm, x, "same"); } finally { WAIT_SCALE = 1; } };
 function dayWait0(k, x, t) {
   const r = RIDES[k], src = r.from_ || k;
   if (r.src === "h") {
