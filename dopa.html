@@ -1624,7 +1624,22 @@ function planSure(items, musts, opt = {}, mustOnly = false) {
   }
   return { ...p, missed: [...p.missed, ...dropped], sure: { ok: sc, n: refs.length } };
 }
-const planMain = (items, musts, opt) => (S.style === "sure" ? planSure(items, musts, opt) : S.style === "must" ? planSure(items, musts, opt, true) : planRoute(items, musts, opt));
+const planMain0 = (items, musts, opt) => (S.style === "sure" ? planSure(items, musts, opt) : S.style === "must" ? planSure(items, musts, opt, true) : planRoute(items, musts, opt));
+// 「ふつう」「楽観」は、待ちの合計だけを小さくするので、同じ個数でも余裕のない予定（閉園ぎりぎりまで詰める）を選ぶことがあった。
+//  「慎重」で組んだ予定が同じ個数以上なら、そちらを使う（個数が増えるときだけ、見込みが下がる）
+let _safeGuard = false;
+function planMain(items, musts, opt) {
+  const p = planMain0(items, musts, opt);
+  if (_safeGuard || !p || !(S.style === "lean" || !S.slack)) return p;
+  const st = S.style, sl = S.slack; _safeGuard = true;
+  try {
+    S.style = "normal"; S.slack = true;
+    const q = planMain0(items, musts, opt); if (!q) return p;
+    const cnt = o => simulate(o.order, opt && opt.start != null ? { start: opt.start, loc: opt.loc } : {}).rides;
+    S.style = st; S.slack = sl;
+    return cnt(q) >= cnt(p) ? q : p;
+  } finally { S.style = st; S.slack = sl; _safeGuard = false; }
+}
 
 // ================= スケジュールの計算（順番どおりに回す） =================
 let uid = 1;
@@ -3919,7 +3934,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
 }
 // いま開いている版（更新されたかの確認用）
-{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/14 12:19　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/14 12:23　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>
