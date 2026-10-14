@@ -912,13 +912,8 @@ h3, .grp h3 { font-size: 18px; font-weight: 700; }
 :is(.card .ph .nm, .card .ph, .tl-name, .tlc .nm, .steps span, .fcard b, .rp-mcard b, .acard b, ol.tips li b, .fixbox .fh, .xp, .alt .up) { font-family: var(--font); font-weight: 700; }
 :is(.fact .k, .stat .k, .rank span, .cal .wd, .steps small) { font-weight: 500; }
 :is(.tl-time, .tlc .t, .cd, .stat .v, .fact .v, .kpis b, .rp-facts b, .cand .big, .wchip, .wt td, .bigflow span, .rank b, .rank .sc, .alt b.n, .perride .n, .mnav b, .cal button b, .st-time, .rp-price, .month .mph b, .fixbox .rk, .steps b, .tl-no, .tlc .no) { font-family: var(--num); font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: 0; }
-/* P3 ページ全体の飾り写真をやめ、面を不透明にする */
-.backdrop, .bgph, .illus::before { display: none; }
-:is(.panel, .strip, .card .body, .month, details.more, .steps button, .acard .at, .rcards .rp-mcard) { background: var(--surface); }
+/* 背景の写真・写真の帯・コラージュは、元に戻した（ユーザー: 背景の写真どこ行った？）。ヘッダーだけは不透明のまま（文字が読みにくくならないように） */
 .top { background: var(--bg); backdrop-filter: none; }
-.pband.short { display: none; }
-@media (max-width: 700px) { .collage, .pband { display: none; } }
-@media (min-width: 701px) { .pband { height: clamp(120px, 14vw, 180px); } }
 /* P4 スマホ: いつ行くタブの大きな写真を430pxから300pxにする */
 .hero::after { background: linear-gradient(0deg, rgba(7,10,20,.78) 0%, rgba(7,10,20,.42) 40%, rgba(7,10,20,0) 75%); }
 @media (min-width: 701px) { .hero::after { background: linear-gradient(0deg, rgba(7,10,20,.75) 0%, rgba(7,10,20,.3) 55%, rgba(7,10,20,0) 85%), linear-gradient(90deg, rgba(7,10,20,.4), rgba(7,10,20,0) 60%); } }
@@ -4580,7 +4575,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
 }
 // いま開いている版（更新されたかの確認用）
-{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/14 12:23　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/14 18:26　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>
