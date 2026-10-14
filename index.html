@@ -1258,6 +1258,7 @@ button { font-family: inherit; }
 .qblock input[type="number"] { width: 5.2em; min-height: 44px; font: inherit; font-size: 16px; padding: 4px 8px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); text-align: right; }
 .qblock.qon { background: color-mix(in srgb, var(--waitc) 22%, var(--surface)); }
 .qblock #qstart { min-height: 48px; }
+.pc-avg b { color: var(--brand); }
 </style>
 
 <noscript><div class="nsnote"><b>この画面では、ナビが動きません</b><br>いま開いているアプリ（ファイルのプレビューなど）は JavaScript を動かさないので、カレンダー・予定・地図などが出ません。ブラウザで開いてください。<ul><li><b>Android</b>：ファイルを長押し（または「︙」）→「アプリで開く」→「Chrome」。Chrome ならネットがなくても全部動きます（写真もこのファイルに入っています）。</li><li><b>iPhone</b>：「ファイル」アプリのプレビューでは動きません。Safari で <a href="https://16king7-ops.github.io/usj-navi/">https://16king7-ops.github.io/usj-navi/</a> を開いてください。</li></ul></div></noscript>
@@ -2580,10 +2581,10 @@ function syncToggles() {}
 let ctrlOpen = false, epOpen = false;
 const styleNow = () => (!S.slack ? "fast" : ["must", "lean"].includes(S.style) ? S.style : "normal");
 const STYLE_NOTE = {
-  lean: "待ちは似た日のふつう（真ん中）の値、歩く時間はふつうの速さ、入園の列15分で見積もり。受付は締め切りの見込みまでに並べばよい（「必ず」だけは外れないように45分前まで）。待ちが長い日は、最後の1つが閉まることもあります",
+  lean: "待ちは似た日のふつう（真ん中）の値、歩く時間はふつうの速さ、入園の列15分で見積もり。慎重より個数が多く入るぶん、全部回れる見込みは低めに出ます。受付は締め切りの見込みまでに並べばよい（「必ず」だけは外れないように45分前まで）。待ちが長い日は、最後の1つが閉まることもあります",
   normal: "待ちを多めに見積もります（ふつうと多めの中間）。予定どおり回れる日は多いけれど、乗れる数は少なめ",
   must: "「必ず」に乗れる日が減らないところまで、ほかを減らします",
-  fast: "入園の列も「必ず」の余裕も見ない、いちばん楽観的な見積もり",
+  fast: "入園の列も「必ず」の余裕も見ない、いちばん詰めた組み方。個数は多めに入るぶん、全部回れる見込み（%）は低く出ます",
 };
 // 前の版の「余裕を見る」「確実」のままの端末は、一度だけ「ふつう」に（シー版と同じ。「余裕を見る」は余裕を見すぎていた）
 if ((store.get("styleV", 0) || 0) < 1) { if (S.style === "normal" || S.style === "sure") S.style = "lean"; store.set("styleV", 1); save(); }
@@ -2729,9 +2730,9 @@ function copyPlan(sim) {
 const PCT_TABLE = [[41, 28], [54, 47], [65, 65], [75, 66], [84, 74], [91, 84], [99, 93]];  // 2025/10/1〜2026/10/10 の毎日×3通りの選び方＝780件（AUC 0.73）。41点未満は28%、上は93%で止める
 const pctOf = sc => { const T = PCT_TABLE; if (sc <= T[0][0]) return T[0][1]; for (let i = 1; i < T.length; i++) if (sc <= T[i][0]) { const [a, pa] = T[i - 1], [b, pb] = T[i]; return Math.round(pa + (pb - pa) * (sc - a) / (b - a)); } return T[T.length - 1][1]; };
 function trustNow(sim) {
-  const refs = M.crowd.refs; let ok = 0, ok11 = 0, okH = 0;
-  for (const x of refs) { if (!replayLive(sim, x, "same").missed.length) ok++; if (!replay11(sim, x).missed.length) ok11++; if (!replayLive(sim, x, "harsh").missed.length) okH++; }
-  return { n: refs.length, ok, ok11, okH, sc: refs.length ? Math.round(100 * (0.5 * ok + 0.3 * ok11 + 0.2 * okH) / refs.length) : null };
+  const refs = M.crowd.refs; let ok = 0, ok11 = 0, okH = 0, rides = 0;
+  for (const x of refs) { const r = replayLive(sim, x, "same"); rides += r.rides; if (!r.missed.length) ok++; if (!replay11(sim, x).missed.length) ok11++; if (!replayLive(sim, x, "harsh").missed.length) okH++; }
+  return { n: refs.length, ok, ok11, okH, rides: refs.length ? rides / refs.length : 0, planned: sim.rows.filter(r => RIDES[r.it.key]).length, sc: refs.length ? Math.round(100 * (0.5 * ok + 0.3 * ok11 + 0.2 * okH) / refs.length) : null };
 }
 let pctRun = 0;
 function paintPct(sim) {
@@ -2747,7 +2748,7 @@ function paintPct(sim) {
       : ["d", "✕", "かなり賭け", "回りきれない日も多そう。1つ減らすか、入園を早める・エクスプレス・パスを使うと楽になります。"];
     box.className = "pctcard v-" + g[0];
     box.innerHTML = `<div class="pc-l"><span class="pc-mark" aria-hidden="true">${g[1]}</span><span class="pc-n"><small>予定を全部回れる見込み</small><b>${p}<i>%</i></b></span></div>
-      <div class="pc-r"><b class="pc-h">${g[2]}</b><p>${g[3]}</p>
+      <div class="pc-r"><b class="pc-h">${g[2]}</b><p>${g[3]}</p><p class="pc-avg">似た日の実際の待ちで回すと、<b>平均 ${t.rides.toFixed(1)}個</b>乗れました（予定は${t.planned}個）。見込みは「予定の${t.planned}個を<u>全部</u>回れる確率」で、個数を多く詰める組み方（ふつう・楽観）ほど低く出ます。</p>
       <details class="pc-how"><summary>この見込みの出し方</summary><p>この予定を、行く日に似た日<b>${t.n}日</b>の実際の待ち時間で、ナビが回してみます。回し方は3通り：<b>ふつう</b>（全部回れたのは${t.ok}日）・<b>去年より1割混む</b>（${t.ok11}日）・<b>歩きも列も長めで、入園が15分遅れる</b>（${t.okH}日）。この3つを5：3：2で合わせた点数（${t.sc}点）を、過去1年（2025年10月〜2026年10月）780件の答え合わせで「実際に全部回れた割合」に直しています（前日までの記録で予定を作り、その日の実際の待ちで回しました）。</p></details></div>`;
   }, 60);
 }
@@ -4564,7 +4565,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
 }
 // いま開いている版（更新されたかの確認用）
-{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/14 03:02　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
+{ const v = document.createElement("p"); v.className = "verline"; v.innerHTML = "版 10/14 12:19　<a href='javascript:location.reload()'>最新を確認（読み込み直す）</a>"; document.body.appendChild(v); }
 </script>
 </body>
 </html>
