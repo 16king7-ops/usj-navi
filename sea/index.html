@@ -2184,6 +2184,7 @@ button { font-family: inherit; }
   <section id="tab-hours" role="tabpanel" hidden>
     <div class="tabhero" data-ph="hours"><div><h2 data-en="WAIT TIMES">いつ空いていて、何時まで並べるか</h2><p class="lead">選んだ日の予想待ち時間（分）。◎一番空く（3分以内の差は「ほぼ同じ」）○次に空く。写真を押すとグラフ。</p></div></div>
     <div class="panel" id="rtpick"></div>
+    <div class="panel" id="retro-many"></div>
     <div class="panel retro" id="retro2" hidden></div>
     <div class="panel wave" id="nightbox"></div>
     <div class="panel wave" id="wavebox"></div>
@@ -7173,6 +7174,79 @@ function nightTry(o, after) {
     addItemAt(it, i < list.length ? list[i].id : null, "plan"); vSig = ""; renderVerdict(curSim());
   };
 }
+// 複数日を少しずつ計算し、計算中も画面を操作できるようにする。
+let retroManyData = [], retroManyRun = 0;
+function renderRetroMany() {
+  const box = document.getElementById("retro-many");
+  if (box.dataset.ready) return;
+  box.dataset.ready = "1";
+  const rides = Object.entries(RIDES).filter(([k,r]) => r.src === "r" && !r.from_);
+  box.innerHTML = `<h3>複数日の答え合わせ</h3>
+    <p class="note">曜日・時間帯・乗り物ごとの傾向や、ずれの大きい日をまとめて見ます。</p>
+    <div class="row"><label>期間 <select id="rm-period"><option value="30">直近30日</option><option value="90">直近90日</option><option value="all">記録の全期間</option></select></label>
+    <label>乗り物 <select id="rm-ride"><option value="">すべて</option>${rides.map(([k,r])=>`<option value="${esc(k)}">${esc(r.short)}</option>`).join("")}</select></label>
+    <button type="button" class="btn small primary" id="rm-go">集計する</button></div>
+    <p class="note">前日までの待ち時間記録を使い、現行モデルで再計算。当日の実測天気は使わず、営業時間はその日の記録を使用します。当時の発行済み予報ではありません。現行モデル・記録の前処理には後年の情報を含むため、当時の純粋な予測精度ではありません。</p>
+    <p class="note" id="rm-progress" aria-live="polite"></p><div id="rm-results"></div>`;
+  box.querySelector("#rm-go").onclick = async () => {
+    const run = ++retroManyRun, progress = box.querySelector("#rm-progress"), out = box.querySelector("#rm-results"), val = box.querySelector("#rm-period").value;
+    const available = DAYS.filter(x => x.d < TODAY && x.avg && Object.keys(x.s).length), days = val === "all" ? available : available.slice(-Number(val));
+    retroManyData = []; out.innerHTML = "";
+    for (let i = 0; i < days.length; i++) {
+      if (run !== retroManyRun) return;
+      const x = days[i], r = retroDay(x.d, 0);
+      if (r) for (const ride of r.rides) {
+        if (RIDES[ride.k].from_) continue; // 同じ記録を別の乗り場として二重に数えない
+        for (const c of ride.cells) retroManyData.push({d:x.d,k:ride.k,t:c.t,a:c.a,p:c.med});
+      }
+      if (i % 3 === 0 || i === days.length - 1) {
+        progress.textContent = `${i + 1} / ${days.length}日を計算中…`;
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
+    }
+    if (run !== retroManyRun) return;
+    const counted = new Set(retroManyData.map(x=>x.d)).size;
+    progress.textContent = `${days[0]?.d || ""}〜${days.at(-1)?.d || ""}：対象${days.length}日、比較できた${counted}日（記録や参照日が足りない日は除外）。`;
+    paintRetroMany();
+  };
+  box.querySelector("#rm-ride").onchange = () => { if (retroManyData.length) paintRetroMany(); };
+}
+function paintRetroMany() {
+  const box = document.getElementById("retro-many"), out = box.querySelector("#rm-results"), ride = box.querySelector("#rm-ride").value;
+  const rows = retroManyData.filter(x => !ride || x.k === ride), n = rows.length;
+  if (!n) { out.innerHTML = `<p class="note">この条件で比較できる記録はありません。</p>`; return; }
+  const stats = a => { const e=a.map(x=>x.a-x.p); return {n:a.length,days:new Set(a.map(x=>x.d)).size,actual:a.reduce((s,x)=>s+x.a,0)/a.length,pred:a.reduce((s,x)=>s+x.p,0)/a.length,mae:e.reduce((s,v)=>s+Math.abs(v),0)/a.length,bias:e.reduce((s,v)=>s+v,0)/a.length,big:100*e.filter(v=>Math.abs(v)>40).length/a.length}; };
+  const all=stats(rows), group=out.querySelector("#rm-group")?.value || "day", order=out.querySelector("#rm-order")?.value || "error", buckets=new Map(), weekdays=["日","月","火","水","木","金","土"];
+  for (const x of rows) {
+    const key=group==="day" ? x.d : group==="month" ? x.d.slice(0,7) : group==="weekday" ? String(dObj(x.d).getDay()) : group==="hour" ? String(Math.floor(x.t/60)).padStart(2,"0") : x.k;
+    if(!buckets.has(key))buckets.set(key,[]); buckets.get(key).push(x);
+  }
+  let items=[...buckets].map(([key,a])=>({key,...stats(a)}));
+  items.sort(order==="error" ? (a,b)=>b.mae-a.mae : (a,b)=>a.key.localeCompare(b.key,"ja"));
+  const label=k=>group==="weekday" ? weekdays[+k]+"曜日" : group==="hour" ? +k+"時台" : group==="ride" ? RIDES[k].short : k;
+  const chronological=items.slice().sort((a,b)=>a.key.localeCompare(b.key,"ja"));
+  const compareChart=group==="ride" ? "" : (()=>{
+    const top=Math.ceil(Math.max(10,...items.map(x=>Math.max(x.actual,x.pred)))/10)*10, X=i=>20+i*960/Math.max(1,chronological.length-1), Y=v=>180-v/top*160;
+    const line=(field,color)=>`<path d="${chronological.map((x,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(x[field]).toFixed(1)}`).join("")}" fill="none" stroke="${color}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>${chronological.map((x,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(x[field]).toFixed(1)}" r="3" fill="${color}"><title>${esc(label(x.key))}：${field==="actual"?"実際":"予測"} ${x[field].toFixed(1)}分・${x.days}日</title></circle>`).join("")}`;
+    const ticks=chronological.length<=15 && group!=="month" ? chronological.map(x=>`<small>${esc(group==="weekday"?weekdays[+x.key]:group==="hour"?String(+x.key):label(x.key))}</small>`).join("") : `<small>${esc(label(chronological[0].key))}</small><small>${esc(label(chronological.at(-1).key))}</small>`;
+    return `<h4>実際と予測の平均</h4><p class="note"><span style="color:#146681">━━ 実際</span>　<span style="color:#c16836">━━ 予測</span>（上端 ${top}分、下端 0分）</p><svg viewBox="0 0 1000 200" preserveAspectRatio="none" style="display:block;width:100%;height:180px" role="img" aria-label="実際と予測の平均待ち時間"><path d="M20,20H980M20,100H980M20,180H980" fill="none" stroke="#c9d1da"/>${line("actual","#146681")}${line("pred","#c16836")}</svg><div class="row" style="justify-content:space-between;gap:0">${ticks}</div>`;
+  })();
+  const peak=Math.max(5,...items.map(x=>Math.abs(x.bias))), scale=Math.ceil(peak/5)*5;
+  const chart=group==="day" ? (()=>{
+    const X=i=>20+i*960/Math.max(1,chronological.length-1), Y=v=>100-v/scale*80;
+    return `<div style="overflow:hidden"><svg viewBox="0 0 1000 200" preserveAspectRatio="none" style="display:block;width:100%;height:180px" role="img" aria-label="日ごとの実際と予測の差。中央より上は実際が長い"><path d="M20,20H980M20,100H980M20,180H980" fill="none" stroke="#c9d1da"/><path d="${chronological.map((x,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(x.bias).toFixed(1)}`).join("")}" fill="none" stroke="#146681" stroke-width="2" vector-effect="non-scaling-stroke"/>${chronological.map((x,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(x.bias).toFixed(1)}" r="3" fill="#146681"><title>${x.key}：差 ${retroSign(x.bias)}分、平均のずれ ${x.mae.toFixed(1)}分</title></circle>`).join("")}</svg><div class="row" style="justify-content:space-between"><small>${chronological[0].key}</small><small>中央 0分・上下 ±${scale}分</small><small>${chronological.at(-1).key}</small></div></div>`;
+  })() : `<div aria-label="区分ごとの実際と予測の差">${chronological.map(x=>`<div style="display:grid;grid-template-columns:minmax(5em,9em) minmax(100px,1fr) 4em;gap:.4em;align-items:center;margin:.35em 0"><span>${esc(label(x.key))}</span><div style="height:1.2em;position:relative;background:linear-gradient(to right,transparent 49.8%,#a7b6c0 49.8%,#a7b6c0 50.2%,transparent 50.2%)"><span style="position:absolute;top:.15em;height:.9em;background:${x.bias>=0?"#c16836":"#146681"};left:${x.bias>=0?50:50+50*x.bias/scale}%;width:${50*Math.abs(x.bias)/scale}%"></span></div><b>${retroSign(x.bias)}分</b></div>`).join("")}</div><p class="note">中央が0分。右（橙）は実際の待ちが長く、左（青）は実際が短い。左右の端は±${scale}分。</p>`;
+  out.innerHTML = `<p>比較 <b>${n.toLocaleString()}点</b>・${new Set(rows.map(x=>x.d)).size}日：平均のずれ <b>${all.mae.toFixed(1)}分</b>、差の平均 ${retroSign(all.bias)}分、40分超 ${all.big.toFixed(1)}%。</p>
+    <p class="note">1点は1施設・1時刻の記録。平均のずれは差の絶対値の平均、差は実際−予測（＋は実際が長い）。記録の多い施設・日が全体平均に多く反映されます。休止・欠測の時刻は含みません。</p>
+    <div class="row"><label>まとめ方 <select id="rm-group"><option value="day">日別</option><option value="month">月別</option><option value="weekday">曜日別</option><option value="hour">時間帯別</option><option value="ride">乗り物別</option></select></label>
+    <label>並び順 <select id="rm-order"><option value="error">ずれが大きい順</option><option value="name">日付・名前順</option></select></label></div>
+    ${compareChart}<h4>差の平均のグラフ</h4><p class="note">実際−予測。プラスとマイナスが打ち消し合うため、ずれの大きさは下の表の「平均のずれ」も確認してください。</p>${chart}
+    <div class="ox"><table class="plain"><thead><tr><th>区分</th><th class="r">平均のずれ</th><th class="r">差の平均</th><th class="r">40分超</th><th class="r">点数 / 日数</th></tr></thead><tbody>${items.map(x=>`<tr><td>${group==="day" ? `<button type="button" class="linkbtn" data-rm-day="${x.key}">${x.key}</button>` : esc(label(x.key))}</td><td class="r"><b>${x.mae.toFixed(1)}分</b></td><td class="r">${retroSign(x.bias)}分</td><td class="r">${x.big.toFixed(1)}%</td><td class="r">${x.n.toLocaleString()} / ${x.days}</td></tr>`).join("")}</tbody></table></div>
+    <p class="note">点数は互いに独立した日数ではありません。曜日や時間帯の差は対象期間・乗り物構成にも左右されます。日付を押すと1日の詳しいグラフを見られます。</p>`;
+  out.querySelector("#rm-group").value=group; out.querySelector("#rm-order").value=order;
+  out.querySelector("#rm-group").onchange=paintRetroMany; out.querySelector("#rm-order").onchange=paintRetroMany;
+  out.querySelectorAll("[data-rm-day]").forEach(b=>b.onclick=()=>showRetro(b.dataset.rmDay,"retro2"));
+}
 function renderRetroPick() {
   const box = document.getElementById("rtpick"), days = DAYS.filter(x => x.d < TODAY).slice(-6).reverse(), last = days[0] && days[0].d;
   box.innerHTML = `<h3>過ぎた日の答え合わせ</h3><p class="note">下の表は、選んだ日の<b>予測</b>です（記録 ${last ? md(last) : ""} までの似た日から作ったもの。今日を選んでいるときは、当日タブを開いている間は5分ごとに今の待ちを読み込み、あとの時間を直します）。過ぎた日を選ぶと、<b>前日の夜までの予測</b>・<b>約1か月前の予測</b>と<b>実際</b>を並べて、どれだけずれたかを見られます。</p>
@@ -7184,6 +7258,7 @@ function renderRetroPick() {
 }
 function renderHours() {
   renderRetroPick();
+  renderRetroMany();
   renderNight();
   { const hm0 = document.getElementById("hmap"); if (hm0) hm0.hidden = true; }  // 乗り物が行のヒートマップは出さない（時間が行の表に一本化）
   renderHourSum();
