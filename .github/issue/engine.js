@@ -412,42 +412,57 @@ function microPast(x) {
   let out;
   try {
     _microBusy = true; cutoffDay = x.d; excludeDay = null; evalBlind = { wx: null, hours: null }; S.wx = {};
-    M = buildModel(x.d); out = { open: M.open, rows: {} };
+    M = buildModel(x.d); out = { open: M.open, rows: {}, actual: {} };
     for (const k of MICRO.rides) {
       const s = x.s[k]; if (!s || !M.prof[k]) continue;
-      const rows = {};
+      const rows = {}, actual = {};
       for (let i = 0; i < SLOT_M.length; i++) {
         const a = dec(s, i), t = SLOT_M[i] < 720 ? SLOT_M[i] + M.open - 480 : SLOT_M[i];
-        if (a != null && t >= M.open && t <= M.close) rows[t] = a - baseAt(k, t).med;
+        if (a != null && t >= M.open && t <= M.close) { rows[t] = a - baseAt(k, t).med; actual[t] = a; }
       }
-      out.rows[k] = rows;
+      out.rows[k] = rows; out.actual[k] = actual;
     }
   } finally { M = keep.M; cutoffDay = keep.cutoffDay; excludeDay = keep.excludeDay; evalBlind = keep.evalBlind; _microBusy = keep.busy; S.wx = keep.wx; }
   _microPast.set(key, out); return out;
+}
+function microValues(refs, k, time, open, field = "rows") {
+  const past = [];
+  for (const x of refs) {
+    const b = microPast(x), rows = b[field][k]; if (!rows) continue;
+    const t = time < open + 90 ? b.open + time - open : time;
+    const at = [t, t - 15, t + 15].find(t => rows[t] != null); if (at == null) continue;
+    past.push({ d: x.d, v: rows[at] }); if (past.length >= MICRO.count) break;
+  }
+  return past;
 }
 function microApply(date, prof, open, beforeMicro = {}) {
   const applied = {};
   if (!MICRO.enabled || _microBusy || excludeDay || leadOf(date) > 3 || !inR(date, HHN_ALL) || !PASS_EX.some(([s]) => s.slice(0, 4) === date.slice(0, 4))) return applied;
   const context = microContext(date), refs = DAYS.filter(x => x.d < date && x.d >= addDays(date, -MICRO.days) && usable(x) && microContext(x.d) === context).slice().reverse();
-  if (refs.length < 2) return applied;
+  // HHNの土曜夕方は、雨の減少を掛けすぎて直近の土曜実績より低くなる場合も直す。
+  // 同じ曜日・除外日・イベント構成の実際の曲線へ半分だけ寄せる。過去の残差とは重ね足ししない。
+  const saturday = dObj(date).getDay() === 6 && isPassEx(date), events = eventsOf(date).slice().sort().join("|");
+  const satRefs = saturday ? DAYS.filter(x => x.d < date && x.d >= addDays(date, -MICRO.days) && usable(x) && dObj(x.d).getDay() === 6 && isPassEx(x.d) && eventsOf(x.d).slice().sort().join("|") === events).slice().reverse() : [];
+  if (refs.length < 2 && satRefs.length < 2) return applied;
   for (const k of MICRO.rides) {
     const p = prof[k]; if (!p) continue;
     for (const q of p) {
-      const past = [];
-      for (const x of refs) {
-        const b = microPast(x), rows = b.rows[k]; if (!rows) continue;
-        // 開園直後90分は時計時刻ではなく、開園からの経過分をそろえる。
-        const t = q[0] < open + 90 ? b.open + q[0] - open : q[0];
-        const at = [t, t - 15, t + 15].find(t => rows[t] != null); if (at == null) continue;
-        past.push({ d: x.d, e: rows[at] }); if (past.length >= MICRO.count) break;
+      let past = microValues(refs, k, q[0], open), delta = 0, kind = "repeated-error";
+      if (past.length >= 2) {
+        const e = microMedian(past.map(x => x.v));
+        if (Math.abs(e) >= MICRO.threshold && past.filter(x => Math.abs(x.v) >= MICRO.threshold && x.v * e > 0).length >= 2) delta = e * MICRO.weight;
       }
-      if (past.length < 2) continue;
-      const e = microMedian(past.map(x => x.e));
-      if (Math.abs(e) < MICRO.threshold || past.filter(x => Math.abs(x.e) >= MICRO.threshold && x.e * e > 0).length < 2) continue;
-      const delta = e * MICRO.weight;
+      if (saturday && q[0] >= 1020 && q[0] < 1200) {
+        const actual = microValues(satRefs, k, q[0], open, "actual");
+        if (actual.length >= 2) {
+          const gap = microMedian(actual.map(x => x.v)) - q[1];
+          if (gap >= 10 && actual.filter(x => x.v - q[1] >= 10).length >= 2 && gap * MICRO.weight > delta) { delta = gap * MICRO.weight; past = actual; kind = "same-saturday"; }
+        }
+      }
+      if (!delta) continue;
       if (!beforeMicro[k]) beforeMicro[k] = p.map(q => q.slice());
       for (let i = 1; i <= 3; i++) q[i] = Math.max(0, q[i] + delta);
-      (applied[k] = applied[k] || []).push({ t: q[0], delta, days: past.map(x => x.d) });
+      (applied[k] = applied[k] || []).push({ t: q[0], delta, kind, days: past.map(x => x.d) });
     }
   }
   return applied;

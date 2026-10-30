@@ -8,6 +8,7 @@
 // 保存先 <out>/<発行日時>/ は作り直さない（同じフォルダがあれば止める）。forecast.json（予測）と input.json.gz（engine.js と D。写真は除く）
 //  --recent recent.js で毎晩の記録（collect/night.py）を足す。--html・--engine で読むアプリと engine.js を変えられる（GitHub の定期実行は公開中の index.html を読む。collect/collect.yml）。
 //  --inputs <フォルダ> なら入力は発行ごとに置かず、そのフォルダに中身の sha256 の名前で1回だけ置き、forecast.json の input に発行フォルダからの相対パスを書く
+//  --weather JMA.json で、その発行時点に出ていた気象庁予報を対象日の入力に固定する（時刻・出典も保存）。省略時は従来どおり天気入力なし。
 //  forecast.json の createdAt は実際に作った時刻。--at が今より前なら既定の issued/ には出さない（--out で別のフォルダに出す確かめ用だけ）。score_issued.cjs は issuedAt と createdAt の遅いほうで何日前を数える
 const fs = require("fs"), path = require("path"), vm = require("vm"), zlib = require("zlib"), crypto = require("crypto");
 const args = process.argv.slice(2), opt = (k, d) => { const i = args.indexOf(k); return i < 0 ? d : args[i + 1]; };
@@ -18,6 +19,7 @@ function compute(engine, D, from, to, issuedDay) {
   vm.createContext(ctx); vm.runInContext(engine, ctx); ctx.__cfg = { from, to, issuedDay };
   return vm.runInContext(`(() => {
     const { from, to, issuedDay } = __cfg, last = DAYS[DAYS.length - 1].d, r1 = v => Math.round(v * 10) / 10, out = [];
+    S.wx = D.forecastWeather ? D.forecastWeather.days : {};
     const obs = (x, k, t) => { const m0 = M, h = x.o && x.c ? [x.o, x.c] : hoursOf(x.d); M = { date: x.d, open: h[0], close: h[1] }; try { const a = dayWait0(k, x, t); return a && !a.closed && a.w != null ? a.w : null; } finally { M = m0; } };
     for (let d = from; d <= to; d = addDays(d, 1)) {
       S.date = d; P().over = {}; M = buildModel(d);
@@ -52,10 +54,18 @@ const now = new Date(Date.now() + 9 * 3600e3).toISOString(), createdAt = now.sli
 const from = opt("--from", addD(last, 1)), to = opt("--to", addD(issuedDay, 14)), outDir = path.resolve(opt("--out", path.join(__dirname, "issued"))), dir = path.join(outDir, at.replace(/[-:]/g, "").replace("T", "-"));
 if (at < now.slice(0, 16) && outDir === path.resolve(__dirname, "issued")) { console.error(`--at（${at}）が今（${now.slice(0, 16)}）より前です。あとから作った予測を事前の予測として issued/ に置くことはできません（確かめ用に --out で別のフォルダへ出すのはできます）`); process.exit(1); }
 if (!(last <= issuedDay)) { console.error(`記録が発行日（${issuedDay}）より先まであるので（${last}）、発行のあとのデータを含みます。--at を直してください`); process.exit(1); }  // 毎晩の発行（23:40）はその日の記録まで使い、予測は翌日から
+if (opt("--weather", null)) {
+  const w = JSON.parse(fs.readFileSync(opt("--weather"), "utf8")), atWx = w[0] && w[0].reportDatetime, ts = w[0] && w[0].timeSeries && w[0].timeSeries[0];
+  if (!Number.isFinite(Date.parse(atWx)) || Date.parse(atWx) > Math.min(Date.parse(at + "+09:00"), Date.now()) || !ts || !Array.isArray(ts.timeDefines) || !ts.areas || !ts.areas[0] || ts.areas[0].area?.code !== "270000" || !Array.isArray(ts.areas[0].weathers)) { console.error("気象庁予報の形式・地域が不正か、予測発行時点より後の予報です"); process.exit(1); }
+  const days = {};
+  ts.timeDefines.forEach((t, i) => { const d = t.slice(0, 10), text = ts.areas[0].weathers[i]; if (d >= from && d <= to && typeof text === "string" && text.length < 100) days[d] = text; });
+  if (!Object.keys(days).length) { console.error("対象日の気象庁予報がありません"); process.exit(1); }
+  D.forecastWeather = { at: atWx, source: "https://www.jma.go.jp/bosai/forecast/data/forecast/270000.json", days };
+}
 fs.mkdirSync(outDir, { recursive: true });
 try { fs.mkdirSync(dir); } catch (e) { if (e.code === "EEXIST") { console.error(`発行済みです（上書きしません）: ${dir}`); process.exit(1); } throw e; }
 const dj = JSON.stringify(D), res = JSON.parse(compute(engine, D, from, to, issuedDay));
-const f = { issuedAt: at + "+09:00", createdAt, dataThrough: res.dataThrough, modelHash: sha(engine), dataHash: sha(dj), inputs: { wx: null, nowcast: false, hoursAt: D.hoursAt || null }, baseline: "直近4週（dataThrough まで）の同じ平日/休日・同時刻の記録の中央値（base）と日数（bn）", tpwIds: D.tpw || {}, days: res.days };
+const f = { issuedAt: at + "+09:00", createdAt, dataThrough: res.dataThrough, modelHash: sha(engine), dataHash: sha(dj), inputs: { wx: D.forecastWeather || null, nowcast: false, hoursAt: D.hoursAt || null }, baseline: "直近4週（dataThrough まで）の同じ平日/休日・同時刻の記録の中央値（base）と日数（bn）", tpwIds: D.tpw || {}, days: res.days };
 const inDir = opt("--inputs", null), ip = inDir ? path.join(path.resolve(inDir), `${f.modelHash.slice(0, 16)}-${f.dataHash.slice(0, 16)}.json.gz`) : path.join(dir, "input.json.gz");
 if (inDir) { fs.mkdirSync(path.dirname(ip), { recursive: true }); f.input = path.relative(dir, ip).split(path.sep).join("/"); }
 if (!fs.existsSync(ip)) fs.writeFileSync(ip, zlib.gzipSync(JSON.stringify({ engine, D })));
