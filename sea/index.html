@@ -3915,12 +3915,12 @@ function retroTableHTML(d) {
   const all = keys.flatMap(k => T.hours.map(h => T.cells[k][h]).filter(c => c && c.p != null)), n = all.length;
   const cnt = f => all.filter(c => f(Math.abs(c.a - c.p))).length, pc = v => (n ? Math.round(100 * v / n) : 0);
   return `<h4 class="rt-h">表で見比べる（時間帯の表と同じ形）</h4>
-    <div class="seg" role="group" aria-label="表で比べる予測">${btn(0, "前日の夜の予測")}${btn(615, "10時に読み込んでいたら")}${btn(735, "12時に")}${btn(855, "14時に")}${btn(975, "16時に")}${btn(1095, "18時に")}</div>
+    <div class="seg" role="group" aria-label="表で比べる予測">${btn(0, "前日の夜の予測")}${btn(615, "10:15の記録で")}${btn(735, "12:15の記録で")}${btn(855, "14:15の記録で")}${btn(975, "16:15の記録で")}${btn(1095, "18:15の記録で")}</div>
     <p class="note">大きい数字が<b>実際</b>（1時間の平均）、小さい数字が<b>予測</b>と差（＋は実際のほうが長い）。${retroT0 ? `${hm(retroT0)}とその30分前・60分前の実際の待ちを読み込んだときに当日の観測時点までの記録から再計算した予測（${hm(retroT0)}までの時間は読み込み済み）。` : "前日の夜までの記録で作った予測。"}
       ずれ ${n ? `10分以内 <b>${pc(cnt(e => e <= 10))}%</b>・20分以内 ${pc(cnt(e => e <= 20))}%・40分より大きい <b>${pc(cnt(e => e > 40))}%</b>` : "—"}</p>
     <div class="scroll" tabindex="0" role="region" aria-label="答え合わせの表（横にスクロール）"><table class="wt rt-wt"><thead><tr><th class="h">時間</th>${keys.map(k => `<th>${rideImg(k) ? `<img src="${rideImg(k)}" alt="" style="width:34px;height:34px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 3px">` : ""}${RIDES[k].short}</th>`).join("")}</tr></thead>
     <tbody>${T.hours.filter(h => keys.some(k => T.cells[k][h])).map(h => `<tr><th class="h">${h}時台</th>${keys.map(k => cell(k, h)).join("")}</tr>`).join("")}</tbody></table></div>
-    <p class="note"><span class="rt-key rt-ok">10分以内</span><span class="rt-key rt-mid">20分以内</span><span class="rt-key rt-big">40分以内</span><span class="rt-key rt-bad">40分より大きい</span>　予測と実際の差で色分け（実際は記録の H:15 と H:45 の平均）</p>`;
+    <p class="note"><span class="rt-key rt-ok">10分以内</span><span class="rt-key rt-mid">20分以内</span><span class="rt-key rt-big">40分以内</span><span class="rt-key rt-bad">40分より大きい</span>　予測と実際の差で色分け（実際は記録のある H:15・H:45 の平均（片方しかなければその値））</p>`;
 }
 const retroSign = v => (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(Math.round(v));
 let retroBoxId = "retro";  // 答え合わせを出す欄: いつ行く（カレンダーの下）か、時間帯（日付を選ぶ）
@@ -3962,7 +3962,7 @@ function paintRetro() {
   const diff = R => (R && R.predAvg ? `実際との差 ${retroSign(x.avg - R.predAvg)}分` : "予測なし");
   box.innerHTML = `<div class="mp-heading"><h3>${md(d)} の答え合わせ</h3><button type="button" class="linkbtn" data-rt-close>閉じる</button></div>
     <p class="note">${wx ? `天気 ${esc(wx)}・` : ""}営業 ${hm(x.o)}〜${hm(x.c)}${x.rank ? `・ランク${esc(x.rank)}` : ""}。実際の記録と、<b>その日より前の記録だけ</b>で現在のモデルを再計算した予測を比べます。当時発行した予測ではなく、当日の実測天気は使用していません。営業時間はその日の記録を使用します。現在のモデルや記録の前処理には後年のデータに基づく調整があるため、当時の予測精度を再現したものではありません。</p>
-    <div class="rt-tiles">${tile("実際の平均待ち", x.avg, `${LVM[lv]} ${LV[lv]}`, "act")}${tile("予測（前日の夜まで）", R0.predAvg ?? "—", diff(R0))}${tile("予測（約1か月前）", R30 && R30.predAvg != null ? R30.predAvg : "—", diff(R30))}</div>
+    <div class="rt-tiles">${tile("実際の平均待ち", x.avg, `${LVM[lv]} ${LV[lv]}`, "act")}${tile("再計算（前日まで）", R0.predAvg ?? "—", diff(R0))}${tile("再計算（約1か月前）", R30 && R30.predAvg != null ? R30.predAvg : "—", diff(R30))}</div>
     <div class="seg" role="group" aria-label="比べる予測"><button type="button" data-rt-lead="0" aria-pressed="${retroLead === 0}">前日の夜までの記録で</button><button type="button" data-rt-lead="30" aria-pressed="${retroLead === 30}" ${R30 ? "" : "disabled"}>約1か月前までの記録で</button></div>
     <p class="note">${cur.rides.length}つの乗り物・${all.n}か所を比べると、予測は実際より<b>平均${Math.round(all.mae)}分</b>ずれ、${Math.abs(all.bias) < 3 ? "偏りはほぼありません" : all.bias > 0 ? `実際のほうが長めでした（${retroSign(all.bias)}分）` : `実際のほうが短めでした（${retroSign(all.bias)}分）`}。実際が予測の幅に入ったのは<b>${all.cover}%</b>（理想は約80%）。似た日は${cur.refs}日。</p>
     <h4 class="rt-h">${esc(RIDES[sel.k].short)}の1日</h4>
