@@ -1,5 +1,5 @@
 # 記録を集める（元は _work/攻略アプリ/collect/。deploy_site.py が site/.github/ に写す）。集めたものは data 枝に置き、公開ページ（main）は作り直さない
-#  live: 日本時間 7時〜22時台に1時間ごと、ThemeParks.wiki の待ち・休止を1分ごと（暗号化）と気象庁の天気予報
+#  live: 日本時間 7時〜22時台に1時間ごと、ThemeParks.wiki の待ち・休止を1分ごと（暗号化）と気象庁の天気予報。1回130分読む（定期実行は遅れたりとばされたりするので、毎時の起動を重ねて抜けを防ぐ）
 #  issue: 日本時間 21時台に、公開中のアプリ（index.html）で翌日から14日分の予測を発行して固定（あとで score_issued.cjs で答え合わせ）
 name: collect
 on:
@@ -8,7 +8,7 @@ on:
     - cron: "23 12 * * *"
   workflow_dispatch:
     inputs:
-      minutes: { description: "待ちを読む分数", default: "70" }
+      minutes: { description: "待ちを読む分数", default: "130" }
       issue: { description: "予測も発行する", type: boolean, default: false }
 permissions:
   contents: write
@@ -16,12 +16,12 @@ jobs:
   live:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '7 22,23,0-13 * * *'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
         with: { sparse-checkout: .github }
       - run: node .github/collect/live.mjs
-        env: { TPW_KEY: "${{ secrets.TPW_KEY }}", MINUTES: "${{ inputs.minutes || '70' }}" }
+        env: { TPW_KEY: "${{ secrets.TPW_KEY }}", MINUTES: "${{ inputs.minutes || '130' }}" }
       - run: bash .github/collect/save.sh "待ち・天気予報"
         env: { GH_TOKEN: "${{ github.token }}" }
   issue:

@@ -1,5 +1,5 @@
-// GitHub の定期実行で、ThemeParks.wiki の /live を1分ごとに MINUTES 分（既定70分）読み、前回から lastUpdated が変わった行だけを残す（列は tpw_log.py と同じ＋ほかの列の種類）。
-//  1時間ごとに起動し、起動が遅れても切れ目ができないよう次の回と10分重ねる（重なりは pull.py で同じ行をまとめる）
+// GitHub の定期実行で、ThemeParks.wiki の /live を1分ごとに MINUTES 分（既定130分）読み、前回から lastUpdated が変わった行だけを残す（列は tpw_log.py と同じ＋ほかの列の種類）。
+//  1時間ごとに起動し、1回130分読む。定期実行が遅れたりとばされたりしても切れ目ができないよう、ふだんは2本で重ねて読む（重なりは pull.py で同じ行をまとめる）
 //  生の値は公開しない約束（ThemeParks.wiki の規約）なので、OUT/tpw/日付/時分.enc に暗号化して置く（鍵は Actions の秘密 TPW_KEY。この PC の pull.py が戻す）
 //  ついでに気象庁の大阪府の天気予報を1回読み、OUT/jma/270000/発表時刻.json に置く（すでにあれば save.sh が上書きしない）
 //  Powered by ThemeParks.wiki https://themeparks.wiki/
@@ -11,7 +11,7 @@ const OUT = process.env.OUT || "out", UA = { "User-Agent": "usj-navi-collector (
 const jst = () => new Date(Date.now() + 9 * 3600e3).toISOString().replace("T", " ").slice(0, 19);
 const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
 const get = async u => { const r = await fetch(u, { headers: UA, signal: AbortSignal.timeout(30e3) }); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); };
-const start = jst(), end = Date.now() + (+process.env.MINUTES || 70) * 60e3, seen = {}, rows = [], runs = [], errs = [];
+const start = jst(), end = Date.now() + (+process.env.MINUTES || 130) * 60e3, seen = {}, rows = [], runs = [], errs = [];
 try {
   const w = await get(JMA), at = w[0].reportDatetime;
   mkdirSync(`${OUT}/jma/270000`, { recursive: true }); writeFileSync(`${OUT}/jma/270000/${at.replace(/:/g, "")}.json`, JSON.stringify(w));

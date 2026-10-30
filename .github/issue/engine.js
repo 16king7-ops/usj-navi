@@ -368,6 +368,28 @@ function dayMLF(date, prof, open, close) {
   const app = v.reduce((s, x) => s + x, 0) / v.length, f = dayFeat(date, lead), ml = Math.exp(mdl.trees.reduce((s, tr) => s + mlTree(tr, f), 0)) * base;
   return Math.min(1.4, Math.max(0.7, Math.pow(ml / app, w)));
 }
+// ===== 乗り物ごとの1日の形の機械学習（7年分。予測検証/score/shapemodel.py） =====
+//  その乗り物のその時の待ちが、その日の10〜18時の平均の何倍か（ln(+10)）を、乗り物・時・暦・連休・ホラーナイト・除外日・天気（dayFeat）で当てる。
+//  水準は今の予測のまま、各時刻の値を ln(+10) で 7:3 に混ぜる。前日夜（3日先まで）だけ
+//  答え合わせ（記録の時刻だけ、2026年1〜10月の各月をその月より前で学ぶ、±10分か±10%）: 全体 58.9→59.8%（前半 +1.1・後半 +0.7）、人気4つ 47.0→47.6%、ドンキー 44.7→46.1、マリオカート 40.8→40.5
+const SH_MODEL = (typeof D !== "undefined" && D.shapemodel) || null, SH_W = 0.3;
+function shapeF(date, prof, open, close, keys) {
+  if (!SH_MODEL || !HIST.keys.length) return;
+  const lead = leadOf(date); if (lead > 3) return;
+  const f0 = dayFeat(date, lead), rides = new Set(SH_MODEL.rides);
+  const at = (p, t) => { if (t <= p[0][0]) return p[0][1]; for (let i = 1; i < p.length; i++) if (t <= p[i][0]) return p[i - 1][1] + (p[i][1] - p[i - 1][1]) * (t - p[i - 1][0]) / Math.max(1, p[i][0] - p[i - 1][0]); return p[p.length - 1][1]; };
+  for (const k of keys) {
+    const p = prof[k]; if (RIDES[k].src !== "r" || !rides.has(k) || !p || p.length < 2) continue;
+    const v = []; for (let t = Math.max(600, open + 15); t <= Math.min(1140, close - 15); t += 30) v.push(at(p, t));
+    if (v.length < 6) continue;
+    const L = v.reduce((s, x) => s + x, 0) / v.length, sh = {};
+    prof[k] = p.map(q => {
+      const h = Math.floor(q[0] / 60); if (!(h in sh)) sh[h] = SH_MODEL.trees.reduce((s, tr) => s + mlTree(tr, [k, h, ...f0]), 0);
+      const ml = Math.max(0, (L + 10) * Math.exp(sh[h]) - 10), m = Math.exp(SH_W * Math.log(ml + 10) + (1 - SH_W) * Math.log(q[1] + 10)) - 10, r = q[1] > 0 ? Math.max(0, m) / q[1] : 1;
+      return [q[0], q[1] * r, q[2] * r, q[3] * r, ...q.slice(4)];
+    });
+  }
+}
 // 7年分の値（1時間平均を H:30 に置いて直線で）。なければ null
 function p7At(p, k, t) { const r = p.v[k]; if (!r) return null; const x = (t - 30) / 60, h0 = Math.floor(x), f = x - h0, a = r[h0], b = r[h0 + 1]; return a != null && b != null ? a + (b - a) * f : a != null ? a : b != null ? b : null; }
 // 乗り物ごとの時期の形（7年分）: 似た日の値を、行く日の時期の高さに直す（毎年10月後半に向けて人気3つが2〜4割上がるのに、今年の似た日は行く日より前の日しかないので低く出ていた）
@@ -452,6 +474,7 @@ function buildModel(date) {
   }
   const dmF = dayMLF(date, prof, open, close);
   if (dmF !== 1) for (const k of keys) if (RIDES[k].src === "r" && prof[k]) prof[k] = prof[k].map(p => [p[0], p[1] * dmF, p[2] * dmF, p[3] * dmF, ...p.slice(4)]);
+  shapeF(date, prof, open, close, keys);
   return { date, typ, open, close, crowd: c, prof, cut, keys, wide, dmF };
 }
 function baseAt(k, t) {  // 今日の様子で直す前の予測（似た日から）
