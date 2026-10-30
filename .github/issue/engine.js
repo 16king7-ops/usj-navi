@@ -392,6 +392,66 @@ function shapeF(date, prof, open, close, keys) {
     });
   }
 }
+// 時期限定の局所補正。全体の水準（日の混み方・dayMLF）と形を作った後の「残るずれ」を直す。
+// 現時点で有効にする範囲は、検証したHHN期間の人気4機種。同条件の過去日だけで再計算し、
+// 同じ時間帯で2日以上、同方向に30分以上外れていた部分に中央値の半分を加える。
+const MICRO = { enabled: true, days: 28, count: 3, threshold: 30, weight: 0.5,
+  rides: new Set(["ハリウッドドリーム", "バックドロップ", "フライングダイナソー", "ハリーポッター"]) };
+let _microBusy = false;
+const _microPast = new Map();
+const microMedian = v => { v = v.slice().sort((a, b) => a - b); return (v[Math.floor((v.length - 1) / 2)] + v[Math.floor(v.length / 2)]) / 2; };
+function microContext(d) {
+  return JSON.stringify([-1, 0, 1].map(n => { const e = addDays(d, n); return [isOff(e), isPassEx(e)]; }).concat([
+    inR(d, HHN_ALL), preExF(d, "ハリーポッター") > 1, eventsOf(d).slice().sort().join("|")
+  ]));
+}
+function microPast(x) {
+  const key = x.d + "|" + DAYS.length + "|" + HIST.keys.length;
+  if (_microPast.has(key)) return _microPast.get(key);
+  const keep = { M, cutoffDay, excludeDay, evalBlind, busy: _microBusy, wx: S.wx };
+  let out;
+  try {
+    _microBusy = true; cutoffDay = x.d; excludeDay = null; evalBlind = { wx: null, hours: null }; S.wx = {};
+    M = buildModel(x.d); out = { open: M.open, rows: {} };
+    for (const k of MICRO.rides) {
+      const s = x.s[k]; if (!s || !M.prof[k]) continue;
+      const rows = {};
+      for (let i = 0; i < SLOT_M.length; i++) {
+        const a = dec(s, i), t = SLOT_M[i] < 720 ? SLOT_M[i] + M.open - 480 : SLOT_M[i];
+        if (a != null && t >= M.open && t <= M.close) rows[t] = a - baseAt(k, t).med;
+      }
+      out.rows[k] = rows;
+    }
+  } finally { M = keep.M; cutoffDay = keep.cutoffDay; excludeDay = keep.excludeDay; evalBlind = keep.evalBlind; _microBusy = keep.busy; S.wx = keep.wx; }
+  _microPast.set(key, out); return out;
+}
+function microApply(date, prof, open, beforeMicro = {}) {
+  const applied = {};
+  if (!MICRO.enabled || _microBusy || excludeDay || leadOf(date) > 3 || !inR(date, HHN_ALL) || !PASS_EX.some(([s]) => s.slice(0, 4) === date.slice(0, 4))) return applied;
+  const context = microContext(date), refs = DAYS.filter(x => x.d < date && x.d >= addDays(date, -MICRO.days) && usable(x) && microContext(x.d) === context).slice().reverse();
+  if (refs.length < 2) return applied;
+  for (const k of MICRO.rides) {
+    const p = prof[k]; if (!p) continue;
+    for (const q of p) {
+      const past = [];
+      for (const x of refs) {
+        const b = microPast(x), rows = b.rows[k]; if (!rows) continue;
+        // 開園直後90分は時計時刻ではなく、開園からの経過分をそろえる。
+        const t = q[0] < open + 90 ? b.open + q[0] - open : q[0];
+        const at = [t, t - 15, t + 15].find(t => rows[t] != null); if (at == null) continue;
+        past.push({ d: x.d, e: rows[at] }); if (past.length >= MICRO.count) break;
+      }
+      if (past.length < 2) continue;
+      const e = microMedian(past.map(x => x.e));
+      if (Math.abs(e) < MICRO.threshold || past.filter(x => Math.abs(x.e) >= MICRO.threshold && x.e * e > 0).length < 2) continue;
+      const delta = e * MICRO.weight;
+      if (!beforeMicro[k]) beforeMicro[k] = p.map(q => q.slice());
+      for (let i = 1; i <= 3; i++) q[i] = Math.max(0, q[i] + delta);
+      (applied[k] = applied[k] || []).push({ t: q[0], delta, days: past.map(x => x.d) });
+    }
+  }
+  return applied;
+}
 // 7年分の値（1時間平均を H:30 に置いて直線で）。なければ null
 function p7At(p, k, t) { const r = p.v[k]; if (!r) return null; const x = (t - 30) / 60, h0 = Math.floor(x), f = x - h0, a = r[h0], b = r[h0 + 1]; return a != null && b != null ? a + (b - a) * f : a != null ? a : b != null ? b : null; }
 // 乗り物ごとの時期の形（7年分）: 似た日の値を、行く日の時期の高さに直す（毎年10月後半に向けて人気3つが2〜4割上がるのに、今年の似た日は行く日より前の日しかないので低く出ていた）
@@ -477,10 +537,11 @@ function buildModel(date) {
   const dmF = dayMLF(date, prof, open, close);
   if (dmF !== 1) for (const k of keys) if (RIDES[k].src === "r" && prof[k]) prof[k] = prof[k].map(p => [p[0], p[1] * dmF, p[2] * dmF, p[3] * dmF, ...p.slice(4)]);
   shapeF(date, prof, open, close, keys);
-  return { date, typ, open, close, crowd: c, prof, cut, keys, wide, dmF };
+  const beforeMicro = {}, micro = microApply(date, prof, open, beforeMicro);
+  return { date, typ, open, close, crowd: c, prof, cut, keys, wide, dmF, micro, beforeMicro };
 }
-function baseAt(k, t) {  // 今日の様子で直す前の予測（似た日から）
-  const r = RIDES[k], p = M.prof[k];
+function baseAt(k, t, beforeMicro = false) {  // 今日の様子で直す前の予測（似た日から）
+  const r = RIDES[k], p = (beforeMicro && M.beforeMicro && M.beforeMicro[k]) || M.prof[k];
   if (!p || !p.length || r.src === "ticket" || r.src === "show") return { med: 0, p10: 0, p90: 0 };
   if (t <= p[0][0]) {
     const op = Math.max(M.open, r.open || 0);
@@ -510,7 +571,7 @@ function ncOf() {  // P().over か M が変わったときだけ作り直す（o
   if (_nc && _nc.o === o && _nc.M === M) return _nc;
   const ks = Object.keys(o).filter(k => o[k] && Number.isFinite(o[k].v) && o[k].v >= 0 && o[k].v <= 600 && Number.isFinite(o[k].from) && o[k].from >= 0 && o[k].from < 1440 && M.prof[k]), e = {}, psi = {};
   let sum = 0, t1 = -1;
-  for (const k of ks) { const x = o[k], m = baseAt(k, x.from).med; e[k] = Math.log((x.v + NC.c) / (m + NC.c)); sum += e[k]; psi[k] = 1 - Math.exp(-Math.max(0, x.from - M.open) / NC.ts); t1 = Math.max(t1, x.from); }
+  for (const k of ks) { const x = o[k], m = baseAt(k, x.from, true).med; e[k] = Math.log((x.v + NC.c) / (m + NC.c)); sum += e[k]; psi[k] = 1 - Math.exp(-Math.max(0, x.from - M.open) / NC.ts); t1 = Math.max(t1, x.from); }
   const G = ks.length ? sum / (ks.length + NC.kg) : 0;
   return (_nc = { o, M, ks, e, psi, G, t1, psiAll: t1 < 0 ? 0 : 1 - Math.exp(-Math.max(0, t1 - M.open) / NC.ts) });
 }
@@ -544,7 +605,7 @@ function applyLive(json, nowMin) {
       if (pl.closed[k] != null) { if (pl.closed[k] > from - 90) pl.liveTip[k] = { t: from, v: w }; delete pl.closed[k]; }
       else if (o && o.src === "auto" && o.v - w >= 20) pl.liveTip[k] = { t: from, v: w, a: o.v };
       out.got.push(k);
-    } else if (st === "DOWN" || ((st === "CLOSED" || st === "REFURBISHMENT") && nowMin >= Math.max(M.open, R.open || 0) + 30 && nowMin <= M.close - 60)) { pl.closed[k] = Math.max(pl.closed[k] ?? -1, from); delete pl.liveTip[k]; out.shut.push(k); }
+    } else if (st === "DOWN" || ((st === "CLOSED" || st === "REFURBISHMENT") && nowMin >= Math.max(M.open, R.open || 0) + 30 && nowMin <= M.close - 60)) { pl.closed[k] = Math.max(pl.closed[k] ?? -1, from); setOver(k, null); delete pl.liveTip[k]; out.shut.push(k); }
   }
   if (out.got.length >= 5) addObs(from, Object.fromEntries(out.got.filter(k => RIDES[k].src === "r").map(k => [k, pl.over[k].v])));
   return out;
@@ -611,14 +672,14 @@ function mlDelta(k, t, lb, lm, la, tj) {
   if (!MLN) return 0;
   const a = trajOf(k); if (!a) return 0;  // 60分前・30分前・今の読み込みがあるとき（学習と同じ条件）
   const t0 = a.t1, h = t - t0; if (h < 45 || h > 240) return 0;  // 30分後は期間で良くも悪くもなる（6月までで学んで7〜10月 −0.06、8月までで学んで9・10月 +0.15）ので使わない
-  const L = v => Math.log(v + NC.c), ob = T => obsAt(k, T), bl = T => L(baseAt(k, T).med), v0 = ob(t0), v1 = ob(t0 - 30), v2 = ob(t0 - 60);
+  const L = v => Math.log(v + NC.c), ob = T => obsAt(k, T), bl = T => L(baseAt(k, T, true).med), v0 = ob(t0), v1 = ob(t0 - 30), v2 = ob(t0 - 60);
   if (v0 == null) return 0;
   const e0 = L(v0) - bl(t0), e1 = v1 == null ? NaN : L(v1) - bl(t0 - 30), e2 = v2 == null ? NaN : L(v2) - bl(t0 - 60);
-  const s = ncOf(), g2 = M.keys.filter(q => RIDES[q].src === "r" && !RIDES[q].from_).map(q => { const v = obsAt(q, t0 - 60); return v == null || !M.prof[q] ? null : L(v) - L(baseAt(q, t0 - 60).med); }).filter(v => v != null);
+  const s = ncOf(), g2 = M.keys.filter(q => RIDES[q].src === "r" && !RIDES[q].from_).map(q => { const v = obsAt(q, t0 - 60); return v == null || !M.prof[q] ? null : L(v) - L(baseAt(q, t0 - 60, true).med); }).filter(v => v != null);
   const G2 = g2.length ? g2.reduce((p, q) => p + q, 0) / g2.length : 0;
   const f = [k, t0, h, isOff(M.date) ? 1 : 0, lb, lm - lb, la == null ? NaN : la - lb, tj ? tj.lm - lb : NaN, tj ? tj.w : 0, e0, e1, e2, e0 - e1, e1 - e2, s.G, s.G - G2, L(v0)];
   if (MLN.features.length > f.length) {  // 近くの乗り物（同じエリア）の今のずれ・その30分の変化、ホラーナイト、除外日、長い除外日の直前（mlnow/ml_rows.cjs と同じ作り方）
-    const ar = AREA_OF[k], nb = T => { const v = M.keys.filter(q => q !== k && ar && AREA_OF[q] === ar && RIDES[q].src === "r" && M.prof[q] && !RIDES[q].from_).map(q => { const w = obsAt(q, T); return w == null ? null : L(w) - L(baseAt(q, T).med); }).filter(v => v != null); return v.length ? v.reduce((p, q) => p + q, 0) / v.length : NaN; };
+    const ar = AREA_OF[k], nb = T => { const v = M.keys.filter(q => q !== k && ar && AREA_OF[q] === ar && RIDES[q].src === "r" && M.prof[q] && !RIDES[q].from_).map(q => { const w = obsAt(q, T); return w == null ? null : L(w) - L(baseAt(q, T, true).med); }).filter(v => v != null); return v.length ? v.reduce((p, q) => p + q, 0) / v.length : NaN; };
     const n0 = nb(t0), n1 = nb(t0 - 30);
     f.push(n0, Number.isNaN(n0) || Number.isNaN(n1) ? NaN : n0 - n1, inR(M.date, HHN_ALL) ? 1 : 0, isPassEx(M.date) ? 1 : 0, preExF(M.date, "ハリーポッター") > 1 ? 1 : 0);
   }
@@ -673,10 +734,13 @@ function noteLive(now, out, err) {
 const analogDays = () => { const a = analogOf(); return a ? a.top.slice(0, 3).map(c => c.x.d) : null; };  // 当日の似た日（近い順に3日。表示用）
 const todayLevel = () => { const s = ncOf(); return s.ks.length ? { pct: Math.round((Math.exp(s.psiAll * s.G) - 1) * 100), n: s.ks.length, at: s.t1 } : null; };  // 今日は予測より何%混んでいるか
 function waitAt(k, t) {
-  const b = baseAt(k, t);
-  if (!b || excludeDay) return b;
+  const prior = baseAt(k, t);
+  if (!prior || excludeDay) return prior;
   const s = ncOf();
-  if (!s.ks.length || !(b.med || b.p90)) return b;
+  if (!s.ks.length) return prior;
+  // 当日モデルは局所補正前の予測を基準に学習済み。観測後はその基準で計算し、二重に直さない。
+  const b = baseAt(k, t, true);
+  if (!(b.med || b.p90)) return b;
   const x = P().over[k], seen = x && x.v != null && s.e[k] != null;
   if (t < (seen ? x.from : s.t1) - 30) return b;  // 分かった時刻より前は直さない
   const h = seen ? Math.max(0, t - x.from) : 0;
