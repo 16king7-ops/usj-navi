@@ -6,7 +6,7 @@
 //  天気は入れない（S.wx なし。記録のない日なので天気の補正は 1）・当日の補正（今の待ち）なし・営業時間は D.hours（公式）がある日は公式、ほかは推定
 //  基準（base・bn）: 発行時にある記録の直近4週（dataThrough まで）の、同じ平日/休日・同時刻の中央値と日数
 // 保存先 <out>/<発行日時>/ は作り直さない（同じフォルダがあれば止める）。forecast.json（予測）と input.json.gz（engine.js と D。写真は除く）
-//  --html・--engine で読むアプリと engine.js を変えられる（GitHub の定期実行は公開中の index.html を読む。collect/collect.yml）。
+//  --recent recent.js で毎晩の記録（collect/night.py）を足す。--html・--engine で読むアプリと engine.js を変えられる（GitHub の定期実行は公開中の index.html を読む。collect/collect.yml）。
 //  --inputs <フォルダ> なら入力は発行ごとに置かず、そのフォルダに中身の sha256 の名前で1回だけ置き、forecast.json の input に発行フォルダからの相対パスを書く
 //  forecast.json の createdAt は実際に作った時刻。--at が今より前なら既定の issued/ には出さない（--out で別のフォルダに出す確かめ用だけ）。score_issued.cjs は issuedAt と createdAt の遅いほうで何日前を数える
 const fs = require("fs"), path = require("path"), vm = require("vm"), zlib = require("zlib"), crypto = require("crypto");
@@ -44,10 +44,14 @@ if (args.includes("--verify")) {
 const root = path.resolve(__dirname, "../../.."), html = fs.readFileSync(opt("--html", path.join(root, "usj_app.html")), "utf8"), engine = fs.readFileSync(opt("--engine", path.join(__dirname, "..", "engine.js")), "utf8");
 if (!html.includes(engine)) { console.error("アプリ（usj_app.html か --html）に今の engine.js が入っていません。先に python _work/攻略アプリ/build_app.py を回してください"); process.exit(1); }
 const line = html.slice(html.indexOf("const D = ") + 10).split("\n", 1)[0].trim(), D = { ...JSON.parse(line.slice(0, -1)), photos: {} };
+if (opt("--recent", null) && fs.existsSync(opt("--recent"))) {  // 毎晩の記録（collect/night.py の recent.js）を足す。ユニバリアルの記録がある日はそちらを使う
+  const R = JSON.parse(fs.readFileSync(opt("--recent"), "utf8").split("=").slice(1).join("=").trim().replace(/;$/, "")), have = new Set(D.days.days.map(x => x.d));
+  D.days = { ...D.days, days: [...D.days.days, ...R.days.filter(x => !have.has(x.d))].sort((a, b) => (a.d < b.d ? -1 : 1)) };
+}
 const now = new Date(Date.now() + 9 * 3600e3).toISOString(), createdAt = now.slice(0, 19) + "+09:00", at = opt("--at", now.slice(0, 16)), issuedDay = at.slice(0, 10), last = D.days.days[D.days.days.length - 1].d;
 const from = opt("--from", addD(last, 1)), to = opt("--to", addD(issuedDay, 14)), outDir = path.resolve(opt("--out", path.join(__dirname, "issued"))), dir = path.join(outDir, at.replace(/[-:]/g, "").replace("T", "-"));
 if (at < now.slice(0, 16) && outDir === path.resolve(__dirname, "issued")) { console.error(`--at（${at}）が今（${now.slice(0, 16)}）より前です。あとから作った予測を事前の予測として issued/ に置くことはできません（確かめ用に --out で別のフォルダへ出すのはできます）`); process.exit(1); }
-if (!(last < issuedDay)) { console.error(`記録が発行日（${issuedDay}）まであるので（${last}）、発行のあとのデータを含みます。--at を直してください`); process.exit(1); }
+if (!(last <= issuedDay)) { console.error(`記録が発行日（${issuedDay}）より先まであるので（${last}）、発行のあとのデータを含みます。--at を直してください`); process.exit(1); }  // 毎晩の発行（23:40）はその日の記録まで使い、予測は翌日から
 fs.mkdirSync(outDir, { recursive: true });
 try { fs.mkdirSync(dir); } catch (e) { if (e.code === "EEXIST") { console.error(`発行済みです（上書きしません）: ${dir}`); process.exit(1); } throw e; }
 const dj = JSON.stringify(D), res = JSON.parse(compute(engine, D, from, to, issuedDay));

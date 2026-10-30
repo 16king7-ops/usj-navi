@@ -1,5 +1,7 @@
 // ================= 共通 =================
 const RIDES = D.rides, PH = D.photos, MAPD = D.map, FOOD = D.food;
+// 毎晩の記録（recent.js。GitHub の定期実行が ThemeParks.wiki の1分ごとの記録から作る。collect/night.py）を記録に足す。ユニバリアルの記録がある日はそちらを使う
+if (typeof window !== "undefined" && window.RECENT && Array.isArray(window.RECENT.days)) { const have = new Set(D.days.days.map(x => x.d)); for (const x of window.RECENT.days) if (x && x.d && !have.has(x.d)) D.days.days.push(x); D.days.days.sort((a, b) => (a.d < b.d ? -1 : 1)); }
 const AL = D.days.alpha, SLOT_M = D.days.slots.map(t => +t.slice(0, 2) * 60 + +t.slice(3));
 const DAYS = D.days.days, DAYMAP = Object.fromEntries(DAYS.map(x => [x.d, x]));
 const hm = m => { m = Math.round(m); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`; };

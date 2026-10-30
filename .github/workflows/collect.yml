@@ -1,20 +1,21 @@
-# 記録を集める（元は _work/攻略アプリ/collect/。deploy_site.py が site/.github/ に写す）。集めたものは data 枝に置き、公開ページ（main）は作り直さない
+# 記録を集める（元は _work/攻略アプリ/collect/。deploy_site.py が site/.github/ に写す）。集めた生の記録は data 枝（暗号化）、毎晩の1日分の記録は main の recent.js
 #  live: 日本時間 7時〜22時台に1時間ごと、ThemeParks.wiki の待ち・休止を1分ごと（暗号化）と気象庁の天気予報。1回130分読む（定期実行は遅れたりとばされたりするので、毎時の起動を重ねて抜けを防ぐ）
-#  issue: 日本時間 21時台に、公開中のアプリ（index.html）で翌日から14日分の予測を発行して固定（あとで score_issued.cjs で答え合わせ）
+#  night: 日本時間 23:40ごろ、その日の1分ごとの記録からアプリの1日分の記録を作って recent.js に足し（night.py）、それを入れたアプリで翌日から14日分の予測を発行して固定（issue_forecast.cjs）
 name: collect
 on:
   schedule:
     - cron: "7 22,23,0-13 * * *"
-    - cron: "23 12 * * *"
+    - cron: "40 14 * * *"
   workflow_dispatch:
     inputs:
-      minutes: { description: "待ちを読む分数", default: "130" }
-      issue: { description: "予測も発行する", type: boolean, default: false }
+      minutes: { description: "待ちを読む分数（0 なら読まない）", default: "130" }
+      night: { description: "毎晩の記録づくりと予測の発行もする", type: boolean, default: false }
+      day: { description: "毎晩の記録を作る日（空ならきょう）", default: "" }
 permissions:
   contents: write
 jobs:
   live:
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '7 22,23,0-13 * * *'
+    if: github.event.schedule == '7 22,23,0-13 * * *' || (github.event_name == 'workflow_dispatch' && inputs.minutes != '0')
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
@@ -24,12 +25,19 @@ jobs:
         env: { TPW_KEY: "${{ secrets.TPW_KEY }}", MINUTES: "${{ inputs.minutes || '130' }}" }
       - run: bash .github/collect/save.sh "待ち・天気予報"
         env: { GH_TOKEN: "${{ github.token }}" }
-  issue:
-    if: github.event.schedule == '23 12 * * *' || inputs.issue
+  night:
+    if: github.event.schedule == '40 14 * * *' || inputs.night
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - run: node .github/issue/issue_forecast.cjs --html index.html --engine .github/issue/engine.js --out out/issued --inputs out/inputs
+      - run: git clone -q --depth 1 --branch data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" d
+      - run: python3 .github/collect/night.py d . ${{ inputs.day }}
+        env: { TPW_KEY: "${{ secrets.TPW_KEY }}" }
+      - run: |
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add recent.js; git diff --cached --quiet || git commit -qm "毎晩の記録"
+          for i in 1 2 3 4 5; do git push -q origin HEAD:main && break; sleep $((i * 7)); git pull -q --rebase origin main; done
+      - run: node .github/issue/issue_forecast.cjs --html index.html --engine .github/issue/engine.js --recent recent.js --out out/issued --inputs out/inputs
       - run: bash .github/collect/save.sh "予測の発行"
         env: { GH_TOKEN: "${{ github.token }}" }
