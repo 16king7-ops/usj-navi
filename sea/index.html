@@ -1888,6 +1888,48 @@ button { font-family: inherit; }
 #intro .inner { gap: 12px; font-size: 14px; color: var(--ink-2); }
 #intro p { max-width: 70em; }
 .nx .cmp b, .nx .go2 b, .answer .kv b, .step4 em, .hs em, .bars .b { font-family: var(--num); font-variant-numeric: tabular-nums; }
+/* 過ぎた日の答え合わせ */
+.cal button.past { box-shadow: inset 0 -3px 0 var(--ink-3); } .cal button.retro { outline: 2px solid var(--ink); outline-offset: -2px; }
+.legend .pastkey { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--surface); box-shadow: inset 0 -3px 0 var(--ink-3); border: 1px solid var(--line); vertical-align: -1px; margin-right: 4px; }
+.retro .mp-heading h3 { margin: 0; } .rt-h { margin: 4px 0 0; font-size: 16px; }
+.rt-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.rt-tile { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; min-width: 0; } .rt-tile.act { border-color: var(--ink); border-width: 2px; }
+.rt-tile span { font-size: 12px; color: var(--ink-2); } .rt-tile b { font: 800 26px/1.1 var(--num); font-variant-numeric: tabular-nums; } .rt-tile b small { font-size: 12px; font-weight: 600; margin-left: 2px; } .rt-tile em { font-style: normal; font-size: 12.5px; color: var(--ink-2); }
+.rt-table th, .rt-table td { white-space: nowrap; } .rt-table tr[data-rk] { cursor: pointer; } .rt-table tr[data-rk]:hover { background: var(--line); } .rt-table tr.on { background: var(--brand-soft); font-weight: 700; }
+@media (max-width: 520px) { .rt-tiles { grid-template-columns: 1fr; } .rt-tile { grid-template-columns: auto 1fr auto; align-items: baseline; } }
+
+.rt-wt td { min-width: 72px; }
+.rt-wt td small { font-weight: 600; }
+.rt-ok { background: var(--good-soft); color: var(--ink); }
+.rt-mid { background: var(--warn-soft); color: var(--ink); }
+.rt-big { background: var(--warn); color: #fff; }
+.rt-bad { background: var(--bad); color: #fff; }
+.rt-known { background: var(--bg); color: var(--ink-3); }
+.rt-key { display: inline-block; padding: 1px 8px; border-radius: 6px; margin-right: 6px; font-weight: 700; }
+
+/* 地図全体を画面内に表示する */
+.map svg { width: auto; height: auto; max-width: 100%; max-height: min(62vh, 650px); justify-self: center; }
+#livemap, #foodmap, #wcmap { display: grid; justify-items: center; min-width: 0; }
+@media (max-width: 700px) { .map svg { max-height: 58vh; } }
+/* 当日は、次の予定を先に表示し、入力欄と全体の地図を続ける */
+@media (max-width: 900px) {
+  #tab-live .nowcard { display: contents; }
+  #tab-live #nextcard { order: 1; }
+  #tab-live :is(#livefix, #liveshift, #liveadopt) { order: 2; }
+  #tab-live #livetoast { order: 3; } #tab-live .nowpanel { order: 4; }
+  #tab-live .livelist { order: 5; } #tab-live .tipboard { order: 6; }
+  #tab-live .nowcard > .map { order: 7; } #tab-live > .row { order: 8; } #tab-live > details.more { order: 9; }
+}
+/* ユニバと同じ月ごとの表示と移動 */
+.mnav { display: none; }
+@media (max-width: 700px) {
+  .months { display: grid; grid-auto-flow: column; grid-auto-columns: 100%; grid-template-columns: none; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .months::-webkit-scrollbar { display: none; } .months .month { scroll-snap-align: start; }
+  .mnav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .mnav b { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .mnav button { font: inherit; font-size: 22px; line-height: 1; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .mnav button:disabled { opacity: .3; } .month .mph b { display: none; }
+}
 </style>
 
 <noscript><div class="nsnote"><b>この画面では、ナビが動きません</b><br>いま開いているアプリ（ファイルのプレビューなど）は JavaScript を動かさないので、カレンダー・予定・地図などが出ません。ブラウザ（Chrome・Safari）で開いてください。</div></noscript>
@@ -1929,7 +1971,10 @@ button { font-family: inherit; }
     <div class="panel" id="dayinfo"></div>
     <div class="pband" data-ph="x_fs" aria-hidden="true"></div>
     <div id="cal" style="display:grid;gap:6px;position:relative"><div class="bgph right" data-bg="x_fs_castle" aria-hidden="true"></div><h2 data-en="CALENDAR">カレンダー</h2><div class="legend" id="callegend"></div></div>
+    <div class="mnav"><button type="button" data-mv="-1" aria-label="前の月">‹</button><b id="mlabel"></b><button type="button" data-mv="1" aria-label="次の月">›</button></div>
     <div class="months" id="months"></div>
+    <div class="panel calpick" id="calpick" aria-live="polite"></div>
+    <div class="panel retro" id="retro" hidden></div>
     <section class="areas" aria-labelledby="areas-h"><h2 id="areas-h" data-en="AREA GUIDE">エリアめぐり</h2><p class="lead">8つのテーマポートの乗り物・レストラン・食べ歩きを、写真で。押すと地図と一緒に見られます。</p><div class="acards" id="acards"></div><figure class="amap" id="amap"></figure></section>
     <section class="about" id="about">
       <h2 data-en="HOW IT WORKS">推定方法と検証</h2>
@@ -2124,6 +2169,7 @@ button { font-family: inherit; }
       <div class="nowrow"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg> 遅れた</b><button type="button" class="btn small" data-late="20">+20分</button><button type="button" class="btn small" data-late="30">+30分</button></div>
       <div id="nowsub"></div>
       <div class="row"><button type="button" class="btn primary" id="replan"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4' /> <path d='M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4' /></svg> 残りを今から組み直す</button><span class="note">済んだものは、予定の ✓ を押すだけ</span></div>
+      <div class="row"><button type="button" class="btn small" id="resetday">当日の記録を最初から</button><span class="note">済んだ印・入力した待ち・休止・現在地を消します。予定とDPAの指定は残ります。</span></div>
     </div>
     <div class="nowcard"><div id="nextcard"></div>
     <figure class="map"><div id="livemap"></div><figcaption class="credit">地図を押すと、そこが「今ここ」になります。</figcaption></figure>
@@ -2137,7 +2183,10 @@ button { font-family: inherit; }
   <!-- 時間帯 -->
   <section id="tab-hours" role="tabpanel" hidden>
     <div class="tabhero" data-ph="hours"><div><h2 data-en="WAIT TIMES">いつ空いていて、何時まで並べるか</h2><p class="lead">選んだ日の予想待ち時間（分）。◎一番空く（3分以内の差は「ほぼ同じ」）○次に空く。写真を押すとグラフ。</p></div></div>
+    <div class="panel" id="rtpick"></div>
+    <div class="panel retro" id="retro2" hidden></div>
     <div class="panel wave" id="nightbox"></div>
+    <div class="panel wave" id="wavebox"></div>
     <div class="panel" id="hmap"></div>
     <details class="more"><summary>乗り物ごとの狙い目を一覧で見る</summary><div class="inner" id="hsum"></div></details>
     <p class="scrollhint" aria-hidden="true">横にスクロールで、ほかの乗り物も <svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 6l6 6l-6 6' /></svg></p>
@@ -3626,6 +3675,52 @@ function replay(sim, x, mode = "same", opt = {}) {
 }
 
 
+// 過去の日の実際と、その日より前の記録で再計算した予測を比較する。
+// 予報や当時発行した予測は保存されていないため、天気を使わない再計算。
+const retroCache = {};
+function retroPoints(k, x) {
+  const r = RIDES[k], s = r && x.s[r.from_ || k]; if (!r || r.src !== "r" || !s) return [];
+  const shift = (x.o || 540) - 480, out = [];
+  for (let i = 0; i < SLOT_M.length; i++) { const v = dec(s, i); if (v != null) out.push([SLOT_M[i] < 720 ? SLOT_M[i] + shift : SLOT_M[i], v]); }
+  return out;
+}
+function retroDay(d, lead) {
+  const key = d + "|" + lead, x = DAYMAP[d]; if (key in retroCache) return retroCache[key];
+  if (!x || !x.avg || !Object.keys(x.s).length) return null;
+  const old = { M, date:S.date, plan:S.plans[d], cutoffDay, excludeDay, evalBlind, wx:S.wx };
+  try {
+    S.date=d; S.plans[d]={items:[],done:{},over:{},ticketAt:{}}; S.wx={};
+    excludeDay=null; cutoffDay=addDays(d,-lead); evalBlind={wx:d,hours:null}; M=buildModel(d);
+    if (!M.crowd.refs.length) return (retroCache[key]=null);
+    const rides=[];
+    for (const k of M.keys) {
+      if (!M.prof[k] || RIDES[k].src !== "r") continue;
+      const pts=retroPoints(k,x).filter(([t])=>t>=M.open && t<=M.close);
+      const cells=pts.map(([t,a])=>{const p=waitAt(k,t);return p && p.med!=null ? {t,a,med:p.med,p10:p.p10,p90:p.p90} : null}).filter(Boolean);
+      if (!cells.length) continue;
+      const line=[];for(let t=M.open;t<=M.close;t+=30){const p=waitAt(k,t);if(p && p.med!=null)line.push([t,p.med,p.p10,p.p90]);}
+      rides.push({k,cells,line});
+    }
+    return (retroCache[key]=rides.length ? {d,lead,predAvg:M.crowd.avg,actAvg:x.avg,refs:M.crowd.refs.length,open:M.open,close:M.close,rides}:null);
+  } finally { M=old.M; S.date=old.date; if(old.plan)S.plans[d]=old.plan;else delete S.plans[d];cutoffDay=old.cutoffDay;excludeDay=old.excludeDay;evalBlind=old.evalBlind;S.wx=old.wx; }
+}
+function retroHours(d,t0) {
+  const key="h|"+d+"|"+(t0||0), x=DAYMAP[d]; if(key in retroCache)return retroCache[key];
+  if(!x || !x.avg || !Object.keys(x.s).length)return null;
+  const old={M,date:S.date,plan:S.plans[d],cutoffDay,excludeDay,evalBlind,wx:S.wx};
+  try {
+    S.date=d;S.plans[d]={items:[],done:{},over:{},ticketAt:{},obs:[]};S.wx={};excludeDay=null;cutoffDay=d;evalBlind={wx:d,hours:null};M=buildModel(d);
+    if(!M.crowd.refs.length)return (retroCache[key]=null);
+    const keys=M.keys.filter(k=>M.prof[k] && RIDES[k].src==="r" && retroPoints(k,x).length);
+    const pts=Object.fromEntries(keys.map(k=>[k,retroPoints(k,x)]));
+    if(t0){const snap=t=>Object.fromEntries(keys.map(k=>{const q=pts[k].find(p=>p[0]===t);return q?[k,q[1]]:null}).filter(Boolean)); const w=snap(t0);for(const [k,v] of Object.entries(w))setOver(k,v,t0,"auto");P().obs=[{t:t0-60,w:snap(t0-60)},{t:t0-30,w:snap(t0-30)},{t:t0,w}];}
+    const hours=[],cells={},lines={};for(let h=Math.floor(M.open/60);h<Math.ceil(M.close/60);h++)hours.push(h);
+    for(const k of keys){cells[k]={};for(const h of hours){const a=pts[k].filter(q=>Math.floor(q[0]/60)===h && q[0]>=M.open && q[0]<=M.close);if(!a.length)continue;const ps=a.map(q=>waitAt(k,q[0]).med);cells[k][h]={a:a.reduce((s,q)=>s+q[1],0)/a.length,p:t0 && h*60+15<=t0 ? null : ps.reduce((s,v)=>s+v,0)/ps.length};}if(t0){lines[k]=[];for(let t=t0;t<=M.close;t+=15)lines[k].push([t,waitAt(k,t).med]);}}
+    return (retroCache[key]={d,t0:t0||null,keys,hours,cells,lines});
+  } finally {M=old.M;S.date=old.date;if(old.plan)S.plans[d]=old.plan;else delete S.plans[d];cutoffDay=old.cutoffDay;excludeDay=old.excludeDay;evalBlind=old.evalBlind;S.wx=old.wx;}
+}
+function retroStats(cells) { const n=cells.length;if(!n)return null;const s=f=>cells.reduce((a,c)=>a+f(c),0),r=v=>Math.round(v*10)/10;return {n,act:r(s(c=>c.a)/n),pred:r(s(c=>c.med)/n),bias:r(s(c=>c.a-c.med)/n),mae:r(s(c=>Math.abs(c.a-c.med))/n),cover:Math.round(100*cells.filter(c=>c.a>=c.p10&&c.a<=c.p90).length/n)}; }
+
 
 // ================= 画面の共通部品 =================
 const AREAS = D.mapLabels || [];  // 地図に書くエリアの名前 [名前, x, y]（build_app.py が乗り物のピンから決める）
@@ -3723,7 +3818,7 @@ function keepSel() { if (S.date && S.sel) S.selBy = { ...(S.selBy || {}), [S.dat
 function setDate(d) {
   let back = false;
   if (S.date && S.date !== d) { keepSel(); const k = (S.selBy || {})[d]; if (k && k.sel) { back = JSON.stringify(k.sel) !== JSON.stringify(S.sel); DAYK.forEach(x => { if (k[x] !== undefined) S[x] = cloneJ(k[x]); }); } }
-  S.date = d; M = buildModel(d); save(); renderTop();
+  const changed = S.date !== d; S.date = d; if (changed) { const p = P(), st = p.liveState || {}; S.liveLoc = st.loc || (p.live && p.live.loc) || null; store.set("liveloc", S.liveLoc); document.getElementById("livetime").value = st.time || ""; liveManual = false; toast("livetoast", ""); } M = buildModel(d); save(); renderTop();
   if (back && document.getElementById("gtoast")) toast("gtoast", `${md(d)}の選び方（${S.sel.length}個）に切り替えました。選び方は日付ごとに覚えています。`);
 }
 
@@ -3800,6 +3895,97 @@ function dayCmpHTML() {
     </tbody></table></div>
     <p class="note">待ちは乗り物ごとに、入園から受付終了の30分前までの予測の平均（似た日から）と、その中でいちばん短い時間帯。全部をいちばん短い時刻に乗れるわけではないので、合計は平均で出しています（${C.length}日とも予測がある${R.common.length}個）。どの日が空くかの順位は付けません。答え合わせ（2025/9〜2026/10の約300日、人気の4つ）では、合計の差が15分を超えても実際に同じ向きだったのは、約1か月前の予測で6割、前日の夜の予測で6割5分でした。</p>`;
 }
+// ===== 過ぎた日の答え合わせ（カレンダーの過ぎた日を押す）=====
+//  その日の実際の記録と、その日より前の記録だけで作った予測（前日の夜まで／約1か月前まで）を見比べる。計算は engine.js の retroDay（予測検証/eval_pred.cjs と同じ作り方）。選んでいる日（S.date）や予定は変えない
+let retroDate = null, retroLead = 0, retroRide = null, retroT0 = 0;  // retroT0: 表で比べる予測（0＝前日の夜まで、615・735・855＝その日の10:15・12:15・14:15に今の待ちを読み込んでいたら）
+// 答え合わせの表（時間帯の表と同じ形）: マスの大きい数字が実際、小さい数字が予測と差。色は差の大きさ（10分以内・20分以内・40分以内・それ以上）
+function retroTableHTML(d) {
+  const T = retroHours(d, retroT0), base = retroT0 ? retroHours(d, 0) : null; if (!T) return "";
+  const shut = DAYMAP[d].c || T.hours[T.hours.length - 1] * 60 + 60;
+  const keys = T.keys.filter(k => RIDES[k].grp !== "kids" && T.hours.some(h => T.cells[k][h])), opens = DAYMAP[d].o || T.hours[0] * 60;
+  const btn = (t, lab) => t && (t < opens + 60 || t > shut - 90) ? "" : `<button type="button" data-rt-t0="${t}" aria-pressed="${retroT0 === t}">${lab}</button>`;
+  const cls = e => (e <= 10 ? "rt-ok" : e <= 20 ? "rt-mid" : e <= 40 ? "rt-big" : "rt-bad");
+  const cell = (k, h) => {
+    const c = T.cells[k][h]; if (!c) return `<td class="off">—</td>`;
+    const a = Math.round(c.a);
+    if (c.p == null) return `<td class="rt-known">${a}<small>読込済</small></td>`;
+    const p = Math.round(c.p), e = Math.abs(a - p), b = base && base.cells[k][h] ? Math.round(base.cells[k][h].p) : null;
+    return `<td class="${cls(e)}" title="実際 ${a}分・予測 ${p}分${b != null ? `（前日の夜 ${b}分）` : ""}">${a}<small>予${p}（${retroSign(a - p)}）</small></td>`;
+  };
+  const all = keys.flatMap(k => T.hours.map(h => T.cells[k][h]).filter(c => c && c.p != null)), n = all.length;
+  const cnt = f => all.filter(c => f(Math.abs(c.a - c.p))).length, pc = v => (n ? Math.round(100 * v / n) : 0);
+  return `<h4 class="rt-h">表で見比べる（時間帯の表と同じ形）</h4>
+    <div class="seg" role="group" aria-label="表で比べる予測">${btn(0, "前日の夜の予測")}${btn(615, "10時に読み込んでいたら")}${btn(735, "12時に")}${btn(855, "14時に")}${btn(975, "16時に")}${btn(1095, "18時に")}</div>
+    <p class="note">大きい数字が<b>実際</b>（1時間の平均）、小さい数字が<b>予測</b>と差（＋は実際のほうが長い）。${retroT0 ? `${hm(retroT0)}とその30分前・60分前の実際の待ちを読み込んだときに当日の観測時点までの記録から再計算した予測（${hm(retroT0)}までの時間は読み込み済み）。` : "前日の夜までの記録で作った予測。"}
+      ずれ ${n ? `10分以内 <b>${pc(cnt(e => e <= 10))}%</b>・20分以内 ${pc(cnt(e => e <= 20))}%・40分より大きい <b>${pc(cnt(e => e > 40))}%</b>` : "—"}</p>
+    <div class="scroll" tabindex="0" role="region" aria-label="答え合わせの表（横にスクロール）"><table class="wt rt-wt"><thead><tr><th class="h">時間</th>${keys.map(k => `<th>${rideImg(k) ? `<img src="${rideImg(k)}" alt="" style="width:34px;height:34px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 3px">` : ""}${RIDES[k].short}</th>`).join("")}</tr></thead>
+    <tbody>${T.hours.filter(h => keys.some(k => T.cells[k][h])).map(h => `<tr><th class="h">${h}時台</th>${keys.map(k => cell(k, h)).join("")}</tr>`).join("")}</tbody></table></div>
+    <p class="note"><span class="rt-key rt-ok">10分以内</span><span class="rt-key rt-mid">20分以内</span><span class="rt-key rt-big">40分以内</span><span class="rt-key rt-bad">40分より大きい</span>　予測と実際の差で色分け（実際は記録の H:15 と H:45 の平均）</p>`;
+}
+const retroSign = v => (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(Math.round(v));
+let retroBoxId = "retro";  // 答え合わせを出す欄: いつ行く（カレンダーの下）か、時間帯（日付を選ぶ）
+function showRetro(d, boxId = "retro") {
+  retroBoxId = boxId; for (const id of ["retro", "retro2"]) if (id !== boxId) document.getElementById(id).hidden = true;
+  retroDate = d; retroRide = null; retroLead = 0; retroT0 = 0;
+  document.querySelectorAll("#months button[data-d]").forEach(b => b.classList.toggle("retro", b.dataset.d === d));
+  const box = document.getElementById(retroBoxId); box.hidden = false; box.innerHTML = `<p class="note">${md(d)}の答え合わせを計算しています…</p>`;
+  box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  setTimeout(paintRetro, 30);  // 計算に少しかかるので、先に表示を出す
+}
+function retroClose() { retroDate = null; document.getElementById("retro").hidden = true; document.getElementById("retro2").hidden = true; document.querySelectorAll("#months button.retro").forEach(b => b.classList.remove("retro")); }
+// 1つの乗り物の1日: 予測の幅（10〜90%）・予測の中心（点線）・実際（実線と点）。グラフの上を動かすと、その時刻の実際と予測を出す
+function retroChartHTML(RT, rs, x, nl, t0) {  // nl: t0 に当日の待ちを読み込んでいたらの予測の線 [[時刻, 分]]（なければ前日の夜の予測だけ）
+  const lo = Math.min(x.o || RT.open, RT.open, ...rs.cells.map(c => c.t)), hi = Math.max(x.c || RT.close, RT.close, ...rs.cells.map(c => c.t)), span = Math.max(1, hi - lo);
+  const top = Math.max(60, Math.ceil(Math.max(...rs.cells.map(c => c.a), ...rs.line.map(p => p[3] || p[1])) / 30) * 30), X = t => 1000 * (t - lo) / span, Y = w => 180 * (1 - w / top);
+  const pt = p => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`;
+  const band = rs.line.length > 1 ? `<path class="mp-wait-band" d="M${rs.line.map(p => `${X(p[0]).toFixed(1)},${Y(p[3]).toFixed(1)}`).join("L")}L${rs.line.slice().reverse().map(p => `${X(p[0]).toFixed(1)},${Y(p[2]).toFixed(1)}`).join("L")}Z"/>` : "";
+  const pred = rs.line.length > 1 ? `<path d="M${rs.line.map(pt).join("L")}" stroke="var(--brand)" stroke-dasharray="7 6"/>` : "";
+  const act = rs.cells.length > 1 ? `<path d="M${rs.cells.map(c => `${X(c.t).toFixed(1)},${Y(c.a).toFixed(1)}`).join("L")}" stroke="var(--ink)"/>` : "";
+  const now = nl && nl.length > 1 ? `<path d="M${nl.map(p => `${X(p[0]).toFixed(1)},${Y(Math.min(top, p[1])).toFixed(1)}`).join("L")}" stroke="var(--good)" stroke-width="3"/><path d="M${X(t0).toFixed(1)},0L${X(t0).toFixed(1)},180" stroke="var(--good)" stroke-dasharray="3 4"/>` : "";
+  const ticks = []; for (let t = Math.ceil(lo / 120) * 120; t <= hi; t += 120) ticks.push(t);
+  return `<div class="mp-wait-plot" style="--lanes:0" role="img" aria-label="${esc(RIDES[rs.k].short)}の1日。実際の待ちと予測の比べ"><span class="mp-wait-unit">待ち（分）</span><div class="mp-wait-y" aria-hidden="true">${[top, top * 2 / 3, top / 3, 0].map(w => `<span style="top:${100 * (1 - w / top)}%">${Math.round(w)}</span>`).join("")}</div>
+    <div class="mp-wait-canvas" id="rt-canvas" data-lo="${lo}" data-span="${span}" data-top="${top}"><svg viewBox="0 0 1000 180" preserveAspectRatio="none" aria-hidden="true"><g stroke="var(--line)" stroke-width="1">${[0, 60, 120, 180].map(y => `<path d="M0,${y}H1000"/>`).join("")}</g>${band}<g fill="none" stroke-width="3" stroke-linecap="round">${pred}${act}${now}</g></svg>
+    ${rs.cells.map(c => `<i class="mp-wait-obs" style="left:${100 * (c.t - lo) / span}%;top:${100 * (1 - Math.min(top, c.a) / top)}%"></i>`).join("")}<i class="mp-wait-marker" id="rt-mark" hidden></i></div>
+    <div class="mp-wait-axis" aria-hidden="true">${ticks.map(t => `<span style="left:${100 * (t - lo) / span}%">${hm(t)}</span>`).join("")}</div></div>
+    <div class="mp-wait-legend"><span class="obs">実際</span><span>予測の中心</span><span class="band">予測の幅（似た日の10〜90%）</span>${now ? `<span style="color:var(--good);font-weight:700">━ ${hm(t0)}に読み込んでいたら</span>` : ""}</div>
+    <p class="note" id="rt-read" aria-live="polite">グラフの上を押す・なぞると、その時刻の実際と予測が出ます。</p>`;
+}
+function paintRetro() {
+  const d = retroDate, box = document.getElementById(retroBoxId); if (!d) return;
+  const x = DAYMAP[d], R0 = retroDay(d, 0), R30 = retroDay(d, 30);
+  if (!x || !R0) { box.innerHTML = `<div class="mp-heading"><h3>${md(d)}</h3><button type="button" class="linkbtn" data-rt-close>閉じる</button></div><p class="note">この日以前の記録が不足しているため、予測との比較を作れません。</p>`; box.querySelector("[data-rt-close]").onclick = retroClose; return; }
+  const cur = retroLead === 30 && R30 ? R30 : R0, all = retroStats(cur.rides.flatMap(r => r.cells));
+  const per = cur.rides.map(r => ({ k: r.k, r, s: retroStats(r.cells) })).sort((a, b) => b.s.act - a.s.act);
+  if (!retroRide || !per.some(p => p.k === retroRide)) retroRide = per[0].k;
+  const sel = per.find(p => p.k === retroRide), lv = lvOf(x.avg), wx = x.w || "";
+  const tile = (h, v, s, cls = "") => `<div class="rt-tile ${cls}"><span>${h}</span><b>${v}<small>分</small></b><em>${s}</em></div>`;
+  const diff = R => (R && R.predAvg ? `実際との差 ${retroSign(x.avg - R.predAvg)}分` : "予測なし");
+  box.innerHTML = `<div class="mp-heading"><h3>${md(d)} の答え合わせ</h3><button type="button" class="linkbtn" data-rt-close>閉じる</button></div>
+    <p class="note">${wx ? `天気 ${esc(wx)}・` : ""}営業 ${hm(x.o)}〜${hm(x.c)}${x.rank ? `・ランク${esc(x.rank)}` : ""}。実際の記録と、<b>その日より前の記録だけ</b>で現在のモデルを再計算した予測を比べます。当時発行した予測ではなく、当日の実測天気は使用していません。営業時間はその日の記録を使用します。現在のモデルや記録の前処理には後年のデータに基づく調整があるため、当時の予測精度を再現したものではありません。</p>
+    <div class="rt-tiles">${tile("実際の平均待ち", x.avg, `${LVM[lv]} ${LV[lv]}`, "act")}${tile("予測（前日の夜まで）", R0.predAvg ?? "—", diff(R0))}${tile("予測（約1か月前）", R30 && R30.predAvg != null ? R30.predAvg : "—", diff(R30))}</div>
+    <div class="seg" role="group" aria-label="比べる予測"><button type="button" data-rt-lead="0" aria-pressed="${retroLead === 0}">前日の夜までの記録で</button><button type="button" data-rt-lead="30" aria-pressed="${retroLead === 30}" ${R30 ? "" : "disabled"}>約1か月前までの記録で</button></div>
+    <p class="note">${cur.rides.length}つの乗り物・${all.n}か所を比べると、予測は実際より<b>平均${Math.round(all.mae)}分</b>ずれ、${Math.abs(all.bias) < 3 ? "偏りはほぼありません" : all.bias > 0 ? `実際のほうが長めでした（${retroSign(all.bias)}分）` : `実際のほうが短めでした（${retroSign(all.bias)}分）`}。実際が予測の幅に入ったのは<b>${all.cover}%</b>（理想は約80%）。似た日は${cur.refs}日。</p>
+    <h4 class="rt-h">${esc(RIDES[sel.k].short)}の1日</h4>
+    <p class="note">実際の平均 ${Math.round(sel.s.act)}分・予測 ${Math.round(sel.s.pred)}分（${retroSign(sel.s.bias)}）・幅に入った ${sel.s.cover}%</p>
+    ${retroChartHTML(cur, sel.r, x, retroT0 && retroLead === 0 ? (retroHours(d, retroT0) || { lines: {} }).lines[sel.k] : null, retroT0)}
+    ${retroTableHTML(d)}
+    <div class="ox"><table class="plain rt-table"><thead><tr><th>乗り物（押すとグラフ）</th><th class="r">実際</th><th class="r">予測</th><th class="r">差</th><th class="r">幅に入った</th></tr></thead><tbody>${per.map(p => `<tr data-rk="${esc(p.k)}" class="${p.k === retroRide ? "on" : ""}" tabindex="0" role="button" aria-pressed="${p.k === retroRide}"><td>${esc(RIDES[p.k].short)}</td><td class="r">${Math.round(p.s.act)}</td><td class="r">${Math.round(p.s.pred)}</td><td class="r">${retroSign(p.s.bias)}</td><td class="r">${p.s.cover}%</td></tr>`).join("")}</tbody></table></div>
+    <p class="note">平均待ち・差は分。差＝実際−予測（＋は実際のほうが長い）。ランクや平均待ちは公式アプリの表示値の記録です。待ち時間は記録のある時刻どうしを比較しています。</p>`;
+  box.querySelector("[data-rt-close]").onclick = retroClose;
+  box.querySelectorAll("[data-rt-lead]").forEach(b => (b.onclick = () => { retroLead = +b.dataset.rtLead; paintRetro(); }));
+  box.querySelectorAll("[data-rt-t0]").forEach(b => (b.onclick = () => { retroT0 = +b.dataset.rtT0; b.textContent = "計算しています…"; setTimeout(paintRetro, 30); }));
+  box.querySelectorAll("tr[data-rk]").forEach(tr => { const go = () => { retroRide = tr.dataset.rk; paintRetro(); }; tr.onclick = go; tr.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } }; });
+  const cv = document.getElementById("rt-canvas"), mark = document.getElementById("rt-mark"), read = document.getElementById("rt-read");
+  const at = ev => {
+    const r = cv.getBoundingClientRect(), lo = +cv.dataset.lo, span = +cv.dataset.span, t = lo + Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)) * span;
+    const c = sel.r.cells.reduce((a, b) => (Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a));
+    mark.hidden = false; mark.style.left = `${100 * (c.t - lo) / span}%`;
+    read.innerHTML = `<b>${hm(c.t)}</b>　実際 <b>${Math.round(c.a)}分</b>　予測 ${Math.round(c.med)}分（幅 ${Math.round(c.p10)}〜${Math.round(c.p90)}分）　差 ${retroSign(c.a - c.med)}分${c.a >= c.p10 && c.a <= c.p90 ? "" : "　<b>幅の外</b>"}`;
+  };
+  cv.addEventListener("pointermove", at); cv.addEventListener("pointerdown", at);
+}
+let calPast = false, calPastJump = false;
+function pickDay(d) { if (d < TODAY) return showRetro(d); if (d === M.date) return goPlan(d); setDate(d); renderDay(); }
 function renderDay() {
   renderIntro();
   renderHero(); renderAreas(); renderSteps4();
@@ -3829,27 +4015,45 @@ function renderDay() {
   document.getElementById("daycmp-go").onclick = () => { const box = document.getElementById("daycmp"); box.innerHTML = dayCmpHTML(); box.querySelectorAll("[data-cmpd]").forEach(b => (b.onclick = () => goPlan(b.dataset.cmpd))); };
   document.getElementById("callegend").innerHTML = LV.map((l, i) => `<span><i class="lv${i}"></i>${LVM[i]} ${l}</span>`).join("") + `<span>赤い日付＝土日祝</span>`;
   let s = "";
-  const start = dObj(TODAY.slice(0, 8) + "01");
-  for (let mi = 0; mi < 12; mi++) {
+  const start = dObj(TODAY.slice(0, 8) + "01"), firstRecord = dObj(DAYS[0].d), back = Math.max(0, (start.getFullYear() - firstRecord.getFullYear()) * 12 + start.getMonth() - firstRecord.getMonth());
+  const from = calPast ? -back : 0;
+  for (let mi = from; mi < 12; mi++) {
     const first = new Date(start.getFullYear(), start.getMonth() + mi, 1, 12), ym = iso(first).slice(0, 7), mo = first.getMonth() + 1;
     const evs = [...new Set(D.events.filter(e => e[0] <= ym + "-31" && e[1] >= ym + "-01").map(e => e[2].replace(/（.*）/, "")))];
     let cells = WD.split("").map(w => `<div class="wd">${w}</div>`).join("") + "<div></div>".repeat(first.getDay());
     for (let d = 1; d <= 31; d++) {
       const o = new Date(first.getFullYear(), first.getMonth(), d, 12); if (o.getMonth() !== first.getMonth()) break;
-      const ds = iso(o), x = crowd(ds);
-      cells += `<button type="button" class="lv${x.lv}${isOff(ds) ? " hol" : ""}" data-d="${ds}" aria-pressed="${ds === M.date}" ${ds < TODAY ? "disabled" : ""} aria-label="${md(ds)} ${LV[x.lv]}"><b>${d}</b><span>${LVM[x.lv]}</span></button>`;
+      const ds = iso(o), past = ds < TODAY, actual = past && DAYMAP[ds], x = past ? {avg:actual && actual.avg, lv:actual && actual.avg ? lvOf(actual.avg) : 1} : crowd(ds);
+      cells += `<button type="button" class="lv${x.lv}${isOff(ds) ? " hol" : ""}${past ? " past" : ""}" data-d="${ds}" aria-pressed="${ds === M.date}" ${past && !x.avg ? "disabled" : ""} aria-label="${md(ds)} ${past ? `実際 平均${x.avg || "—"}分` : LV[x.lv]}"><b>${d}</b><span>${LVM[x.lv]}</span>${past && x.avg ? `<small class="avg">${x.avg}分</small>` : ""}</button>`;
     }
     const ph = PH[MONTH_PH[mo]];
     s += `<div class="month"><div class="mph">${ph ? `<img src="${ph}" alt="" loading="lazy">` : ""}<b>${+ym.slice(0, 4)}年${mo}月</b>${evs.length ? `<small>${evs.join("・")}</small>` : ""}</div><div class="cal">${cells}</div></div>`;
   }
   document.getElementById("months").innerHTML = s;
-  document.querySelectorAll("#months button[data-d]").forEach(b => b.addEventListener("click", () => goPlan(b.dataset.d)));
+  document.querySelectorAll("#months button[data-d]").forEach(b => b.addEventListener("click", () => pickDay(b.dataset.d)));
+  const legend = document.getElementById("callegend"); legend.insertAdjacentHTML("beforeend", `<button type="button" class="btn small" id="calpast" aria-pressed="${calPast}">${calPast ? "過ぎた月をしまう" : "過ぎた月を見る（答え合わせ）"}</button>`);
+  document.getElementById("calpast").onclick = () => { calPast = !calPast; calPastJump = calPast; renderDay(); };
+  const cp = document.getElementById("calpick"); cp.innerHTML = `<div class="row" style="justify-content:space-between"><div><b>${md(M.date)} は ${LVM[M.crowd.lv]} ${LV[M.crowd.lv]}</b><div class="note">${hm(M.open)}〜${hm(M.close)}・${M.typ}。同じ日付をもう一度押しても計画に進めます。</div></div><button type="button" class="btn sun" id="calpick-go">この日で計画する</button></div>`; document.getElementById("calpick-go").onclick = () => goPlan(M.date);
+  const m = document.getElementById("months"), ch = m.children || [], sel = calPast && calPastJump ? 0 : Math.max(0,Math.min(ch.length-1,(dObj(M.date).getFullYear()-start.getFullYear())*12+dObj(M.date).getMonth()-start.getMonth()-from)); calPastJump = false; if(ch[sel])m.scrollLeft=ch[sel].offsetLeft-ch[0].offsetLeft; monthNav();
 }
 
 if ("IntersectionObserver" in window) {  // 予定の要約か予定の一覧が見えている間は「予定を見る」を隠す
   const seen = new Set(), io = new IntersectionObserver(es => { es.forEach(e => (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target))); document.getElementById("fab").classList.toggle("away", seen.size > 0); });
   ["plansum", "plantl"].forEach(id => document.getElementById(id) && io.observe(document.getElementById(id)));
 }
+
+// スマホのカレンダー: 1か月ずつ横にめくる（‹ › とスワイプ）
+const monthIdx = () => { const m = document.getElementById("months"); return Math.round(m.scrollLeft / Math.max(1, m.clientWidth + 12)); };
+function monthNav() {
+  const m = document.getElementById("months"), ch = m.children || [], i = monthIdx(), b = ch[i] && ch[i].querySelector(".mph b");
+  document.getElementById("mlabel").textContent = b ? `${b.textContent}（${i + 1}/${ch.length}）` : "";
+  document.querySelectorAll(".mnav [data-mv]").forEach(x => (x.disabled = +x.dataset.mv < 0 ? i <= 0 : i >= ch.length - 1));
+}
+document.getElementById("months").addEventListener("scroll", () => { clearTimeout(monthNav.t); monthNav.t = setTimeout(monthNav, 80); }, { passive: true });
+document.querySelectorAll(".mnav [data-mv]").forEach(x => x.addEventListener("click", () => {
+  const m = document.getElementById("months"), c = m.children[monthIdx() + +x.dataset.mv];
+  if (c) m.scrollTo({ left: c.offsetLeft - m.children[0].offsetLeft, behavior: "smooth" });
+}));
 
 // ================= 計画 =================
 const GROUPS = [["fs", "ファンタジースプリングス", "入口から一番遠い（歩いて20分ほど）。2025年4月から誰でも並べる"], ["main", "人気のアトラクション", "シングルライダーは使わない前提"],
@@ -6124,15 +6328,22 @@ const liveStart = () => Math.max(liveNow(), busyNow() ? busyNow().until : 0);
 const liveLoc = () => (busyNow() ? busyNow().loc : S.liveLoc || GATE);
 function liveSim() { return simulate(liveRest(), { start: liveStart(), loc: liveLoc() }); }
 // 当日の変更は、前の状態を残して「元に戻す」で戻せる
-const liveSnap = () => JSON.stringify({ items: P().items, done: P().done, over: P().over, closed: P().closed || {}, opened: P().opened || {}, live: P().live, upd: P().updSrc || null, leave: P().leave ?? null, sel: S.sel, busy: P().busy || null, ack: P().ack || {} });
-function liveRestore(js) { const o = JSON.parse(js), pl = P(); Object.assign(pl, { items: o.items, done: o.done, over: o.over, closed: o.closed, opened: o.opened, live: o.live, updSrc: o.upd, leave: o.leave, busy: o.busy || null, ack: o.ack || {} }); S.sel = o.sel; save(); chCache = null; renderLiveTL(); }
+const liveSnap = () => JSON.stringify({ loc: S.liveLoc, time: document.getElementById("livetime").value, items: P().items, done: P().done, over: P().over, closed: P().closed || {}, opened: P().opened || {}, live: P().live, upd: P().updSrc || null, leave: P().leave ?? null, sel: S.sel, busy: P().busy || null, ack: P().ack || {} });
+function liveRestore(js) { const o = JSON.parse(js), pl = P(); Object.assign(pl, { items: o.items, done: o.done, over: o.over, closed: o.closed, opened: o.opened, live: o.live, updSrc: o.upd, leave: o.leave, busy: o.busy || null, ack: o.ack || {} }); S.sel = o.sel; S.liveLoc = o.loc || null; store.set("liveloc", S.liveLoc); document.getElementById("livetime").value = o.time || ""; save(); chCache = null; renderLiveTL(); }
 // 「元に戻す」は、そのあとに予定・済んだ印・休止・帰る時刻が変わっていたら使わない（戻すと、そのあとの操作まで消えるため）
-const undoSig = () => JSON.stringify([(P().items || []).map(x => x.id), P().done, P().closed || {}, P().leave ?? null]);
+const undoSig = () => JSON.stringify([P().items, P().done, P().over, P().closed, P().opened, P().leave, P().ep, P().ticketAt, P().busy, P().ack, S.sel, S.liveLoc, document.getElementById("livetime").value]);
 function undoToast(html, snap) {
   toast("livetoast", `${html} <button type="button" class="btn small" id="liveundo">元に戻す</button>`);
   const sig = undoSig();
   document.getElementById("liveundo").addEventListener("click", () => { if (undoSig() !== sig) { toast("livetoast", "このあとに予定や済んだ印が変わったので、元に戻せません（戻すと、そのあとの操作も消えるため）。"); return; } liveRestore(snap); toast("livetoast", "元に戻しました。"); });
 }
+document.getElementById("resetday").addEventListener("click", e => {
+  const b = e.currentTarget;
+  if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "もう一度押すと記録を消します"; setTimeout(() => { b.dataset.sure = ""; b.textContent = "当日の記録を最初から"; }, 6000); return; }
+  const snap = liveSnap(), pl = P(); Object.assign(pl, { done:{}, over:{}, closed:{}, opened:{}, live:null, busy:null, ack:{}, updSrc:null, liveState:null });
+  S.liveLoc = null; store.set("liveloc", null); setLiveNowClock(); save(); chCache = null; renderLiveTL();
+  b.dataset.sure = ""; b.textContent = "当日の記録を最初から"; undoToast("当日の記録を初期化しました。予定とDPAは残っています。", snap);
+});
 const endTxt = t => (t > M.close + 30 ? "閉園後（入りきらない）" : hm(t));
 // 変更の前と後: 終わり・乗れる数・並ぶ合計と、時刻が10分以上動いたもの・入ったもの・外れたもの
 function planDiffHTML(a, b) {
@@ -6145,9 +6356,10 @@ function planDiffHTML(a, b) {
 // 代わりの候補は、すぐには変えない。変わる所を見せてから採用する（採用したあとも元に戻せる）
 function previewLive(title, items, onOk) {
   const box = document.getElementById("nxconf") || document.getElementById("nowsub"), before = liveSim(), after = simulate(liveRest(items), { start: liveStart(), loc: liveLoc() });
+  const sig = () => JSON.stringify([S.date, P(), S.sel, S.must, S.wx, S.free, S.entry, liveNow(), liveLoc()]), shown = sig();
   box.innerHTML = `<div class="confirm"><b>${title}${/る$/.test(title) ? "と" : "にすると"}</b>${planDiffHTML(before, after)}<div class="row"><button type="button" class="btn primary" id="cf-ok">この案にする</button><button type="button" class="btn" id="cf-x">やめる</button></div></div>`;
   document.getElementById("cf-x").addEventListener("click", () => (box.innerHTML = ""));
-  document.getElementById("cf-ok").addEventListener("click", () => { const snap = liveSnap(); onOk(); save(); chCache = null; renderLiveTL(); undoToast(`<b>${title}</b>にしました。終わり ${endTxt(before.end)} → ${endTxt(liveSim().end)}。`, snap); });
+  document.getElementById("cf-ok").addEventListener("click", () => { if (sig() !== shown) { box.innerHTML = `<p class="note">時刻や予定が変わりました。候補を選び直してください。</p>`; return; } const snap = liveSnap(); onOk(); save(); chCache = null; renderLiveTL(); undoToast(`<b>${title}</b>にしました。終わり ${endTxt(before.end)} → ${endTxt(liveSim().end)}。`, snap); });
   box.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 // 次の予定の理由（予測の数字から。言い切らない）
@@ -6336,6 +6548,20 @@ function wireQueue(r0) {
   const st = document.getElementById("qstop");
   if (st) st.onclick = () => { set(x => { const y = { ...x }; delete y.qs; delete y.qw; return y; }); renderLiveTL(); toast("livetoast", "並ぶのをやめました（予定に戻しました）。"); };
 }
+// 残りの予定から次を選ぶ。比較だけでは順番を変えない。
+function nextPlannedChoices(sim) {
+  const first = sim.rows[0]; if (!first || first.it.qs != null || busyNow()) return [];
+  const all = P().items, at = all.findIndex(x => x.id === first.it.id), beforeFlags = new Map(sim.rows.map(r => [r.it.id, r.flag])); if (at < 0) return [];
+  const holds = new Set(sim.rows.filter(r => r.idle >= 5 || r.it.pin != null || r.it.mAt != null).map(r => r.it.id));
+  const visibleIds = new Set(sim.rows.map(r => r.it.id));
+  return sim.rows.slice(1).filter(r => RIDES[r.it.key] && RIDES[r.it.key].src === "r" && r.it.pin == null && !holds.has(r.it.id) && r.it.qs == null).map(r => {
+    const from = all.findIndex(x => x.id === r.it.id); if (from <= at) return null;
+    const copy = all.map(x => x.at != null && visibleIds.has(x.id) && !holds.has(x.id) ? (({ at, ...y }) => y)(x) : x); const moved = copy.splice(from, 1)[0]; copy.splice(at, 0, moved);
+    const after = simulate(liveRest(copy.filter(x => !P().done[x.id])), { start: liveStart(), loc: liveLoc() });
+    const next = after.rows[0]; if (!next || next.it.id !== r.it.id || after.rides < sim.rides || after.end > Math.max(M.close, sim.end) || after.rows.some(q => q.flag && !beforeFlags.get(q.it.id))) return null;
+    return { id:r.it.id, key:r.it.key, copy, next, delta:Math.round(after.end-sim.end) };
+  }).filter(Boolean).sort((a,b)=>a.delta-b.delta).slice(0,5);
+}
 function renderLiveTL() {
   if ((P().items || []).some(x => P().done[x.id] || x.qs != null)) P().live = { now: liveNow(), loc: S.liveLoc || GATE };
   P().liveState = { time: document.getElementById("livetime").value, loc: S.liveLoc }; save();
@@ -6357,6 +6583,7 @@ function renderLiveTL() {
   const rideIt = P().items.filter(x => RIDES[x.key] && RIDES[x.key].src !== "show"), nDone = rideIt.filter(x => P().done[x.id] && !(busyNow() && busyNow().id === x.id)).length;
   const stat = `<div class="lstat"><span>今 <b>${hm(now)}</b></span><span>${upd >= 0 ? `待ち時間の更新 <b>${hm(upd)}</b>（${P().updSrc || "公式アプリ"}${now - upd > 60 ? "・1時間以上前" : ""}）` : "待ち時間は<b>予測だけ</b>（公式アプリの今の待ちは未入力）"}</span><span>済んだ <b>${nDone}</b>／${rideIt.length}個</span>${P().leave ? `<span>帰る <b>${hm(P().leave)}</b>（あと${dur(Math.max(0, P().leave - now))}）</span>` : ""}</div>`;
   let cmp = "", alts = "";
+  const plannedNext = nextPlannedChoices(sim);
   if (r0 && RIDES[r0.it.key] && RIDES[r0.it.key].src !== "show") {
     const k = r0.it.key, base = Math.round(baseAt(k, r0.start).med), ov = P().over[k], cur = ov && ov.v != null && now - ov.from <= 60 ? ov.v : null;
     cmp = `<div class="cmp"><span>予測 <b>${epOf(k) ? "DPA 10" : base}</b>分<small>（${hm(r0.start)}ごろ・似た日の記録${!epOf(k) && Math.round(r0.wait) - base >= 3 ? (cur != null || todayLevel() ? `。今日の待ちを入れたので、予定は${Math.round(r0.wait)}分で見ています` : `。予定は余裕を見て${Math.round(r0.wait)}分`) : ""}）</small></span>${cur != null ? `<span>今 <b>${cur}</b>分<small>（${hm(ov.from)}の公式アプリ）</small></span><span class="${cur > base ? "up" : "dn"}">予測より${cur > base ? "+" : ""}${cur - base}分</span>` : ""}
@@ -6372,7 +6599,7 @@ function renderLiveTL() {
   const bzName = bzIt ? itemName(bzIt) : "遅れのぶん", busyT = bz ? `<div class="busy"><span>${bzIt ? `今：<b>${bzName}</b>の最中（${hm(bz.until)}ごろ終わる見込み）` : `遅れのぶん、<b>${hm(bz.until)}</b>まで動けない前提`}。残りの予定は、そのあとから組んでいます。</span><button type="button" class="btn small primary" id="busy-end">${bzIt ? "終わった" : "もう動ける"}</button></div>` : "";
   document.getElementById("nowpanel").hidden = now >= M.close; const palBox = document.getElementById("livepal").closest("details"); if (palBox) palBox.hidden = now >= M.close;
   const prepT = !noPick() && now <= M.open + 45 && P().items && !Object.values(P().done || {}).some(Boolean) ? (() => { const h = prepHTML(curSim(), ["morning", "entry"]); return h ? `<details class="more prep" open><summary><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20.942 13.021a9 9 0 1 0 -9.407 7.967' /> <path d='M12 7v5l3 3' /> <path d='M15 19l2 2l4 -4' /></svg> 入園の前後にやること</summary><div class="inner" id="prepLive">${h}</div></details>` : ""; })() : "";
-  const dayT = S.date !== TODAY ? `<div class="warnline">いま出ているのは<b>${md(S.date)}の予定</b>です（今日は${md(TODAY)}）。${md(S.date)}の練習なら、このまま上の時刻を変えて試せます。 <button type="button" class="btn small" id="go-today">今日（${md(TODAY)}）の予定にする</button></div>` : "";
+  const dayT = S.date !== TODAY ? `<div class="warnline">いま出ているのは<b>${md(S.date)}の予定</b>です（今日は${md(TODAY)}）。${md(S.date)}の練習なら、このまま時刻を変えて試せます。 <button type="button" class="btn small" id="go-today">今日（${md(TODAY)}）の予定にする</button></div>` : "";
   document.getElementById("nextcard").innerHTML = dayT + prepT + (noPick() ? `<div class="nx"><h3>まだ予定がありません</h3><p class="note">計画の画面で乗りたいものを選ぶと、ここに「次はこれ」が出ます。</p><div class="row"><button type="button" class="btn primary" id="nx-toplan">乗りたいものを選ぶ</button></div></div>` : now >= M.close ? `<div class="nx"><h3>閉園の時刻（${hm(M.close)}）を過ぎました</h3><p class="note">今日はおつかれさまでした。</p></div>` : catchC ? catchHTML(catchC) : busyT + goneT + heldT + (r0 ? `<div class="nx">${stat}<div class="nxh">${img0 ? `<img src="${img0}" alt="">` : "<span></span>"}<div><small>次はこれ</small><h3>${itemName(r0.it)}${S.must.includes(r0.it.key) ? '<span class="badge must">必ず</span>' : ""}</h3></div></div>
       ${cmp}
       <div class="go2"><span class="note">このまま行くと：${(g => (g >= 1 ? `${bz ? `${bzName}のあと` : "待ち"}${Math.round(g)}分 → ` : ""))(r0.arrive - r0.walk - now)}歩く${r0.walk}分${r0.idle >= 1 ? ` → ${now < M.open + gateSlack() + 1 && !bz ? "入園の列と空き" : "空き"}${Math.round(r0.idle)}分${idleWhy(r0)}` : ""}${r0.wait >= 1 ? ` → 並ぶ${Math.round(r0.wait)}分` : ""}${RIDES[r0.it.key] && RIDES[r0.it.key].src !== "show" ? ` → 乗る${Math.round(r0.d)}分` : ""}</span><b>${hm(now)} → ${hm(r0.end)} おわり</b></div>
@@ -6381,7 +6608,7 @@ function renderLiveTL() {
       <div class="acts"><button type="button" class="btn primary" id="nx-go"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z' /> <path d='M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5' /></svg> このまま行く</button><button type="button" class="btn" id="donenext"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20.942 13.021a9 9 0 1 0 -9.407 7.967' /> <path d='M12 7v5l3 3' /> <path d='M15 19l2 2l4 -4' /></svg> 済んだ（記録）</button><button type="button" class="btn" id="nx-alt" aria-expanded="false" aria-controls="nxalt"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M18 4l3 3l-3 3' /> <path d='M18 20l3 -3l-3 -3' /> <path d='M3 7h3a5 5 0 0 1 5 5a5 5 0 0 0 5 5h5' /> <path d='M21 7h-5a4.978 4.978 0 0 0 -3 1m-4 8a4.984 4.984 0 0 1 -3 1h-3' /></svg> 代わりの候補</button><button type="button" class="btn" id="nx-replan"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4' /> <path d='M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4' /></svg> 残りを組み直す</button></div>
       <div class="row"><button type="button" class="btn small" id="skipnext">飛ばす</button><button type="button" class="btn small" id="wcnext" aria-expanded="false" aria-controls="nxdet"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6 10m-3 0a3 7 0 1 0 6 0a3 7 0 1 0 -6 0' /> <path d='M21 10c0 -3.866 -1.343 -7 -3 -7' /> <path d='M6 3h12' /> <path d='M21 10v10l-3 -1l-3 2l-3 -3l-3 2v-10' /> <path d='M6 10h.01' /></svg> 道中で寄る（トイレ・食べ物）</button></div>
       <div id="nxdet" hidden></div>
-      <div id="nxalt" hidden>${alts || `<p class="note">今は、あとの予定を遅らせずに入れ替えられる候補がありません。予定が狂ったときは「残りを組み直す」を。</p>`}</div>
+      <div id="nxalt" hidden>${plannedNext.length ? `<div class="chs"><b class="q">予定に入っている乗り物を、次にするなら</b>${plannedNext.map(o => `<button type="button" class="ch" data-next-planned="${esc(o.id)}">${rideImg(o.key) ? `<img src="${rideImg(o.key)}" alt="">` : ""}<span><b>${esc(RIDES[o.key].short)}</b><small>待ち約${Math.round(o.next.wait)}分・全体の終わり ${Math.abs(o.delta)<10 ? "ほぼ同じ" : o.delta<0 ? `${-o.delta}分早い` : `${o.delta}分遅い`}</small></span></button>`).join("")}</div><p class="note">候補を押すと変化を確認できます。確定するまで予定は変わりません。</p>` : ""}${alts || (!plannedNext.length ? `<p class="note">今は、あとの予定を遅らせずに入れ替えられる候補がありません。予定が狂ったときは「残りを組み直す」を。</p>` : "")}</div>
       <div id="nxconf"></div>
       ${r1 ? `<div class="then">そのあと：<b>${itemName(r1.it)}</b>（${hm(r1.start)}〜）${sim.rows[2] ? ` → ${itemName(sim.rows[2].it)}` : ""}・残りの乗り物${sim.rows.filter(q => RIDES[q.it.key] && RIDES[q.it.key].src !== "show" && !q.flag).length}個・終わり ${sim.end > M.close + 30 ? "閉園後" : hm(sim.end)}${sim.bad ? `・<b style="color:var(--bad)">間に合わないもの${sim.bad}件</b>` : ""}</div>` : ""}</div>` : `<div class="nx"><h3>今日の予定はすべて終わりました</h3><p class="note">下の「乗り物・食べ物を予定に足す」から、まだ乗れるものを足せます。</p></div>`));
   { const pl = document.getElementById("prepLive"); if (pl) wirePrep(pl); }
@@ -6392,6 +6619,7 @@ function renderLiveTL() {
   if (be) be.addEventListener("click", () => { const b = P().busy; P().busy = null; if (b) { S.liveLoc = b.loc; store.set("liveloc", b.loc); } save(); doReplan(); });  // 今から組み直す（前は予定の時刻が残って、長い空きが出ていた）
   if (r0 && now < M.close && !catchC && !noPick()) {
     wireChoices(document.getElementById("nextcard"), "live");
+    document.querySelectorAll("[data-next-planned]").forEach(b => b.addEventListener("click", () => { const choice = nextPlannedChoices(liveSim()).find(o => o.id === b.dataset.nextPlanned); if (!choice) { toast("livetoast", "条件が変わったので候補を選び直してください。"); return; } previewLive(`${RIDES[choice.key].short}を次にする`, choice.copy.filter(x => !P().done[x.id]), () => { P().items = choice.copy; }); }));
     const f = document.getElementById("nowq");
     if (f) f.addEventListener("submit", e => { e.preventDefault(); const raw = document.getElementById("nowqv").value.trim(), v = Number(raw); if (raw === "" || !isFinite(v) || v < 0) { document.getElementById("nowqv").focus(); return; } /* 空のまま押すと0分として入っていた */ const before = liveSim(); setOver(r0.it.key, Math.round(v), now); P().updSrc = "手入力"; save(); renderLiveTL(); const after = liveSim(); toast("livetoast", `${RIDES[r0.it.key].short}の今の待ち${Math.round(v)}分を入れました。ほかの乗り物の予測にも反映しています。終わり ${hm(before.end)} → ${hm(after.end)}。`); });
     document.getElementById("donenext").addEventListener("click", () => markDone(r0.it.id));
@@ -6945,7 +7173,17 @@ function nightTry(o, after) {
     addItemAt(it, i < list.length ? list[i].id : null, "plan"); vSig = ""; renderVerdict(curSim());
   };
 }
+function renderRetroPick() {
+  const box = document.getElementById("rtpick"), days = DAYS.filter(x => x.d < TODAY).slice(-6).reverse(), last = days[0] && days[0].d;
+  box.innerHTML = `<h3>過ぎた日の答え合わせ</h3><p class="note">下の表は、選んだ日の<b>予測</b>です（記録 ${last ? md(last) : ""} までの似た日から作ったもの。今日を選んでいるときは、当日タブを開いている間は5分ごとに今の待ちを読み込み、あとの時間を直します）。過ぎた日を選ぶと、<b>前日の夜までの予測</b>・<b>約1か月前の予測</b>と<b>実際</b>を並べて、どれだけずれたかを見られます。</p>
+    <div class="row" id="rtchips">${days.map(x => `<button type="button" class="btn small" data-rtd="${x.d}">${md(x.d)}</button>`).join("")}</div>
+    <label class="note">ほかの日 <input type="date" id="rtdate" min="${DAYS[0].d}" max="${last || ""}"></label>`;
+  const go = d => { if (d && DAYMAP[d] && d < TODAY) showRetro(d, "retro2"); }, inp = document.getElementById("rtdate");
+  box.querySelectorAll("[data-rtd]").forEach(b => (b.onclick = () => { inp.value = b.dataset.rtd; go(b.dataset.rtd); }));
+  inp.onchange = () => go(inp.value);
+}
 function renderHours() {
+  renderRetroPick();
   renderNight();
   { const hm0 = document.getElementById("hmap"); if (hm0) hm0.hidden = true; }  // 乗り物が行のヒートマップは出さない（時間が行の表に一本化）
   renderHourSum();
@@ -6966,6 +7204,7 @@ function renderHours() {
   { const ra = recordAge(), tb = document.getElementById("tablebox"); let n0 = document.getElementById("hrage"); if (!n0) { n0 = document.createElement("p"); n0.id = "hrage"; n0.className = "note"; tb.before(n0); } n0.textContent = ra.n >= 3 ? `予測は記録（${+ra.last.slice(5, 7)}/${+ra.last.slice(8)}まで・${ra.n}日前）から。直近の混み方は入っていません。` : ""; }  // 記録の古さを数字のすぐそばにも
   { const tb = document.getElementById("tablebox"), upd = () => tb.classList.toggle("end", tb.scrollLeft + tb.clientWidth >= tb.scrollWidth - 4); tb.onscroll = upd; upd(); if (!tb._ro && window.ResizeObserver) (tb._ro = new ResizeObserver(() => tb.onscroll())).observe(tb); }
   document.querySelectorAll("#tablebox thead button").forEach(b => b.addEventListener("click", () => { focusK = b.dataset.k; renderDetail(); document.getElementById("detail").scrollIntoView({ behavior: "smooth", block: "start" }); }));
+  renderWave();
   renderDetail();
 }
 // 待ちの波: 選んだ乗り物を1日の上がり幅（最長−最短）で「時間を決める／少し気にする／いつ並んでも同じ」に分け、同じ目盛りで並べる。オレンジの点は今の予定で並び始める時刻
