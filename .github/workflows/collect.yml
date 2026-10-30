@@ -31,8 +31,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - run: git clone -q --depth 1 --branch data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" d
-      - run: python3 .github/collect/night.py d . ${{ inputs.day }}
+      - run: git clone -q --depth 1 --branch data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" g
+      - run: python3 .github/collect/night.py g . ${{ inputs.day }}
         env: { TPW_KEY: "${{ secrets.TPW_KEY }}" }
       - run: |
           git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
