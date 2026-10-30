@@ -15,7 +15,7 @@ img { max-width: 100%; }
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <style>
 /* Layout: 写真のヒーロー → タブ（いつ行く／計画＝選ぶ＋タイムライン＋地図／フード・トイレ／当日／時間帯）。計画はカードからタイムラインへドラッグ */
 :root {
@@ -383,9 +383,9 @@ details.set .inner { display: grid; gap: 12px; padding-bottom: 14px; }
 .backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 .backdrop i { position: absolute; inset: 0; background: center / cover no-repeat; opacity: 0; transition: opacity 1.6s ease; filter: saturate(.85);
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 85%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 85%, transparent 100%); }
-.backdrop i.on { opacity: .3; }
-:root[data-theme="dark"] .backdrop i.on { opacity: .45; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .backdrop i.on { opacity: .45; } }
+.backdrop i.on { opacity: .24; }
+:root[data-theme="dark"] .backdrop i.on { opacity: .26; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .backdrop i.on { opacity: .26; } }
 .wrap { position: relative; z-index: 1; }
 :is(.panel, .strip, .card .body, .month, details.more, .steps button) { background: color-mix(in srgb, var(--surface) 80%, transparent); }
 .fact { background: color-mix(in srgb, var(--surface-2) 75%, transparent); }
@@ -457,238 +457,6 @@ details.set .inner { display: grid; gap: 12px; padding-bottom: 14px; }
 .verdict .vd-sc small:first-child { line-height: 1.2; text-align: right; }
 .verdict .vd-adv { display: grid; gap: 2px; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--vc) 10%, var(--surface)); }
 .verdict .vd-adv > b { font-size: 15px; color: var(--ink); } .verdict .vd-adv p { font-size: 14px; }
-/* 導入（旅雑誌の特集ふう。4案を作って審査し、仕上げた案。scratchpad/intro_designs/final）*//* ===================== intro : 旅雑誌の特集 ===================== */
-.intro{
-  --pad:clamp(22px,6vw,76px);
-  --intro-mincho:"Zen Old Mincho",serif;
-  --intro-figure:"Cormorant Garamond","Zen Old Mincho",serif;
-  --mark:var(--ink);
-  position:relative;background:var(--surface);color:var(--ink);
-  border-radius:22px;overflow:hidden;
-  padding:0 var(--pad);
-  font-size:16px;line-height:1.85;letter-spacing:.02em;
-}
-.intro *,.intro *::before,.intro *::after{box-sizing:border-box}
-.intro p,.intro figure,.intro ol,.intro ul{margin:0}
-.intro h2,.intro h3{margin:0;font-family:var(--intro-mincho);font-weight:900;letter-spacing:.04em;font-feature-settings:"palt" 1}
-.intro h2,.intro h3,.intro .ivd,.intro .aside,.intro .body,.intro .q-sub,.intro .for li,.intro .close .sub,.intro .bye,.intro .ledger th{word-break:auto-phrase;text-wrap:balance}
-.intro .body,.intro .lead,.intro .irs p,.intro .turn p,.intro .note,.intro .ilg,.intro .honest,.intro .todo{word-break:auto-phrase;text-wrap:pretty}
-.intro .fig{font-family:var(--intro-figure);font-variant-numeric:lining-nums tabular-nums;font-weight:600;letter-spacing:0}
-.intro .nw{white-space:nowrap}
-.intro img{display:block;width:100%}
-.intro .cap{position:absolute;left:0;right:0;bottom:0;margin:0;padding:72px 18px 14px;font-size:14px;letter-spacing:.06em;line-height:1.5;color:var(--hero-ink);
-  background:linear-gradient(transparent,color-mix(in srgb,var(--shade) 78%,transparent));text-shadow:0 1px 3px var(--shade)}
-
-/* ---- opening : 文字だけ ---- */
-.intro .open{padding-top:clamp(44px,6.5vw,84px)}
-.intro .q{font-size:clamp(32px,5.6vw,66px);line-height:1.34;letter-spacing:0;text-indent:-.5em;padding-left:.5em}
-.intro .q-sub{margin-top:14px;font-family:var(--intro-mincho);font-weight:700;font-size:clamp(19px,2.3vw,26px);color:var(--ink-2);letter-spacing:.06em;font-feature-settings:"palt" 1}
-.intro .open-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:32px clamp(36px,6vw,80px);align-items:start;margin-top:clamp(36px,5vw,60px)}
-.intro .lead{font-family:var(--intro-mincho);font-weight:600;font-size:17px;line-height:2.05;color:var(--ink)}
-.intro .lead em{font-style:normal;font-weight:700;text-decoration:underline var(--sun);text-decoration-thickness:.2em;text-underline-offset:.22em;text-decoration-skip-ink:none}
-/* こんな人に：箇条書きではなく、余白の欄に書き添えた語り口で */
-.intro .for{padding:4px 0 4px clamp(20px,2.4vw,30px);border-left:1px solid var(--ink)}
-.intro .for h3{font-size:15px;font-weight:700;letter-spacing:.14em;line-height:1.6;color:var(--ink-2)}
-.intro .for ul{list-style:none;padding:0;margin-top:6px}
-.intro .for li{margin-top:12px;font-family:var(--intro-mincho);font-weight:600;font-size:17px;line-height:1.75;color:var(--ink);font-feature-settings:"palt" 1;letter-spacing:.04em}
-
-/* ---- TOP3 ---- */
-.intro .sec{margin-top:clamp(72px,10vw,120px)}
-.intro .sec-head{padding-bottom:16px;border-bottom:3px double var(--ink)}
-.intro .sec-head h2{font-size:clamp(30px,4.6vw,54px);line-height:1.25}
-
-.intro .irk{--rp:clamp(40px,5.4vw,64px);display:grid;grid-template-columns:clamp(104px,12vw,150px) minmax(0,1fr);gap:0 clamp(20px,4vw,52px);padding:var(--rp) 0;border-bottom:1px solid var(--line)}
-.intro .irk:last-child{border-bottom:0;padding-bottom:0}
-.intro .irk .main{min-width:0}
-.intro .irk .wide{grid-column:1 / -1;min-width:0;margin-top:clamp(28px,3.6vw,44px)}
-.intro .num{align-self:start;display:flex;align-items:flex-start;gap:8px}
-.intro .num .n{font-family:var(--intro-figure);font-variant-numeric:lining-nums;font-style:italic;font-weight:500;font-size:clamp(96px,14vw,180px);line-height:.74;letter-spacing:-.03em;color:var(--ink)}
-.intro .num .v{writing-mode:vertical-rl;font-family:var(--intro-mincho);font-weight:700;font-size:14px;letter-spacing:.3em;color:var(--ink-3);padding-top:4px}
-.intro .irk h3{font-size:clamp(24px,3vw,36px);line-height:1.35;margin-bottom:16px}
-.intro .body{max-width:36em;color:var(--ink-2)}
-
-/* 1位：表をカード幅いっぱいに */
-.intro .ledger table{width:100%;border-collapse:collapse}
-.intro .ledger th,.intro .ledger td{text-align:left;font-weight:500;padding:16px 0;border-bottom:1px solid var(--line);vertical-align:baseline}
-.intro .ledger thead th{font-size:14px;letter-spacing:.06em;color:var(--ink-2);padding:6px 0;border-bottom:1px solid var(--ink)}
-.intro .ledger tbody th{font-size:16px;color:var(--ink-2);padding-right:16px;width:34%;line-height:1.5}
-.intro .ledger td{padding-left:16px;font-family:var(--intro-figure);font-variant-numeric:lining-nums tabular-nums;font-weight:600;font-size:clamp(26px,4.4vw,54px);line-height:1.05;white-space:nowrap}
-.intro .ledger td small{font-family:var(--intro-mincho);font-size:.46em;font-weight:700;margin:0 .14em}
-.intro .ledger td small.u{font-size:.56em;margin-left:.22em}
-.intro .ledger td+td,.intro .ledger thead th:last-child{text-align:right}
-.intro .ledger thead th+th{padding-left:16px}
-.intro .ledger tr.is-pop td{color:var(--ink-3)}
-.intro .ledger .x{background:linear-gradient(var(--ink-3),var(--ink-3)) 0 58% / 100% 1px no-repeat}
-.intro .ledger tr.is-navi th{font-weight:700;color:var(--ink)}
-.intro .ledger tr.is-navi td{color:var(--brand)}
-.intro .ledger tr.is-navi th,.intro .ledger tr.is-navi td{border-bottom:1px solid var(--ink)}
-
-.intro .ivd{font-family:var(--intro-mincho);font-weight:700;font-size:clamp(19px,2.2vw,25px);line-height:1.6;max-width:24em;letter-spacing:.05em;font-feature-settings:"palt" 1}
-.intro .ivd .fig{font-size:1.7em;line-height:1;margin:0 .06em}
-
-/* ナビの順番：番号は付けず、線と点で順を見せる */
-.intro .route{margin-top:30px}
-.intro .route .lbl{font-size:14px;font-weight:700;color:var(--ink-2);margin-bottom:10px}
-.intro .route ol{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:10px 0}
-.intro .route li{position:relative;flex:1 1 0;min-width:0;padding:22px 14px 0 0;line-height:1.35;font-weight:700;font-size:15px;color:var(--ink);word-break:auto-phrase}
-.intro .route li::before{content:"";position:absolute;top:2px;left:0;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ink);background:var(--surface)}
-.intro .route li::after{content:"";position:absolute;top:6px;left:13px;right:4px;border-top:1px solid var(--ink-3)}
-.intro .route li:last-child::after{display:none}
-.intro .route li:first-child::before{background:var(--ink)}
-.intro .note{margin-top:16px;font-size:14px;color:var(--ink-2);line-height:1.75}
-.intro .concl{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px clamp(28px,5vw,64px);align-items:end;margin-top:clamp(32px,4vw,44px)}
-.intro .aside{max-width:34em;font-family:var(--intro-mincho);font-weight:600;font-size:16px;color:var(--ink-2);line-height:1.95}
-
-/* 2位：写真は内側の余白にそろえて置く（右端・上下ともほかの段と同じ線） */
-.intro .irk2{grid-template-columns:clamp(104px,12vw,150px) minmax(0,1fr) minmax(0,.86fr)}
-.intro .irk2 h3{font-size:clamp(24px,2.7vw,32px)}
-.intro .irk2 .photo{grid-column:3;grid-row:1;position:relative;min-height:440px;overflow:hidden}
-.intro .irk2 .photo img{position:absolute;inset:0;height:100%;object-fit:cover;object-position:55% 40%}
-.intro .ibars{margin-top:24px;max-width:480px}
-.intro .ibars .ilg{font-size:14px;color:var(--ink-2);line-height:1.6;padding-bottom:8px;border-bottom:1px solid var(--ink)}
-.intro .ibar{display:grid;grid-template-columns:4.2em minmax(0,1fr);align-items:end;gap:0 14px;padding:14px 0 12px;border-bottom:1px solid var(--line)}
-.intro .ibar .h{font-size:14px;font-weight:700;color:var(--ink-2);padding-bottom:2px}
-.intro .ibar .val{display:block;font-family:var(--intro-figure);font-variant-numeric:lining-nums tabular-nums;font-weight:600;font-size:clamp(30px,3.6vw,42px);line-height:1;color:var(--ink-3)}
-.intro .ibar .val small{font-family:var(--intro-mincho);font-size:.46em;font-weight:700;margin-left:.15em}
-.intro .ibar .line{position:relative;display:block;height:1px;margin:10px 0 3px;width:calc(var(--w) * (100% - 8px));min-width:2px;background:var(--ink-3)}
-.intro .ibar .line::after{content:"";position:absolute;right:-7px;top:-3.5px;width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
-.intro .ibar.late .h{color:var(--ink)}
-.intro .ibar.late .val{color:var(--brand)}
-.intro .ibar.late .line,.intro .ibar.late .line::after{background:var(--brand)}
-.intro .ibars .ivd{margin-top:18px}
-.intro .irk2 .aside{margin-top:22px}
-
-/* 3位：見出しと本文を左右に、図はカード幅いっぱいに */
-.intro .irk3 .main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:12px clamp(28px,4vw,52px);align-items:end}
-.intro .irk3 h3{margin-bottom:0}
-.intro .shift{position:relative;padding:26px 0 34px;--k:4.2em}
-.intro .shift .srow{display:grid;grid-template-columns:var(--k) minmax(0,1fr);align-items:center;margin-top:30px}
-.intro .shift .srow:first-child{margin-top:0}
-.intro .shift .k{font-size:14px;letter-spacing:.06em;color:var(--ink-2);font-weight:700}
-.intro .shift .trk{position:relative;height:22px}
-.intro .shift i{position:absolute;top:0;bottom:0;left:var(--x);width:var(--w);background:var(--mark)}
-.intro .shift i.late{background:repeating-linear-gradient(135deg,var(--mark) 0 2px,transparent 2px 5px);border:1px solid var(--mark)}
-.intro .shift i.lost{background:none;border:1.5px dashed var(--ink-3)}
-.intro .shift em{position:absolute;top:30px;left:var(--x);font-style:normal;font-size:14px;letter-spacing:.04em;color:var(--ink-2);white-space:nowrap;line-height:1.4}
-.intro .shift .closeline{position:absolute;top:0;bottom:0;left:calc(var(--k) + (100% - var(--k)) * .877);border-left:1px solid var(--ink)}
-.intro .shift .closeline span{position:absolute;top:-2px;left:6px;font-size:14px;color:var(--ink);white-space:nowrap;font-family:var(--intro-mincho);font-weight:700;line-height:1.4}
-.intro .keys{list-style:none;padding:14px 0 0;display:flex;flex-wrap:wrap;gap:6px 26px;border-top:1px solid var(--line);font-size:14px;color:var(--ink-2)}
-.intro .keys li{display:flex;align-items:center;gap:8px;white-space:nowrap}
-.intro .keys li::before{content:"";width:22px;height:10px;background:var(--mark)}
-.intro .keys .late::before{background:repeating-linear-gradient(135deg,var(--mark) 0 2px,transparent 2px 5px);border:1px solid var(--mark)}
-.intro .keys .lost::before{background:none;border:1.5px dashed var(--ink-3)}
-
-/* ---- turn : 夜の写真を敷いて、話の向きを変える ---- */
-.intro .turn{position:relative;isolation:isolate;margin:clamp(56px,7vw,84px) calc(-1 * var(--pad)) 0;padding:clamp(56px,8vw,104px) var(--pad) clamp(52px,7vw,92px);
-  min-height:clamp(420px,46vw,540px);display:flex;flex-direction:column;justify-content:flex-end;background:var(--shade);color:var(--hero-ink)}
-.intro .turn > img{position:absolute;inset:0;z-index:-2;height:100%;object-fit:cover;object-position:68% 55%}
-.intro .turn::before{content:"";position:absolute;inset:0;z-index:-1;
-  background:linear-gradient(90deg,color-mix(in srgb,var(--shade) 92%,transparent) 0%,color-mix(in srgb,var(--shade) 74%,transparent) 46%,color-mix(in srgb,var(--shade) 12%,transparent) 100%)}
-.intro .turn h2{font-weight:900;line-height:1.3;letter-spacing:.04em}
-.intro .turn h2 .t1{display:block;font-size:clamp(20px,2.4vw,28px);font-weight:700;letter-spacing:.1em;color:var(--hero-ink-2)}
-.intro .turn h2 .t2{display:block;margin-top:.18em;font-size:clamp(40px,7.2vw,88px);line-height:1.15;letter-spacing:.02em;margin-left:-.06em}
-.intro .turn p{margin-top:clamp(22px,2.8vw,30px);max-width:30em;font-size:17px;line-height:1.95;color:var(--hero-ink-2);text-shadow:0 1px 2px var(--shade)}
-.intro .turn p em{font-style:normal;font-weight:700;color:var(--hero-ink)}
-.intro .turn .tag{position:absolute;top:18px;right:var(--pad);font-size:14px;letter-spacing:.08em;color:var(--hero-ink-2);text-shadow:0 1px 3px var(--shade)}
-
-/* ---- reasons : TOP3と同じ斜体数字の文法。数字の根拠は本文の下に ---- */
-.intro .iwhy{margin-top:clamp(72px,9vw,112px)}
-.intro .iwhy h2{font-size:clamp(28px,3.8vw,46px);line-height:1.35}
-.intro .iwhy h2 .sub{display:block;margin-top:.7em;font-size:max(17px,.46em);font-weight:700;line-height:1.5;color:var(--ink-2);letter-spacing:.08em}
-.intro .irs{list-style:none;padding:0;margin-top:clamp(28px,3.4vw,40px)}
-.intro .irs li{display:grid;grid-template-columns:clamp(64px,8vw,104px) minmax(0,1fr) minmax(0,1.25fr);gap:10px clamp(20px,3.6vw,48px);align-items:start;padding:clamp(28px,3.4vw,40px) 0;border-top:1px solid var(--line)}
-.intro .irs li:last-child{border-bottom:1px solid var(--line)}
-.intro .irs .rn{font-family:var(--intro-figure);font-variant-numeric:lining-nums;font-style:italic;font-weight:500;font-size:clamp(64px,7.4vw,96px);line-height:.74;letter-spacing:-.03em;color:var(--ink)}
-.intro .irs h3{font-size:clamp(21px,2.3vw,27px);line-height:1.5;padding-top:.1em}
-.intro .irs p{font-size:16px;line-height:1.9;color:var(--ink-2)}
-.intro .irs .datum{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;margin-top:16px;padding-top:12px;border-top:1px solid var(--ink)}
-.intro .irs .datum b{font-family:var(--intro-figure);font-variant-numeric:lining-nums tabular-nums;font-weight:600;font-size:clamp(40px,4.4vw,54px);letter-spacing:0;color:var(--ink);line-height:1}
-.intro .irs .datum b small{font-family:var(--intro-mincho);font-size:.5em;font-weight:700;margin-left:.08em}
-.intro .irs .datum b i{font-style:normal;color:var(--ink-3);font-weight:500;margin:0 .22em}
-.intro .irs .datum span{font-size:14px;font-weight:700;color:var(--ink-2);line-height:1.5}
-.intro .honest{margin-top:clamp(36px,4.4vw,52px);max-width:32em;font-family:var(--intro-mincho);font-weight:600;font-size:17px;line-height:2.05;color:var(--ink)}
-.intro .honest b{font-weight:700;text-decoration:underline var(--sun);text-decoration-thickness:.2em;text-underline-offset:.22em;text-decoration-skip-ink:none}
-
-/* ---- close ---- */
-.intro .close{margin-top:clamp(88px,11vw,140px);text-align:center;container-type:inline-size}
-.intro .close .pre{font-family:var(--intro-mincho);font-weight:700;font-size:16px;letter-spacing:.1em;color:var(--ink-2);margin-bottom:14px}
-.intro .close h2{line-height:1.5;font-weight:900}
-.intro .close h2 .a{display:block;font-size:clamp(22px,3.2vw,38px);font-weight:700;color:var(--ink-2)}
-.intro .close h2 .b{display:block;white-space:nowrap;font-size:min(64px,calc((100cqi + 2 * var(--pad) - 24px) / 11.6));margin:.12em calc(12px - var(--pad)) 0;color:var(--ink);letter-spacing:.02em}
-.intro .close .sub{margin:26px auto 0;max-width:30em;font-family:var(--intro-mincho);font-weight:600;font-size:17px;color:var(--ink-2);line-height:2}
-
-/* 写真で終わる：カードの下の角まで裁ち落とし、言葉とボタンを写真に置く */
-.intro .finale{position:relative;isolation:isolate;margin:clamp(56px,7vw,88px) calc(-1 * var(--pad)) 0;min-height:clamp(480px,54vw,620px);
-  display:flex;flex-direction:column;justify-content:flex-end;padding:clamp(40px,6vw,72px) var(--pad) clamp(36px,5vw,60px);color:var(--hero-ink);background:var(--shade)}
-.intro .finale > img{position:absolute;inset:0;z-index:-2;height:100%;object-fit:cover;object-position:62% 40%}
-.intro .finale::before{content:"";position:absolute;inset:0;z-index:-1;
-  background:linear-gradient(0deg,color-mix(in srgb,var(--shade) 92%,transparent) 0%,color-mix(in srgb,var(--shade) 70%,transparent) 44%,transparent 78%),linear-gradient(90deg,color-mix(in srgb,var(--shade) 40%,transparent),transparent 60%)}
-.intro .finale .tag{position:absolute;top:18px;right:var(--pad);font-size:14px;letter-spacing:.08em;color:var(--hero-ink);text-shadow:0 1px 3px var(--shade)}
-.intro .act{max-width:36em}
-.intro .todo{font-size:16px;line-height:1.9;color:var(--hero-ink-2);text-shadow:0 1px 2px var(--shade)}
-.intro .todo b{font-family:var(--intro-mincho);font-weight:700;color:var(--hero-ink)}
-.intro .bye{margin-top:14px;font-family:var(--intro-mincho);font-weight:900;font-size:clamp(30px,4.4vw,52px);line-height:1.35;letter-spacing:.04em;font-feature-settings:"palt" 1;color:var(--hero-ink);text-shadow:0 2px 12px color-mix(in srgb,var(--shade) 60%,transparent)}
-.intro .btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:clamp(22px,2.6vw,30px)}
-.intro .finale .btn{min-height:46px;padding:10px 22px;font-size:15px}
-.intro .finale .btn:not(.sun){background:color-mix(in srgb,var(--shade) 35%,transparent);color:var(--hero-ink);border-color:color-mix(in srgb,var(--hero-ink) 70%,transparent)}
-.intro .btn:focus-visible{outline:2px solid var(--sun);outline-offset:3px}
-
-/* ---- dark ---- */
-:root[data-theme="dark"] .intro{--mark:var(--ink-2)}
-:root[data-theme="dark"] .intro .irk2 .photo img{filter:brightness(.85)}
-:root[data-theme="dark"] .intro .turn{box-shadow:inset 0 1px 0 var(--line),inset 0 -1px 0 var(--line)}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .intro{--mark:var(--ink-2)}
-  :root:not([data-theme="light"]) .intro .irk2 .photo img{filter:brightness(.85)}
-  :root:not([data-theme="light"]) .intro .turn{box-shadow:inset 0 1px 0 var(--line),inset 0 -1px 0 var(--line)}
-}
-
-/* ---- motion ---- */
-@media (prefers-reduced-motion: no-preference){
-  .intro .irk2 .photo img,.intro .turn > img,.intro .finale > img{animation:intro-settle 1.6s cubic-bezier(.2,.7,.2,1) both}
-  @keyframes intro-settle{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
-}
-
-/* ---- phone ---- */
-@media (max-width:760px){
-  .intro .open{padding-top:36px}
-  .intro .open-row{grid-template-columns:minmax(0,1fr)}
-  .intro .lead{font-size:16.5px}
-  .intro .for li{font-size:16px}
-  .intro .irk,.intro .irk2{grid-template-columns:minmax(0,1fr)}
-  .intro .irk > *,.intro .irk2 .photo{grid-column:1;grid-row:auto}
-  .intro .num{margin-bottom:22px}
-  .intro .num .n{font-size:104px}
-  .intro .irk .wide{margin-top:24px}
-  .intro .irk2 .photo{order:-1;margin:0 calc(-1 * var(--pad)) 30px;min-height:0}
-  .intro .irk2 .photo img{position:static;aspect-ratio:16/10;height:auto;object-position:50% 22%}
-  .intro .ledger tbody th{width:7.4em;font-size:14.5px}
-  .intro .ledger td{font-size:24px;padding-left:10px}
-  .intro .route ol{display:block}
-  .intro .route li{padding:6px 0 6px 26px;min-width:auto;font-size:15px}
-  .intro .route li::before{top:13px}
-  .intro .route li::after{top:24px;bottom:-11px;left:4.5px;right:auto;border-top:0;border-left:1px solid var(--ink-3)}
-  .intro .concl{grid-template-columns:minmax(0,1fr)}
-  .intro .irk3 .main{grid-template-columns:minmax(0,1fr)}
-  .intro .irk3 h3{margin-bottom:4px}
-  .intro .shift{--k:3em}
-  .intro .shift .closeline span{left:auto;right:6px}
-  .intro .turn{min-height:0;padding-top:200px}
-  .intro .turn::before{background:linear-gradient(0deg,color-mix(in srgb,var(--shade) 94%,transparent) 0%,color-mix(in srgb,var(--shade) 80%,transparent) 55%,color-mix(in srgb,var(--shade) 20%,transparent) 100%)}
-  .intro .turn > img{object-position:60% 30%}
-  .intro .turn p{font-size:16px}
-  .intro .iwhy h2 .sub{margin-top:.9em}
-  .intro .irs li{grid-template-columns:auto minmax(0,1fr);gap:12px 18px}
-  .intro .irs .rn{font-size:64px}
-  .intro .irs h3{align-self:end}
-  .intro .irs li > div{grid-column:1 / -1}
-  .intro .honest{font-size:16.5px}
-  .intro .close .sub{text-wrap:pretty}
-  .intro .finale{min-height:600px}
-  .intro .finale > img{object-position:58% 30%}
-  .intro .finale::before{background:linear-gradient(0deg,color-mix(in srgb,var(--shade) 94%,transparent) 0%,color-mix(in srgb,var(--shade) 72%,transparent) 52%,transparent 82%)}
-  .intro .finale .btn{flex:1 1 100%}
-}
 .steps button { font: inherit; text-align: left; display: flex; gap: 8px; align-items: flex-start; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 14px; padding: 10px; cursor: pointer; }
 .steps button:hover { border-color: var(--brand); }
 .steps b { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: var(--brand-ink); font-family: var(--round); font-weight: 400; }
@@ -1525,249 +1293,389 @@ html { scroll-padding-top: calc(var(--toph, 150px) + 8px); }
   .panel { padding: 16px 14px; }
 }
 
-/* ===================== 全体の作り直し（2026/10/12）: 同じ旅雑誌の別ページ =====================
-   土台（明朝の見出し・Cormorant の数字・細い罫線）＋タブごとの表情（いつ行く=暦／計画=旅程表／フード=メニュー／当日=発車標／時間帯=潮見表） */
-/* ===== 土台: 旅雑誌の文法（導入と地続き）=====
-   見出しは明朝（Zen Old Mincho）、数字と英字の小見出しは Cormorant Garamond の斜体、区切りは細い罫線、角は控えめ。
-   色はトークンだけ。導入（.intro）とヒーロー（.hero）には触らない */
-:root { --mincho: var(--font); --figure: var(--font); }
-
-/* 上のバー: 雑誌の柱 */
-.top { border-bottom: 1px solid var(--ink); }
-.logo { font-family: var(--mincho) !important; font-weight: 900 !important; letter-spacing: .08em; font-size: 19px; }
+/* ユニバと共通の書体・パネル・タブ配置 */
+.tabs .ti { display: none; }
+.mnav { display: none; }
+@media (max-width: 700px) {
+  .top { backdrop-filter: none; background: var(--bg); padding-block: 6px; }
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; overflow: visible;
+    background: var(--surface); border-top: 1px solid var(--line); padding: 2px 2px calc(env(safe-area-inset-bottom, 0px) + 2px); box-shadow: 0 -6px 20px color-mix(in srgb, var(--shade) 8%, transparent); }
+  .tabs button { display: grid; justify-items: center; align-content: center; gap: 3px; padding: 6px 0 5px; min-height: 56px; border-bottom: 0; font-size: 10.5px !important; letter-spacing: 0; color: var(--ink-3); }
+  .tabs .ti { display: block; width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .tabs button[aria-selected="true"] { color: var(--brand); }
+  .tabs button[aria-selected="true"] .ti { stroke-width: 2.4; }
+  .wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .fab:not([hidden]) { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); }
+  .sheet { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); }
+}
+/* ===== デザイン刷新（2026/10/13）: Apple HIG・Material 3・デジタル庁/SmartHR・Stripe/Linear などを参考に。書体1つ・太さ3段階・面と影2段階・飾りの写真と動きを減らす ===== */
+:root {
+  /* 書体: Dela Gothic One をやめる。var(--round) はそのまま本文の書体になる */
+  --font: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+  --round: var(--font);
+  --num: 'Inter', var(--font);            /* 時刻・分・%・日数の数字だけ（tabular-nums） */
+  /* 文字サイズ（px）: これ以外は使わない */
+  --fs-micro: 11px;   /* 下タブのラベル・表のセルの注記だけ */
+  --fs-xs: 12px;      /* バッジ・凡例・クレジット・カードの補足 */
+  --fs-sm: 13px;      /* メタ（徒歩◯分・エリア）・注記 */
+  --fs-md: 14px;      /* ボタン・チップ・補助の本文 */
+  --fs-base: 16px;    /* 本文 */
+  --fs-lg: 18px;      /* h3・カードの見出し */
+  --fs-xl: 20px;      /* h2（スマホ。PC は 24〜26px） */
+  --fs-2xl: 28px;     /* h1（スマホ。PC は clamp で 40px まで） */
+  --fs-num: 34px;     /* 当日のカウントダウン */
+  --lh-body: 1.7; --lh-dense: 1.4; --lh-title: 1.3; --lh-one: 1.15;
+  --fw-r: 400; --fw-m: 500; --fw-b: 700;   /* 800 と 900 は使わない */
+  /* 余白（4px 単位） */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+  /* 角丸 */
+  --r-s: 8px; --r-m: 12px; --r-l: 16px; --r-pill: 999px;
+  /* 影は2段階だけ */
+  --shadow-1: 0 0 0 1px rgba(20,26,46,.06), 0 1px 2px rgba(20,26,46,.06);
+  --shadow-2: 0 2px 6px rgba(20,26,46,.08), 0 12px 28px rgba(20,26,46,.14);
+  --ease: cubic-bezier(.2,0,0,1); --t-fast: .15s; --t-med: .25s;
+  /* 面と文字 */
+  --bg: #f4f6fb; --surface: #ffffff; --surface-2: #eef1f8; --line: #e1e5ee;
+  --ink: #141a2e; --ink-2: #3d4560; --ink-3: #5b6380;   /* ink-3 は #eef1f8 の上でも 4.5:1 以上 */
+  --brand: #1450d2; --brand-ink: #ffffff; --brand-soft: #e7eeff;   /* 押せるもの・選択中・「次」だけ */
+  --good: #0b7a4b; --good-soft: #e1f5ea; --warn: #8a5200; --warn-soft: #fff1d6; --bad: #c42f2f; --bad-soft: #fde8e8;
+  --sun: #ffc21a; --sun-ink: #2a1e00;   /* 注意のハイライトだけ。飾りには使わない */
+  /* 分類の色（予定の点・地図のピン・線にだけ使い、文字の色にはしない） */
+  --ride: #1450d2; --meal: #23a061; --food: #c24e1c; --store: #e5622a; --toilet: #1a72c2; --walk: #a7adbf; --waitc: #f29b2e; --free: #e9ecf4;
+  /* 待ち時間（BINS ≤20/40/60/90/120/150/それより長い）: 明るさが一方向に下がる。白い文字は w6・w7 だけ */
+  --w1: #fff9db; --w2: #feeba8; --w3: #fed37a; --w4: #fdae5b; --w5: #f7853f; --w6: #c8441c; --w7: #9e2a14; --wt: #1a1d24; --wt7: #ffffff;
+  /* 混雑カレンダー ◎○△×（ふつうを真ん中にした配色。文字は --ink） */
+  --c0: #c6e0f5; --c1: #eef1f5; --c2: #fbddb3; --c3: #f3ae86;
+}
+/* P1 当日「一覧」の行がスマホで3行に崩れる不具合を直す */
+@media (max-width: 700px) {
+  .tlc.tl-item, .tlc.done { grid-template-columns: 14px 44px 22px minmax(0, 1fr) auto 44px; gap: 6px; min-height: 52px; padding: 4px 0; }
+}
+.tlc .t { font-family: var(--num); font-weight: 600; font-size: 14px; }
+.tlc .nm { font-size: 15px; font-weight: 700; }
+.tlc .nm small { font-size: 12px; font-weight: 400; }
+.tlc.next { border-radius: var(--r-s); box-shadow: inset 3px 0 0 var(--brand); }
+/* P2 書体を1つにし、太さは400/500/700の3段階にする。数字はInterの等幅数字にする */
+:root { --round: var(--font); --num: 'Inter', var(--font); }
+body { font-size: 16px; line-height: 1.7; }
+h1, h2, .logo, .planhero h2, .rp-catch { font-family: var(--font); font-weight: 700; letter-spacing: .01em; font-feature-settings: 'palt'; }
+h1 { line-height: 1.25; }
+h2 { font-size: clamp(20px, 2.2vw, 26px); line-height: 1.35; word-break: auto-phrase; text-wrap: balance; }
+h3, .grp h3 { font-size: 18px; font-weight: 700; }
+:is(.tabs button, .presets button, .gtabs button, .tipchips button, .seg button, .btn, .datechip, .card .must, .card .info, .badges button) { font-family: var(--font); font-weight: 500; }
+:is(.btn.primary, .seg button[aria-pressed='true']) { font-weight: 700; }
+:is(.card .ph .nm, .card .ph, .tl-name, .tlc .nm, .steps span, .fcard b, .rp-mcard b, .acard b, ol.tips li b, .fixbox .fh, .xp, .alt .up) { font-family: var(--font); font-weight: 700; }
+:is(.fact .k, .stat .k, .rank span, .cal .wd, .steps small) { font-weight: 500; }
+:is(.tl-time, .tlc .t, .cd, .stat .v, .fact .v, .kpis b, .rp-facts b, .cand .big, .wchip, .wt td, .bigflow span, .rank b, .rank .sc, .alt b.n, .perride .n, .mnav b, .cal button b, .st-time, .rp-price, .month .mph b, .fixbox .rk, .steps b, .tl-no, .tlc .no) { font-family: var(--num); font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: 0; }
+/* 背景の写真・写真の帯・コラージュは、元に戻した（ユーザー: 背景の写真どこ行った？）。ヘッダーだけは不透明のまま（文字が読みにくくならないように） */
+.top { background: var(--bg); backdrop-filter: none; }
+/* P4 スマホ: いつ行くタブの大きな写真を430pxから300pxにする */
+.hero::after { background: linear-gradient(0deg, rgba(7,10,20,.78) 0%, rgba(7,10,20,.42) 40%, rgba(7,10,20,0) 75%); }
+@media (min-width: 701px) { .hero::after { background: linear-gradient(0deg, rgba(7,10,20,.75) 0%, rgba(7,10,20,.3) 55%, rgba(7,10,20,0) 85%), linear-gradient(90deg, rgba(7,10,20,.4), rgba(7,10,20,0) 60%); } }
+.hero .slide { transition: opacity .4s var(--ease); }
+.hero .slide img { animation: none; transform: none; }
+.hero .kicker { color: rgba(255,255,255,.85); font-family: var(--font); font-weight: 500; font-size: 13px; letter-spacing: .04em; }
+.hero .count { background: rgba(255,255,255,.92); color: var(--ink); box-shadow: none; font-size: 13px; font-weight: 700; padding: 4px 12px; }
+.hero .dots button.on { background: #fff; }
+.hero .btn.sun { background: #fff; color: var(--ink); border-color: #fff; font-weight: 700; }
+.hero .btn:not(.sun) { background: rgba(255,255,255,.14); color: #fff; border-color: rgba(255,255,255,.45); }
+@media (max-width: 700px) {
+  :is(.hero, .tabhero, .planhero) { margin-inline: -16px; border-radius: 0; max-width: none; }
+  .hero { aspect-ratio: auto; min-height: 0; height: 300px; margin-top: 0; }
+  .hero .txt { padding: 16px; gap: 8px; }
+  .hero h1 { font-size: 28px; }
+  .hero .txt p { font-size: 14px; line-height: 1.6; }
+  .hero :is(.kicker, .dots, .cap) { display: none; }
+  .hero .row .btn[data-goabout] { display: none; }
+}
+/* P5 スマホ: 各タブの写真を96pxの帯にし、説明は写真の外に1行で出す */
+.tabhero .th-img { transform: none; transition: opacity .4s var(--ease); }
+.tabhero .th-img.on { animation: none; }
+.tabhero h2, .tabhero .lead { text-shadow: none; }
+@media (max-width: 700px) {
+  .tabhero { margin-top: 0; min-height: 0; padding: 0; display: block; background: transparent; overflow: visible; }
+  .tabhero .th-img { inset: 0 0 auto 0; height: 96px; }
+  .tabhero::before { inset: 0 0 auto 0; height: 96px; background: linear-gradient(0deg, rgba(7,10,20,.72) 0%, rgba(7,10,20,.2) 60%, rgba(7,10,20,0) 100%); }
+  .tabhero > div { padding: 0 16px; gap: 8px; }
+  .tabhero h2 { height: 96px; display: flex; align-items: flex-end; padding-bottom: 12px; font-size: 20px; color: #fff; }
+  .tabhero .lead { color: var(--ink-2); font-size: 14px; line-height: 1.6; }
+}
+/* P6 スマホ: 計画タブの上の写真を、写真の帯と白い要約にする */
+.planhero .kicker { color: rgba(255,255,255,.85); font-family: var(--font); font-weight: 500; letter-spacing: .02em; }
+@media (max-width: 700px) {
+  .planhero { min-height: 0; margin-top: 0; padding-top: 80px; background: transparent; align-items: start; }
+  .planhero .mosaic { inset: 0 0 auto 0; height: 80px; }
+  .planhero::after { inset: 0 0 auto 0; height: 80px; background: linear-gradient(0deg, rgba(7,10,20,.2), rgba(7,10,20,0)); }
+  .planhero .txt { color: var(--ink); padding: 12px 16px 4px; gap: 6px; }
+  .planhero .kicker { color: var(--ink-2); font-size: 13px; letter-spacing: 0; }
+  .planhero h2 { color: var(--ink); font-size: 20px; line-height: 1.4; }
+  .planhero p { color: var(--ink-2); font-size: 14px; line-height: 1.6; }
+  .planhero .pills span { background: var(--surface); border: 0; box-shadow: var(--shadow-1); color: var(--ink); font-family: var(--num); font-weight: 600; font-size: 13px; padding: 4px 10px; }
+}
+/* P7 計画タブを詰める: 乗り物は3列の小さいタイルに、改善案は1列のカードに */
+@media (max-width: 700px) {
+  #cards .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  #cards .card .ph { aspect-ratio: 1 / 1; }
+  #cards .card .ph .nm { font-size: 13px; padding: 20px 6px 6px; }
+  #cards .card .catch { display: none; }
+  #cards .card .meta { font-size: 12px; line-height: 1.4; -webkit-line-clamp: 1; }
+  #cards .card .body { padding: 6px; gap: 6px; }
+  #cards .card .acts { flex-wrap: nowrap; gap: 4px; }
+  #cards .card :is(.must, .info) { position: relative; flex: 1 1 0; min-width: 0; min-height: 32px; padding: 0 4px; font-size: 12px; }
+  #cards .card :is(.must, .info)::after { content: ''; position: absolute; inset: -6px -2px; }
+  .alt { grid-template-columns: minmax(0, 1fr); border: 0; background: var(--surface-2); border-radius: var(--r-m); padding: 12px; gap: 8px; }
+  .alt .btn { justify-self: start; }
+}
+/* P8 たためるところの見た目を1つにそろえ、計画の補足をたたむ */
+:is(details.more, details.set, details.ctrlbox) > summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 12px 0; font-size: 15px; font-weight: 700; color: var(--ink); cursor: pointer; }
+:is(details.more, details.set, details.ctrlbox) > summary::-webkit-details-marker { display: none; }
+:is(details.more, details.set, details.ctrlbox) > summary::after { content: ''; flex: none; margin-left: auto; width: 8px; height: 8px; border-right: 1.75px solid var(--ink-3); border-bottom: 1.75px solid var(--ink-3); transform: translateY(-2px) rotate(45deg); transition: transform var(--t-fast) var(--ease); }
+:is(details.more, details.set, details.ctrlbox)[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+details.ctrlbox > summary { min-height: 44px; padding: 8px 0; font-size: 14px; font-weight: 500; color: var(--ink-2); }
+details.more, details.set { border: 0; border-radius: var(--r-m); box-shadow: var(--shadow-1); padding: 0 16px; }
+/* 続けて並ぶ details を、iOS の設定のように1つの白い面にまとめる */
+.about > details.more { border-radius: 0; box-shadow: none; border-bottom: 1px solid var(--line); }
+.about > details.more + details.more { margin-top: -12px; }
+.about > :not(details.more) + details.more { border-radius: var(--r-m) var(--r-m) 0 0; }
+.about > details.more:not(:has(+ details.more)) { border-radius: 0 0 var(--r-m) var(--r-m); border-bottom: 0; }
+/* P9 時間帯の表に、横に動かせる手がかりをつけ、時刻の列の固定を見やすくする */
+#tablebox { border: 0; border-radius: var(--r-m); box-shadow: var(--shadow-1); overscroll-behavior-x: contain; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); }
+#tablebox.end { -webkit-mask-image: none; mask-image: none; }
+.wt th.h { min-width: 56px; font-size: 13px; font-weight: 500; box-shadow: 1px 0 0 var(--line), 8px 0 8px -8px rgba(20,26,46,.28); }
+.wt thead th { min-width: 64px; font-size: 12px; font-weight: 500; line-height: 1.3; }
+.wt thead th button img { width: 32px; height: 32px; }
+.wt td { min-width: 64px; height: 40px; font-size: 15px; font-weight: 600; }
+.wt td small { font-size: 11px; font-weight: 500; }
+.wt td.off { font-size: 12px; }
+.scrollhint { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin: 0 0 -8px; font-size: 12px; color: var(--ink-3); }
+#tab-hours:has(#tablebox.end) .scrollhint { display: none; }
+/* P10 予定（タイムライン）の枠と左の色帯をやめ、薄い面と番号の丸で示す */
+:is(.tl-card, .tl-card.meal, .tl-card.food, .tl-card.wc, .tl-card.show, .tl-card.ticket, .tl-card.rest) { border: 0; background: var(--surface-2); border-radius: var(--r-m); }
+.tl-card.bad { background: var(--bad-soft); }
+.tl-item.hl .tl-card { background: var(--brand-soft); box-shadow: 0 0 0 2px var(--brand); }
+.tl-time { font-size: 15px; font-weight: 600; padding-top: 14px; }
+.tl-name { font-size: 15px; line-height: 1.35; }
+.tl-sub { font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.tl-ph { border-radius: var(--r-s); }
+.tl-grip { opacity: .6; }
+.tl-acts button { font-weight: 400; color: var(--ink-3); }
+.tl-gap .ln { border-left: 2px dotted var(--walk); font-size: 13px; color: var(--ink-3); }
+@media (max-width: 700px) {
+  .tl-start, .tl-item, .tl-gap { grid-template-columns: 44px minmax(0, 1fr); gap: 6px; }
+  .tl-time { font-size: 13px; letter-spacing: 0; }
+  .tl-card { grid-template-columns: 14px 48px minmax(0, 1fr) auto; gap: 8px; padding: 8px 4px 8px 0; }
+  .tl-ph { width: 48px; aspect-ratio: 1 / 1; }
+}
+/* P11 枠線・角丸・影を3段階にそろえる */
+.panel { border: 0; border-radius: var(--r-l); box-shadow: var(--shadow-1); padding: var(--s4); gap: var(--s3); }
+@media (min-width: 701px) { .panel { padding: var(--s5); gap: var(--s4); } }
+.month { border: 0; border-radius: var(--r-l); box-shadow: var(--shadow-1); }
+.card { border: 1px solid var(--line); border-radius: var(--r-m); transition: box-shadow var(--t-fast) var(--ease); }
+.card:hover { transform: none; box-shadow: none; }
+@media (hover: hover) and (pointer: fine) { .card:hover { box-shadow: var(--shadow-2); } }
+.card.on, .card.on.is-must { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+:is(.btn, .seg, .datechip, .presets button, .gtabs button, .tipchips button, .card .must, .card .info, .card .acts select, .ctrls select, .mnav button, .steps button, .alt, .fixbox li, .fixbox .fp, .copybox, .eprow input[type='time'], .sheet input, .fcard, .cand, .wcard, .ch, .badges button) { border-width: 1px; }
+:is(.badges button, .ch) { border-style: solid; }
+.ch { border-color: var(--line); }
+:is(.fcard, .cand, .wcard, .fact, .stat, .kpis > div, .rp-facts > div, .recov, ol.tips li, .reasons span, .advice, .toast) { border-radius: var(--r-m); }
+:is(.tl-ph, .tlx img, .wcard .ic, .ch img, .cal button) { border-radius: var(--r-s); }
+.wchip { border-radius: 6px; }
+.strip { border: 0; border-radius: var(--r-l); box-shadow: var(--shadow-1); }
+@media (min-width: 641px) { .strip { box-shadow: var(--shadow-2); } }
+:is(.fab:not([hidden]), .sheet, .rpage, .ghost) { box-shadow: var(--shadow-2); }
+.sheet, .rpage { border-radius: var(--r-l); border: 0; }
+@media (max-width: 600px) { .rpage { border-radius: var(--r-l) var(--r-l) 0 0; } }
+.medal, .acard .aph, .acard.night .aph { box-shadow: none; }
+/* P12 下タブの仕上げ: 文字を11pxにし、選択中はアイコンの後ろに丸い目印を置く */
+@media (max-width: 700px) {
+  .tabs { box-shadow: none; border-top: 1px solid var(--line); padding: 0 4px env(safe-area-inset-bottom, 0px); }
+  .tabs button { position: relative; isolation: isolate; align-content: start; gap: 4px; padding: 8px 0 6px; min-height: 60px; font-size: 11px !important; font-weight: 500; color: var(--ink-2); transition: color var(--t-fast) var(--ease); }
+  .tabs .ti { stroke-width: 1.75; }
+  .tabs button[aria-selected='true'] { color: var(--brand); font-weight: 700; }
+  .tabs button[aria-selected='true'] .ti { stroke-width: 2.1; }
+  .tabs button[aria-selected='true']::before { content: ''; position: absolute; z-index: -1; top: 5px; left: 50%; width: 56px; height: 30px; margin-left: -28px; border-radius: 999px; background: var(--brand-soft); }
+  .lbl-d { display: none; }
+}
+@media (min-width: 701px) { .lbl-m { display: none; } }
+/* P13 色の役割を固定する: ink-3 と状態色の文字を濃くし、黄色は注意だけにする */
+.next .nph small { color: rgba(255,255,255,.85); letter-spacing: .04em; }
+.month .mph small { background: rgba(255,255,255,.92); color: var(--ink); font-size: 12px; font-weight: 500; }
+.btn.sun { background: var(--brand-soft); color: var(--brand); border-color: transparent; }
+.badge.ep { background: var(--brand-soft); color: var(--brand); }
+.wcard .ic b { background: #fff; color: var(--ink); }
+.tabs svg.ic, .nowrow > b svg.ic { color: inherit; }
+.cal button.hol b { color: var(--bad); }
+/* P14 ボタンの階層: 操作は角丸12の四角、絞り込みは丸いチップ、青の塗りは1画面に1つ */
+.btn { border-radius: var(--r-m); font-size: 14px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); }
+.btn:hover { border-color: var(--ink-3); }
+.btn.primary { border-color: var(--brand); }
+.btn.small { min-height: 36px; padding: 6px 12px; font-size: 13px; border-radius: var(--r-s); }
+:is(.presets button, .gtabs button, .tipchips button) { border-radius: 999px; font-size: 14px; min-height: 36px; padding: 6px 14px; }
+.presets button { background: var(--surface-2); border-color: transparent; }
+.presets button:hover { background: var(--brand-soft); border-color: transparent; }
+.next .row { gap: 8px; }
+.next .row .btn.primary { flex: 1 1 100%; min-height: 48px; font-size: 16px; }
+/* P15 文字サイズの下限を12pxにし、本文は16px・行の高さ1.7にする */
+.lead { font-size: 15px; line-height: 1.7; max-width: 40em; }
+.note { font-size: 13px; line-height: 1.6; color: var(--ink-3); max-width: 40em; }
+:is(.credit, .tlaxis, .key, .grp small, .card .catch, .acard small, .rp-tags span, .where, .alt .seq, .fixbox .give, .card .mstore, .ch small, .cand .cph .here) { font-size: 12px; }
+:is(.steps .tkt em, .acard em, .tiph em, .rp-area, button.rp-area, .st-card em) { font-size: 12px; letter-spacing: .06em; font-weight: 700; }
+:is(.wt td small, .bars .offc) { font-size: 11px; }
+.collage .c-text { font-weight: 400; font-size: 16px; }
+@media (max-width: 600px) {
+  .stat .k { font-size: 12px; } .stat .v { font-size: 16px; }
+  .fcard b { font-size: 12px; }
+  .card .acts select { font-size: 12px; }
+}
+/* P16 当日「次はこれ」: カウントダウンを一番大きくし、流れは小さくする */
+#nextcard > .next { border: 0; border-radius: var(--r-l); box-shadow: 0 0 0 2px var(--brand); }
+.next .nph h3 { font-size: 20px; }
+.cd { font-size: 34px; line-height: 1.1; font-weight: 700; color: var(--brand); }
+.bigflow { gap: 4px; }
+.bigflow span { font-size: 15px; font-weight: 600; padding: 4px 10px; border-radius: var(--r-s); }
+.next .then { font-size: 14px; }
+.xp { font-size: 13px; font-weight: 500; }
+.xp .bar { height: 6px; }
+@media (max-width: 700px) { .next .nph { aspect-ratio: auto; height: 112px; } }
+/* P17 注意・提案・お知らせの箱を、線のない薄い色の面にする */
+.advice { border: 0; background: var(--warn-soft); padding: 12px 16px; font-size: 14px; line-height: 1.7; }
+.fixbox { border: 0; background: var(--bad-soft); border-radius: var(--r-m); }
+.fixbox .fh { background: transparent; color: var(--bad); font-family: var(--font); font-weight: 700; padding: 12px 16px 0; }
+.fixbox li { border: 0; background: var(--surface); border-radius: var(--r-s); }
+.fixbox li.best { background: var(--surface); box-shadow: inset 0 0 0 1px var(--good); }
+.toast { border: 0; background: var(--brand-soft); font-size: 14px; }
+.zline { border-radius: var(--r-m); }
+/* P18 フード・トイレ: トイレをまとめた一覧の行にし、食べ歩きの写真の高さをそろえる */
+.fcard { align-content: start; }
+.fcard .ph { overflow: hidden; }
+.fcard[aria-pressed='true'] { border-color: var(--food); box-shadow: 0 0 0 1px var(--food); }
+.cand { border: 1px solid var(--line); }
+.cand[aria-pressed='true'] { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+.cand .big { font-size: 24px; }
+.cand .big small { font-family: var(--font); font-size: 13px; font-weight: 500; }
+@media (max-width: 700px) {
+  .wcards { gap: 0; background: var(--surface); border-radius: var(--r-m); box-shadow: var(--shadow-1); overflow: hidden; }
+  .wcard { border: 0; border-radius: 0; border-bottom: 1px solid var(--line); padding: 12px 16px; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
+  .wcard:last-child { border-bottom: 0; }
+  .wcard .ic { width: 56px; height: 56px; }
+  .wcard[aria-pressed='true'] { background: var(--brand-soft); box-shadow: inset 3px 0 0 var(--toilet); }
+}
+/* P19 カレンダー: 日付と記号の大きさに差をつけ、月の写真を低くする */
+.cal button b { font-size: 15px; }
+.cal button span { font-size: 13px; font-weight: 700; }
+.cal button[aria-pressed='true'] { border-color: var(--brand); box-shadow: none; }
+.month .mph b { font-size: 20px; }
+@media (max-width: 700px) {
+  .month .mph { aspect-ratio: auto; height: 88px; }
+  .mnav button { border: 1px solid var(--line); }
+}
+/* P20 使い方の3ステップは1つにまとめた一覧に、エリアのアーチ形の写真は角丸の四角にする */
+.steps .tkt { border-style: solid; }
+.acard .aph { border-radius: var(--r-m); aspect-ratio: 4 / 5; }
+@media (max-width: 700px) {
+  .steps { gap: 0; background: var(--surface); border-radius: var(--r-m); box-shadow: var(--shadow-1); overflow: hidden; }
+  .steps button { border: 0; border-radius: 0; border-bottom: 1px solid var(--line); min-height: 64px; padding: 10px 16px; }
+  .steps button:last-child { border-bottom: 0; }
+  .steps .tkt::after { display: none; }
+  .steps .tkt i { width: 44px; height: 44px; border-radius: var(--r-s); }
+}
+/* P21 動きは操作への返事だけにする（止まらない動きをやめる） */
+:is(.hero .slide img, .tabhero .th-img.on, .rp-gal img.on) { animation: none; }
+.rp-gal img { transition: opacity .3s var(--ease); }
+:is(.acard:hover .aph img, .rp-mcard:hover .mph img) { transform: none; }
+@media (hover: hover) and (pointer: fine) { :is(.acard:hover .aph img, .rp-mcard:hover .mph img) { transform: scale(1.03); } }
+.seg button, .gtabs button, .presets button, .tipchips button { transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+/* P22 ゲームの要素を控えめにする（紙吹雪をやめる・ランクを青い文字に・スマホではバッジを隠す） */
+.confetti, .plus1 { display: none !important; }
+.rank b { font-size: 32px; }
+.rank.r-S b { background: transparent; color: var(--brand); padding: 0; }
+.badges button.got, .badges button[data-badge='fast'] { background: var(--brand-soft); color: var(--brand); border-color: transparent; }
+@media (max-width: 700px) { #plansum .badges { display: none; } }
+/* P23 待ち時間の色と混雑の色を、明るさが一方向に変わる配色にする */
+.wt td.best, .bars .b.best { box-shadow: inset 0 0 0 3px var(--good); }
+/* P24 余白を4px単位にし、ヘッダーを軽くする */
+.wrap { gap: var(--s6); }
+@media (min-width: 701px) { .wrap { gap: var(--s7); } }
+section { gap: var(--s4); }
+@media (min-width: 701px) { :is(.hero, .tabhero, .planhero) { margin-top: 0; } }
+.logo { font-size: 18px; }
 .logo i { width: 22px; height: 22px; }
-.datechip { border-radius: 4px; border: 1px solid var(--ink); font-family: var(--mincho); font-weight: 700; letter-spacing: .04em; }
-.datechip span { font-family: var(--font); }
+.datechip { font-size: 13px; font-weight: 500; padding: 4px 12px; }
+.grp { gap: var(--s2); margin-top: var(--s2); }
 
-/* タブ: 目次。番号は Cormorant の斜体、文字は明朝、選ばれたタブは墨の細い下線 */
-.tabs { counter-reset: tb; gap: 0; }
-.tabs button { counter-increment: tb; font-family: var(--mincho) !important; font-weight: 700 !important; letter-spacing: .1em; font-size: 15px; color: var(--ink-3); padding: 10px 14px 9px; border-bottom: 2px solid transparent; }
-.tabs button::before { content: counter(tb, decimal-leading-zero); font-family: var(--figure); font-style: italic; font-weight: 500; font-size: 15px; letter-spacing: 0; margin-right: 6px; color: var(--ink-3); }
-.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
-.tabs button[aria-selected="true"]::before { color: var(--brand); }
-.tabs svg.ic { display: none; }  /* 目次に絵は要らない（文字と番号で選べる） */
+/* ===== 点検で見つかったところ（2026/10/13） ===== */
+#nowsub :is(select, input) { border-width: 1px; }
+@media (max-width: 700px) {
+  .top { margin-inline: -16px; padding-inline: 16px; }                       /* 左右の16pxから写真が透けていた */
+  .planhero .mosaic { grid-template-rows: 80px; overflow: hidden; }         /* 写真が2段目まではみ出し、日付が読めなかった */
+  .steps button.tkt { border: 0; border-radius: 0; border-bottom: 1px solid var(--line); min-height: 64px; padding: 10px 16px; }
+  .steps button.tkt:last-child { border-bottom: 0; }
+  .wcards .wcard { border-radius: 0; }
+  #cards .card.on { border-color: var(--line); box-shadow: none; }          /* 選んだものは ✓ と色で分かる。青い枠の壁をやめる */
+  #cards .card .must[aria-pressed="true"] { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+  #cards .card .ph .nm { word-break: auto-phrase; }
+  .months { align-items: start; }
+  .month .mph b { display: none; }                                         /* 月の名前は ‹ › の間に出ている */
+}
+.card.on.is-must { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }   /* 「必ず」は赤い枠で見分ける */
+.wt td { line-height: 1.2; height: 44px; }
+.wt td small { font-size: 12px; line-height: 1.2; margin-top: 1px; }
+.tl-gap .addwc { opacity: 1; color: var(--ink-3); font-size: 13px; font-weight: 500; }
+.bars .lbl { position: relative; z-index: 1; background: var(--surface); padding: 0 2px; border-radius: 4px; line-height: 1.3; }
+#nextcard .nph::after { background: linear-gradient(0deg, color-mix(in srgb, var(--shade) 85%, transparent), color-mix(in srgb, var(--shade) 50%, transparent) 70%, color-mix(in srgb, var(--shade) 15%, transparent)); }
+#nextcard .nph small { color: #fff; }
+.tlc .w { display: grid; grid-template-columns: auto 22px; justify-content: end; align-items: center; column-gap: 2px; }
+.tlc .w > button { grid-column: 2; }
+.cal .wd { font-size: 12px; }
+@media (max-width: 600px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .stats > .stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+@media (min-width: 641px) and (max-width: 1439px) { .strip { position: relative; top: auto; } .map.sticky { top: 100px; } }
+@media (min-width: 701px) and (max-width: 1023px) { .hero .kicker { display: none; } .hero { min-height: 380px; } }
+.fact .v { word-break: auto-phrase; line-break: strict; }
+/* 予定の種類は、枠の代わりに左の細い帯で */
+.tl-card { --band: var(--ride); box-shadow: inset 3px 0 0 var(--band); padding-left: 4px; }
+.tl-card.meal { --band: var(--meal); } .tl-card.food { --band: var(--food); } .tl-card.wc { --band: var(--toilet); } .tl-card.show, .tl-card.ticket { --band: var(--sun); } .tl-card.rest { --band: var(--walk); }
+.tl-item.hl .tl-card { box-shadow: inset 3px 0 0 var(--band), 0 0 0 2px var(--brand); }
+/* 土日祝の赤い日付は、どの混み具合の色の上でも読める濃さに。「ふつう」の色は背景と見分けがつくよう輪郭を */
+.cal button.hol b { color: #8a1414; }
+.legend i.lv1, .cal button.lv1:not([aria-pressed="true"]) { box-shadow: inset 0 0 0 1px #9aa1b5; }
+.planhero .pills span { font-weight: 700; }
+/* 紹介ページの × は、下まで読んでも上に残る */
+.rp-bar { position: sticky; top: 0; height: 0; z-index: 5; }
 
-/* 見出し: 明朝。英字のラベル（data-en）は Cormorant の斜体で上に小さく */
-.wrap h2:not(.intro *):not(.hero *) { font-family: var(--mincho); font-weight: 900; letter-spacing: .05em; font-feature-settings: "palt" 1; }
-.wrap h2[data-en]:not(.intro *):not(.hero *)::before { content: attr(data-en); display: block; font-family: var(--figure); font-style: italic; font-weight: 500; font-size: max(13px, .46em); letter-spacing: .16em; color: var(--ink-3); margin-bottom: .15em; }
-.wrap h3:not(.intro *):not(.hero *):not(.tl-name):not(.grp h3) { font-family: var(--mincho); font-weight: 900; letter-spacing: .04em; }
-.tabhero h2 { color: var(--hero-ink); }
-.tabhero h2[data-en]::before { color: var(--hero-ink-2) !important; }
-
-/* パネル: 角を控えめにし、薄い面＋細い罫線。浮かせる影はなし */
-.panel { border-radius: 6px; border: 1px solid var(--line); border-top: 2px solid var(--ink); }
-details.more { border-radius: 6px; border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); padding: 2px 4px; background: transparent !important; }
-details.more > summary { font-family: var(--mincho); font-weight: 700; letter-spacing: .04em; }
-.note { line-height: 1.75; }
-
-/* ボタン: 形はそのまま、主ボタンだけ少し締める */
-.btn { letter-spacing: .02em; }
-.btn.primary { box-shadow: none; }
-
-/* 数字の大きい表示（日の情報・統計）は Cormorant で上品に */
-.fact .v, .stat .v { font-family: var(--figure) !important; font-weight: 600 !important; letter-spacing: 0; }
-.fact .k, .stat .k { letter-spacing: .08em; }
-
-/* Cormorant の数字は高さのそろった数字に（小文字風の数字にしない） */
-.fact .v, .stat .v, .tabs button::before, #nowbar input[type=time], #tab-live .nx .lstat b, #tab-live .nx .cmp b, #tab-live .nx .go2 b, #tab-live .nx .nowq input, #tab-live .tlc .t, #tab-live .tlc .no, #tab-day .cal button b, #tab-day .step4 em { font-variant-numeric: lining-nums tabular-nums; }
-
-/* ===== いつ行く: 暦と季節の誌面 =====
-   日の情報は誌面のデータ欄（罫線で区切った段組み）、ステップは目次、カレンダーは上質な手帳の暦、エリアは街のガイドの索引 */
-
-/* 使い方の4ステップ: 箱をやめて、罫線の目次に */
-#tab-day .steps4 { gap: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); }
-#tab-day .step4 { border: 0; border-radius: 0; background: transparent; padding: 14px 34px 14px 16px; border-left: 1px solid var(--line); min-height: 44px; }
-#tab-day .step4:first-child { border-left: 0; padding-left: 4px; }
-#tab-day .step4:hover { background: color-mix(in srgb, var(--brand-soft) 60%, transparent); }
-#tab-day .step4 em { font-family: var(--figure); font-style: italic; font-weight: 500; font-size: 15px; letter-spacing: .12em; color: var(--ink-3); }
-#tab-day .step4 b { font-family: var(--mincho); font-weight: 900; font-size: 17px; letter-spacing: .04em; }
-#tab-day .step4 .go { color: var(--ink-3); font-weight: 400; font-family: var(--figure); font-size: 24px; }
-#tab-day .step4.hot { background: transparent; box-shadow: inset 0 3px 0 var(--brand); }
-#tab-day .step4.hot em { color: var(--brand); }
-@media (max-width: 600px) { #tab-day .step4 { border-left: 0; border-top: 1px solid var(--line); padding-left: 4px; } #tab-day .step4:first-child { border-top: 0; } }
-
-/* その日の情報: データ欄。箱はやめて、上に墨の罫線、項目名は明朝の小見出し、数字は Cormorant */
-#tab-day #dayinfo { border-radius: 4px; padding: clamp(18px, 3vw, 30px); }
-#tab-day #dayinfo h2 { font-size: clamp(24px, 3.4vw, 34px); }
-#tab-day .facts { gap: 0 clamp(18px, 2.6vw, 34px); grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-#tab-day .fact { background: transparent !important; border-radius: 0; padding: 12px 0 16px; border-top: 1px solid var(--ink); }
-#tab-day .fact .k { font-family: var(--mincho); font-weight: 700; font-size: 13.5px; letter-spacing: .1em; color: var(--ink-2); }
-#tab-day .fact .v { font-size: clamp(26px, 2.6vw, 32px); line-height: 1.25; margin: 4px 0 6px; color: var(--ink); }
-#tab-day .fact .v.ev { font-family: var(--mincho) !important; font-weight: 700 !important; font-size: 18px; line-height: 1.55; }
-#tab-day .fact .s { font-size: 13.5px; line-height: 1.7; color: var(--ink-2); }
-/* 編集部からひとこと（黄色い箱をやめて、余白の注記に） */
-#tab-day #dayinfo .advice { background: transparent; border: 0; border-left: 3px solid var(--sun); border-radius: 0; padding: 4px 0 4px 16px; font-family: var(--mincho); font-weight: 600; font-size: 15.5px; line-height: 1.95; }
-#tab-day #dayinfo .advice svg { display: none; }
-
-/* カレンダー: 手帳の暦。月の写真は帯に、日付は Cormorant、混み具合の色は保ったまま角を小さく */
-#tab-day .months { gap: clamp(18px, 2.4vw, 28px); }
-#tab-day .month { border-radius: 4px; border: 1px solid var(--line); border-top: 2px solid var(--ink); background: var(--surface) !important; }
-#tab-day .month .mph { aspect-ratio: 16 / 5; }
-#tab-day .month .mph b { font-family: var(--mincho); font-weight: 900 !important; font-size: 24px; letter-spacing: .08em; }
-#tab-day .month .mph small { border-radius: 2px; background: color-mix(in srgb, var(--shade) 55%, transparent); color: var(--hero-ink); font-weight: 600; letter-spacing: .04em; }
-#tab-day .cal { gap: 2px; padding: 12px 12px 14px; }
-#tab-day .cal .wd { font-family: var(--mincho); font-weight: 700; font-size: 12px; color: var(--ink-3); padding-bottom: 4px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
-#tab-day .cal button { border-radius: 3px; min-height: 46px; }
-#tab-day .cal button b { font-family: var(--figure); font-weight: 600; font-size: 18px; line-height: 1; }
-#tab-day .cal button span { font-size: 12px; }
-#tab-day .cal button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--ink); }
-#tab-day .cal button.hol b { color: var(--bad); }
-
-/* エリアめぐり: 街のガイドの索引。アーチの写真はそのまま、文字は明朝と Cormorant の英字 */
-#tab-day .acard .at { background: transparent; padding: 6px 2px 8px; border-radius: 0; border-top: 1px solid var(--ink); }
-#tab-day .acard em { font-family: var(--figure); font-style: italic; font-weight: 600; font-size: 13px; letter-spacing: .12em; color: var(--ink-3); }
-#tab-day .acard.tipsc em { color: var(--good); }
-#tab-day .acard b { font-family: var(--mincho); font-weight: 900; font-size: 16px; letter-spacing: .03em; }
-#tab-day .acard .aph { box-shadow: none; }
-#tab-day .steps4 { background: color-mix(in srgb, var(--surface) 90%, transparent); }
-
-/* ===== 計画: 旅程表と航海日誌 =====
-   攻略プランは「旅程表」。時刻は Cormorant、行き先は明朝、行の区切りは細い罫線、箱の重ねを減らす。
-   乗り物カードは写真が主役のカタログ。数字（並ぶ・歩く・終わり）は誌面の大きな数字として */
-
-/* 写真の見出し */
-#tab-plan .planhero { border-radius: 6px; }
-#tab-plan .planhero h2 { font-family: var(--mincho); font-weight: 900; letter-spacing: .05em; }
-#tab-plan .planhero .kicker { font-family: var(--figure); font-style: italic; font-weight: 600; font-size: 16px; letter-spacing: .14em; }
-#tab-plan .planhero .pills span { border-radius: 2px; font-weight: 600; }
-
-/* 攻略プランの箱: 青い太枠をやめて、上に墨の太罫＋細罫（旅程表の表紙） */
-#tab-plan .answer { border: 0; border-radius: 4px; border-top: 3px double var(--ink); box-shadow: 0 0 0 1px var(--line); padding: clamp(16px, 2.6vw, 26px); }
-#tab-plan .answer .meta { font-family: var(--figure); font-style: italic; font-weight: 600; font-size: 15px; letter-spacing: .06em; color: var(--ink-3); }
-#tab-plan .answer h2 { font-size: clamp(26px, 4vw, 38px); }
-#tab-plan .answer .kv { gap: 4px 22px; }
-#tab-plan .answer .kv b { font-family: var(--figure); font-weight: 600; font-size: 30px; font-variant-numeric: lining-nums tabular-nums; }
-
-/* 旅程（.plist）: 時刻は Cormorant、行き先は明朝、行は細い罫線で */
-#tab-plan .plist > li { border-top: 1px solid var(--line); }
-#tab-plan .plist > li .t { font-family: var(--figure); font-weight: 600; font-size: 21px; font-variant-numeric: lining-nums tabular-nums; letter-spacing: .01em; }
-#tab-plan .plist > li .nm { font-family: var(--mincho); font-weight: 900; letter-spacing: .03em; }
-#tab-plan .plist > li .nm small { font-family: var(--font); font-weight: 500; letter-spacing: 0; }
-#tab-plan .plist > li .ph img, #tab-plan .plist > li .ph { border-radius: 3px; }
-#tab-plan .wchip { border-radius: 2px; font-family: var(--figure); font-weight: 700; font-size: 15px; font-variant-numeric: lining-nums tabular-nums; }
-
-/* 手ごたえ（全部回れる見込み）: 誌面の大きな数字。左の太い色罫は細く、% を大きく */
-#tab-plan .verdict { border-radius: 4px; border: 0; border-left: 3px solid var(--vc); box-shadow: 0 0 0 1px var(--line); }
-#tab-plan .verdict .vd-sc b { font-family: var(--figure); font-weight: 600; font-size: 44px; line-height: 1; font-variant-numeric: lining-nums; }
-#tab-plan .verdict .vd-h { font-family: var(--mincho); font-weight: 900; font-size: 22px; letter-spacing: .04em; }
-#tab-plan .verdict .vd-adv { border-radius: 2px; }
-#tab-plan .verdict .vd-adv > b { font-family: var(--mincho); font-weight: 900; }
-#tab-plan .advice { border-radius: 4px; }
-
-/* 予定（ドラッグできるカード）: 角を小さく、時刻を Cormorant に。操作はそのまま */
-#tab-plan .tl-card { border-radius: 4px; border-width: 1px; border-left-width: 4px; }
-#tab-plan .tl-time { font-family: var(--figure) !important; font-weight: 600 !important; font-size: 21px; font-variant-numeric: lining-nums tabular-nums; }
-#tab-plan .tl-name { font-family: var(--mincho) !important; font-weight: 900 !important; letter-spacing: .03em; }
-#tab-plan .tl-ph { border-radius: 3px; }
-
-/* 乗り物カード: カタログ。写真の角を小さく、名前は明朝、選んだ枠は墨 */
-#tab-plan .card { border-radius: 4px; border-width: 1px; }
-#tab-plan .card.on { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
-#tab-plan .card.on.is-must { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
-#tab-plan .card .ph .nm { font-family: var(--mincho) !important; font-weight: 900 !important; letter-spacing: .03em; }
-#tab-plan .card .chk { border-radius: 3px; }
-#tab-plan .grp h3 { font-family: var(--mincho) !important; letter-spacing: .06em; border-bottom: 1px solid var(--ink); padding-bottom: 4px; }
-#tab-plan .gtabs button { border-radius: 2px; font-family: var(--mincho); font-weight: 700; }
-#tab-plan .gtabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
-#tab-plan .fcard { border-radius: 4px; border-width: 1px; }
-#tab-plan .strip { border-radius: 4px; box-shadow: none; border-width: 1px; border-top: 2px solid var(--ink); }
-#tab-plan .strip .stat { border-radius: 2px; }
-#tab-plan .askcard, #tab-plan .asksum { border-radius: 4px; border-width: 1px; }
-#tab-plan .askcard .btn, #tab-plan .askb .btn { border-radius: 4px; }
-#tab-plan .askh { font-family: var(--mincho); font-weight: 900; letter-spacing: .04em; }
-
-/* ===== フード・トイレ: レストランのメニュー表 =====
-   お店や食べ歩きは写真を活かしたメニューページに、名前は明朝、値段・時間は Cormorant。トイレは控えめで実用的に */
-#tab-food .tabhero h2 { font-family: var(--mincho); font-weight: 900; }
-#tab-food .rcards { gap: clamp(14px, 2vw, 22px); }
-#tab-food .rcards .rp-mcard { border-radius: 4px; background: color-mix(in srgb, var(--surface) 94%, transparent); padding: 6px 6px 12px; border-bottom: 2px solid var(--ink); }
-#tab-food .rcards .rp-mcard img { border-radius: 3px; }
-#tab-food .rcards .rp-mcard b { font-family: var(--mincho); font-weight: 900; letter-spacing: .03em; }
-#tab-food .fcard { border-radius: 4px; border-width: 1px; }
-#tab-food .fcard b { font-family: var(--mincho); font-weight: 700; }
-#tab-food .wcard { border-radius: 4px; border-width: 1px; }
-#tab-food .wcard .ic { border-radius: 3px; }
-#tab-food .wcard b { font-family: var(--mincho); font-weight: 900; }
-#tab-food .panel > h3, #tab-food h3 { letter-spacing: .05em; }
-
-/* ===== 当日: 発車標と旅のチケット =====
-   「次はこれ」は駅の発車標のように、行き先を明朝で大きく、時刻は Cormorant で。屋外のスマホで一目で読めるよう、大きさと押しやすさは落とさない。
-   このあとの予定（.tlc）は時刻表のように整然と */
-
-/* 今ここ（上の帯）: 切符の端のような細い罫線 */
-#nowbar { border-top: 1px solid var(--line); }
-#nowbar .nowl { font-family: var(--mincho); letter-spacing: .06em; }
-#nowbar input[type=time] { font-family: var(--figure); font-weight: 600; font-size: 20px; border-radius: 4px; border-color: var(--ink); }
-
-/* 次はこれ: 発車標。上に墨の帯（「NEXT」と今の状況）、行き先を大きく、時刻と分を大きな数字で */
-#tab-live .nx { border: 0; border-radius: 6px; padding: 0; gap: 0; overflow: hidden; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 10px 28px color-mix(in srgb, var(--shade) 10%, transparent); }
-#tab-live .nx .lstat { background: var(--shade); color: var(--hero-ink-2); padding: 9px 16px; gap: 4px 18px; font-size: 13.5px; letter-spacing: .02em; }
-#tab-live .nx .lstat b { color: var(--sun); font-family: var(--figure); font-weight: 600; font-size: 17px; }
-#tab-live .nx > :not(.lstat) { margin-inline: 16px; }
-#tab-live .nx .nxh { margin-top: 16px; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--ink); }
-#tab-live .nx .nxh img { width: 76px; height: 76px; border-radius: 4px; }
-#tab-live .nx .nxh small { font-family: var(--figure); font-style: italic; font-weight: 600; font-size: 15px; letter-spacing: .16em; color: var(--brand); }
-#tab-live .nx .nxh small::after { content: " — NEXT"; letter-spacing: .12em; color: var(--ink-3); }
-#tab-live .nx .nxh h3 { font-family: var(--mincho); font-weight: 900; font-size: clamp(26px, 6.4vw, 34px); line-height: 1.25; letter-spacing: .04em; }
-#tab-live .nx .cmp { margin-top: 12px; gap: 6px 18px; }
-#tab-live .nx .cmp b { font-family: var(--figure); font-weight: 600; font-size: 38px; line-height: 1; }
-#tab-live .nx .nowq input { border-radius: 4px; border-color: var(--ink); font-family: var(--figure); font-size: 18px; font-weight: 600; }
-/* このまま行くと: 切符の券面（点線で切り取り） */
-#tab-live .nx .go2 { margin-top: 12px; background: color-mix(in srgb, var(--brand-soft) 70%, var(--surface)); border-radius: 4px; border: 1px dashed color-mix(in srgb, var(--brand) 45%, transparent); padding: 10px 14px; }
-#tab-live .nx .go2 b { font-family: var(--figure); font-weight: 600; font-size: 28px; letter-spacing: .01em; }
-#tab-live .nx .why { margin-top: 10px; }
-#tab-live .nx .why > b { font-family: var(--mincho); font-size: 13px; color: var(--ink); border-bottom: 2px solid var(--sun); margin-right: 8px; }
-#tab-live .nx .acts { margin-top: 14px; }
-#tab-live .nx .acts .btn { border-radius: 6px; font-weight: 700; }
-#tab-live .nx .acts .btn.primary { background: var(--ink); border-color: var(--ink); color: var(--surface); }
-#tab-live .nx .row { margin-top: 10px; }
-#tab-live .nx .then { margin: 12px 0 0; padding: 10px 16px 14px; border-top: 1px solid var(--line); margin-inline: 0 !important; }
-#tab-live .nx > :last-child { margin-bottom: 14px; }
-
-/* このあとの予定: 時刻表。行の罫線を細く、時刻は Cormorant、次の行は墨の左罫 */
-#tab-live .tlc { border-bottom: 1px solid var(--line); }
-#tab-live .tlc .t { font-family: var(--figure) !important; font-weight: 600 !important; font-size: 18px; letter-spacing: .01em; }
-#tab-live .tlc .nm { font-family: var(--mincho); font-weight: 900; letter-spacing: .03em; }
-#tab-live .tlc .no { border-radius: 3px; font-family: var(--figure); font-size: 13px; }
-#tab-live .tlc.next { background: color-mix(in srgb, var(--brand-soft) 55%, transparent); box-shadow: inset 3px 0 0 var(--ink); }
-#tab-live .donebar { border-radius: 4px; }
-#tab-live .panel { border-radius: 6px; }
-
-/* ===== 時間帯: 潮見表とデータ誌面 =====
-   待ち時間マップは潮見表のように、セルの角を落として細い白い目地で区切り、数字は Cormorant。
-   狙い目の一覧はデータの索引（罫線の行）。色の意味（空く〜混む・◎・締め切り）はそのまま */
-#tab-hours .secth { border-bottom: 3px double var(--ink); padding-bottom: 14px; }
-#tab-hours .secth h2 { font-size: clamp(26px, 4vw, 44px); line-height: 1.3; }
-#tab-hours .secth .lead { font-family: var(--mincho); font-weight: 600; font-size: 16px; line-height: 1.95; color: var(--ink-2); max-width: 40em; }
-#tab-hours .panel { border-radius: 4px; padding: clamp(18px, 2.6vw, 28px); }
-#tab-hours .panel > h3 { font-size: clamp(20px, 2.4vw, 26px); padding-bottom: 8px; border-bottom: 1px solid var(--ink); }
-
-/* 表: 目地は細く、角は小さく。数字は Cormorant の揃った数字 */
-#tab-hours .hm { border-spacing: 1px; }
-#tab-hours .hm td { border-radius: 2px; font-family: var(--figure); font-weight: 600; font-size: 14px; font-variant-numeric: lining-nums tabular-nums; }
-#tab-hours .hm thead th { font-variant-numeric: lining-nums; font-family: var(--figure); font-style: italic; font-weight: 600; font-size: 14px; color: var(--ink-2); border-bottom: 1px solid var(--ink); padding-bottom: 2px; }
-#tab-hours .hm tbody th button { font-family: var(--mincho); font-weight: 700; letter-spacing: .02em; }
-#tab-hours .hm tr.grp th { font-family: var(--mincho); font-weight: 700; letter-spacing: .12em; color: var(--ink-2); border-bottom: 1px solid var(--line); }
-#tab-hours .hm td i { font-style: normal; }
-
-/* 狙い目の一覧: 箱をやめて、罫線で区切った索引に */
-#tab-hours .hslist { gap: 0 clamp(16px, 2.4vw, 28px); }
-#tab-hours .hs { border: 0; border-radius: 0; border-top: 1px solid var(--line); background: transparent; padding: 10px 2px; min-height: 56px; }
-#tab-hours .hs:hover { background: color-mix(in srgb, var(--brand-soft) 50%, transparent); }
-#tab-hours .hs img { border-radius: 3px; }
-#tab-hours .hs b { font-family: var(--mincho); font-weight: 900; font-size: 15.5px; letter-spacing: .03em; }
-#tab-hours .hs em { font-family: var(--figure); font-weight: 600; font-size: 17px; color: var(--good); font-variant-numeric: lining-nums; }
-
-/* そのほかの数字（帯の縦棒グラフなど）も Cormorant に */
-#tab-hours .bars .lbl, #tab-hours .fact .v { font-variant-numeric: lining-nums; }
-#tab-hours details.more { margin-top: 4px; }
+/* 点検の残り（自分で確かめて入れたもの） */
+:root { --w1: #fff4c2; --w2: #fee391; --w3: #fec44f; --w4: #fe9929; --w5: #ec7014; --w6: #cc4c02; --w7: #8c2d04; }   /* 空いているほど淡く、混むほど濃く。段の差を大きく */
+.wt td.off { background: repeating-linear-gradient(135deg, var(--surface-2) 0 6px, var(--surface) 6px 12px); }
+.wt td.best, .bars .b.best { box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 5px var(--good); }
+.fab > span { white-space: nowrap; }
+.fab > span:first-child { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 900px) { .fab:not([hidden]) { font-size: 14px; padding: 8px 14px; min-height: 52px; gap: 12px; } }
+@media (max-width: 700px) {
+  .fcard b { word-break: auto-phrase; line-height: 1.35; }
+  #cards .card .meta { -webkit-line-clamp: 2; }                              /* 2行目の「締切」が消えていた */
+}
+@media (max-width: 1023px) { .collage { display: none; } }
+@media (min-width: 701px) {
+  .tabhero h2, .tabhero .lead { text-shadow: 0 1px 8px rgba(0,0,0,.45); }
+  .tabhero::before { background: linear-gradient(0deg, rgba(7,10,20,.72) 0%, rgba(7,10,20,.25) 60%, rgba(7,10,20,0) 100%); }
+  .wcards { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+  .wcard { grid-template-columns: 56px minmax(0, 1fr); }
+  .wcard .ic { width: 56px; height: 56px; }
+}
+button { font-family: inherit; }
+@media (max-width: 700px) { #cards .card.on.is-must { border-color: var(--bad); } }   /* 「必ず」はスマホでも赤い枠で */
+:is(.chk, .tl-check, #tab-food em, .no, .nph b, .ph) { font-weight: 700; }
+.chl { margin: 6px 0; padding-left: 1.2em; display: grid; gap: 4px; font-size: 14px; }
+.tl-start.chance .tl-sub { line-height: 1.6; }
 
 /* 夜の枠（17時の混みとビリーヴの前後） */
 .nwcols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; } @media (max-width: 700px) { .nwcols { grid-template-columns: minmax(0, 1fr); } }
 .nwcols h5 { margin: 0 0 4px; font-size: 14px; } .nwl { margin: 0; padding-left: 1.4em; display: grid; gap: 4px; font-size: 14px; line-height: 1.6; } .nwl small { color: var(--ink-3); margin-left: 4px; }
 .nightcard .nwl { padding-left: 1.1em; } .nightcard .nwl .btn { margin-left: 6px; } .nwt td, .nwt th { white-space: nowrap; } .nwt small { color: var(--ink-3); }
-/* ===== ユニバ版から（2026/10/26）: 自分たちで組む・1日の帯・今から並び始める。角丸と数字の書体はシーに合わせる ===== */
-:root { --r-s: 8px; --r-m: 12px; --r-l: 16px; --r-pill: 999px; --num: var(--figure); }
+/* 自分たちで組む・1日の帯（ユニバと共通の書体） */
+:root { --r-s: 8px; --r-m: 12px; --r-l: 16px; --r-pill: 999px; --num: 'Inter', var(--font); }
 .mp-wait-plot, .mp-wait-axis, .mp-wait-y { font-family: var(--font); }
 .win { display: block; font-size: 12.5px; color: var(--ink-2); line-height: 1.5; margin-top: 2px; }
 .win b { color: var(--brand); font-variant-numeric: tabular-nums; }
@@ -1974,6 +1882,12 @@ details.more > summary { font-family: var(--mincho); font-weight: 700; letter-sp
 #manual-plan #mp-opening { min-height: auto; width: 18px; height: 18px; }
 @media (max-width:1050px) { .mp-grid { grid-template-columns: minmax(0,1fr); } .mp-own { position: static; grid-row: 1; } .mp-choose { grid-row: 2; } .mp-calendar-scroll { max-height: 420px; } }
 @media (max-width:480px) { .mp-own { padding: 12px; } .mp-card:not(.mp-featured) .mp-drag-handle { padding: 4px; left: 5px; font-size: 11px; } .mp-wait b { font-size: 23px; } .mp-three button { font-size: 11px; } .mp-three b { font-size: 11px; } }
+/* シー固有の補足も共通の本文・数値書体で表示 */
+#nowpanel .nowbar { flex-wrap: wrap; overflow: visible; padding: 0; }
+#nowpanel .nowbar .locs:not([hidden]) { position: static; flex-basis: 100%; padding: 0; background: transparent; border: 0; }
+#intro .inner { gap: 12px; font-size: 14px; color: var(--ink-2); }
+#intro p { max-width: 70em; }
+.nx .cmp b, .nx .go2 b, .answer .kv b, .step4 em, .hs em, .bars .b { font-family: var(--num); font-variant-numeric: tabular-nums; }
 </style>
 
 <noscript><div class="nsnote"><b>この画面では、ナビが動きません</b><br>いま開いているアプリ（ファイルのプレビューなど）は JavaScript を動かさないので、カレンダー・予定・地図などが出ません。ブラウザ（Chrome・Safari）で開いてください。</div></noscript>
@@ -1985,17 +1899,11 @@ details.more > summary { font-family: var(--mincho); font-weight: 700; letter-sp
   </div>
   <div class="top">
     <div class="tabs" role="tablist" aria-label="画面">
-      <button type="button" role="tab" data-tab="day" aria-selected="true">いつ行く</button>
-      <button type="button" role="tab" data-tab="plan" aria-selected="false">計画</button>
-      <button type="button" role="tab" data-tab="food" aria-selected="false">フード・トイレ</button>
-      <button type="button" role="tab" data-tab="live" aria-selected="false">当日</button>
-      <button type="button" role="tab" data-tab="hours" aria-selected="false">時間帯</button>
-    </div>
-    <div class="nowbar" id="nowbar" hidden>
-      <b class="nowl"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0' /> <path d='M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z' /></svg> 今ここ</b><input type="time" id="livetime" aria-label="今の時刻"><button type="button" class="btn small" id="livenow">今の時刻に</button>
-      <button type="button" class="btn small" id="locbtn" aria-expanded="false" aria-controls="locbtns"><span id="locname">入口</span> ▾</button>
-      <button type="button" class="btn small" data-late="10">+10分 遅れた</button>
-      <div class="locs" id="locbtns" hidden></div>
+      <button type="button" role="tab" data-tab="day" aria-selected="true"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>いつ行く</button>
+      <button type="button" role="tab" data-tab="plan" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="5.5" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.5 5.5H15a3.5 3.5 0 0 1 0 7H9a3.5 3.5 0 0 0 0 7h6.5"/></svg>計画</button>
+      <button type="button" role="tab" data-tab="food" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v18M4.5 3v5a2.5 2.5 0 0 0 5 0V3M17.5 21V3c-2.2 1.2-3.5 4-3.5 7.5V13h3.5"/></svg><span class="lbl-d">フード・トイレ</span><span class="lbl-m">食事・トイレ</span></button>
+      <button type="button" role="tab" data-tab="live" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>当日</button>
+      <button type="button" role="tab" data-tab="hours" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M6 17v-5M11 17V5M16 17V9"/></svg>時間帯</button>
     </div>
   </div>
 
@@ -2005,34 +1913,39 @@ details.more > summary { font-family: var(--mincho); font-weight: 700; letter-sp
       <div class="txt">
         <span class="kicker"><span class="long">東京ディズニーシー ／ </span>1年分の待ち時間から</span>
         <h1>シー<br>攻略ナビ</h1>
-        <p>1年分の待ち時間の記録から、行く日の混み具合と、乗りたいものを一番待たずに回る順番を出します。入園の時刻やプレミアアクセスも入れて組めます。</p>
-        <p class="pcnote"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 9v4' /> <path d='M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z' /> <path d='M12 16h.01' /></svg> 計画づくりは、パソコンの大きい画面のほうが見やすいです（予定・待ち時間マップ・入れる方法を並べて見られます）。当日はスマホで「当日」のタブを。</p>
+        <p>過去の待ち時間から、来園日の混雑と時間帯別の待ち時間を推定します。DPAとショーの時刻を考慮して、予定を作成・比較できます。</p>
         <div class="row"><button type="button" class="btn sun" data-go="cal">行く日を選ぶ</button><button type="button" class="btn" data-goplan="1">計画を立てる</button><button type="button" class="btn" data-goabout="1">このナビの考え方</button></div>
       </div>
       <span class="count" id="count" hidden></span>
       <div class="dots" id="dots"></div>
       <span class="cap" id="herocap"></span>
     </div>
-    <div class="intro" id="intro"></div>
-    <div class="steps4" id="steps4" aria-label="使い方（4ステップ）"></div>
+    <div class="steps illus" aria-label="使い方">
+      <button type="button" data-step="cal" class="tkt"><i data-ph="x_harbor"></i><span><em>STEP 1</em>行く日を選ぶ<small>カレンダーの色で混み具合</small></span></button>
+      <button type="button" data-step="plan" class="tkt"><i data-ph="x_fs_frozen"></i><span><em>STEP 2</em>待ちを比べて相談する<small>自分たちで決める・自動の提案も</small></span></button>
+      <button type="button" data-step="live" class="tkt"><i data-ph="x_mc_night"></i><span><em>STEP 3</em>当日は今の待ちを入れる<small>公式アプリの数字で残りを見直す</small></span></button>
+    </div>
+    <div id="intro"></div>
     <div class="panel" id="dayinfo"></div>
+    <div class="pband" data-ph="x_fs" aria-hidden="true"></div>
     <div id="cal" style="display:grid;gap:6px;position:relative"><div class="bgph right" data-bg="x_fs_castle" aria-hidden="true"></div><h2 data-en="CALENDAR">カレンダー</h2><div class="legend" id="callegend"></div></div>
     <div class="months" id="months"></div>
     <section class="areas" aria-labelledby="areas-h"><h2 id="areas-h" data-en="AREA GUIDE">エリアめぐり</h2><p class="lead">8つのテーマポートの乗り物・レストラン・食べ歩きを、写真で。押すと地図と一緒に見られます。</p><div class="acards" id="acards"></div><figure class="amap" id="amap"></figure></section>
     <section class="about" id="about">
-      <h2 data-en="HOW IT WORKS">このナビの考え方</h2>
-      <p class="lead">1年分・約24万件の実際の待ち時間から、行く日の待ちを乗り物ごとに30分きざみで予測します。その予測で、空く時間と道のりに合わせて回る順番を組みます。出した予定は、去年の似た日の実際の待ち時間で本当に回れたかを確かめてから見せます。</p>
+      <h2 data-en="HOW IT WORKS">推定方法と検証</h2>
+      <details class="more"><summary>利用手順と選択中の予定</summary><div class="inner"><div class="steps4" id="steps4" aria-label="使い方（4ステップ）"></div></div></details>
+      <p class="lead">本ナビは、過去の表示待ち時間から施設別・時間帯別の待ち時間を推定し、徒歩移動、受付終了時刻、食事およびショーの開催時刻を考慮して行程案を作成します。行程の実行可能性は、類似日の記録を用いたシミュレーションにより評価します。</p>
       <div class="panel">
         <h3>ひと目で分かる数字</h3>
         <div class="kpis" id="kpis">
-          <div><b>420日・約24万件</b><span>待ち時間の記録（2025年9月1日〜2026年10月25日）</span></div>
+          <div><b>425日・約24万件</b><span>待ち時間の記録（2025年9月1日〜2026年10月30日）</span></div>
           <div><b>88%</b><span>「似た日の多くは○〜○分」に実際が入った割合（30日前に予測。理想は80%）</span></div>
           <div><b>約11分</b><span>待ち時間のずれ（30日前に予測した場合）</span></div>
           <div><b>97〜100%</b><span>30日前に組んだ予定を、その日の実際の待ちで回して「必ず乗る」を全部回れた日（2026年9〜10月の38日）</span></div>
         </div>
       </div>
 
-      <details class="more"><summary>コンセプト：何を解決するか</summary><div class="inner">
+      <details class="more"><summary>目的と対象範囲</summary><div class="inner">
         <p>シーは人気のアトラクションが一日中120分を超えることも多く、どれをいつ並ぶかで1日に乗れる数が大きく変わります。混雑予想サイトは「この日は混む」までは教えてくれますが、どの順番で何時に並べばいいかまでは出してくれません。</p>
         <p>このナビは、乗りたいものを選ぶだけで「いつ・どこへ・どの順番で」を組みます。乗り物ごとに空く時間は違い、多くは夜に空きます。その空く時間を、歩く道のり（入口からファンタジースプリングスまでは歩いて20分ほど）、受付の締め切り、ショーの時刻、ごはんと組み合わせて、1日の予定にします。</p>
         <p>もう1つの柱は「本当にその通りに回れるのか」を数字で見せることです。予定を出すたびに、去年の似た日の実際の待ちで回してみて、何日中何日回れたか、乗れなかったらなぜかを出します。</p>
@@ -2050,7 +1963,7 @@ details.more > summary { font-family: var(--mincho); font-weight: 700; letter-sp
 
       <details class="more"><summary>使っているデータと、整え方</summary><div class="inner">
         <ul>
-          <li><b>待ち時間</b>：ディズニーリアルの30分ごとの待ち時間表（画像）を、自作の文字読み取りで数字にしました。2025年9月1日〜2026年10月25日の420日分です。</li>
+          <li><b>待ち時間</b>：ディズニーリアルの30分ごとの待ち時間表（画像）を、自作の文字読み取りで数字にしました。2025年9月1日〜2026年10月30日の425日分です。</li>
           <li><b>その日の情報</b>：営業時間、天気、パーク全体の平均待ち時間、休止中の施設。</li>
           <li><b>ショーの時刻</b>：ディズニーリアルの日ごとの開催時刻（直近の多い組み合わせを、選べる回にしています）。</li>
         </ul>
@@ -2154,6 +2067,7 @@ details.more > summary { font-family: var(--mincho); font-weight: 700; letter-sp
     <div id="planfix"></div>
     <h2 class="sech" id="pickh" data-en="CHOOSE">乗りたいものを選ぶ</h2>
     <div class="planbody"><div class="pickcol">
+    <div class="pband short" data-ph="x_mc_evening" aria-hidden="true"></div>
     <div class="presets" id="presets"></div>
     <div id="cards" style="display:grid;gap:14px"></div>
     <div style="display:grid;gap:8px"><div class="grp"><h3>ごはん</h3><small>押すと入れる・外す。お店は、その時いる場所から近くて空いている所を選びます</small></div><div class="cards" id="meals"></div></div>
@@ -2173,6 +2087,7 @@ details.more > summary { font-family: var(--mincho); font-weight: 700; letter-sp
 
   <!-- フード・トイレ -->
   <section id="tab-food" role="tabpanel" hidden>
+    <div class="tabhero" data-ph="food"><div><h2 data-en="FOOD &amp; RESTROOM">食べたいもの・トイレ</h2><p class="lead">食べたいものを押すと売っている店が、地図を押すと近いトイレが出ます。</p></div></div>
     <div class="seg2" role="tablist" aria-label="さがすもの"><button type="button" role="tab" data-fp="food" aria-selected="true"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path stroke='none' d='M0 0h24v24H0z' /> <path d='M8 13v.01' /> <path d='M12 17v.01' /> <path d='M12 12v.01' /> <path d='M16 14v.01' /> <path d='M11 8v.01' /> <path d='M13.148 3.476l2.667 1.104a4 4 0 0 0 4.656 6.14l.053 .132a3 3 0 0 1 0 2.296q -.745 1.18 -1.024 1.852q -.283 .684 -.66 2.216a3 3 0 0 1 -1.624 1.623q -1.572 .394 -2.216 .661q -.712 .295 -1.852 1.024a3 3 0 0 1 -2.296 0q -1.203 -.754 -1.852 -1.024q -.707 -.292 -2.216 -.66a3 3 0 0 1 -1.623 -1.624q -.397 -1.577 -.661 -2.216q -.298 -.718 -1.024 -1.852a3 3 0 0 1 0 -2.296q .719 -1.116 1.024 -1.852q .257 -.62 .66 -2.216a3 3 0 0 1 1.624 -1.623q 1.547 -.384 2.216 -.661q .687 -.285 1.852 -1.024a3 3 0 0 1 2.296 0' /></svg> 食べる</button><button type="button" role="tab" data-fp="wc" aria-selected="false"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6 10m-3 0a3 7 0 1 0 6 0a3 7 0 1 0 -6 0' /> <path d='M21 10c0 -3.866 -1.343 -7 -3 -7' /> <path d='M6 3h12' /> <path d='M21 10v10l-3 -1l-3 2l-3 -3l-3 2v-10' /> <path d='M6 10h.01' /></svg> トイレ</button></div>
     <div class="row"><label>時刻 <input type="time" class="btn" id="foodtime"></label><span class="note">この時刻の行列と混み方で見ます</span></div>
     <div id="fpane-food" class="fpane">
@@ -2193,10 +2108,16 @@ details.more > summary { font-family: var(--mincho); font-weight: 700; letter-sp
 
   <!-- 当日 -->
   <section id="tab-live" role="tabpanel" hidden>
+    <div class="tabhero" data-ph="live"><div><h2 data-en="ON THE DAY">当日：今これ、次これ</h2><p class="lead">現在地・待ち時間・帰る時刻に合わせて、残りの予定を見直せます。</p></div></div>
     <div class="toast" id="livetoast" hidden></div>
-    <div id="nextcard"></div>
     <div id="livefix"></div><div id="liveshift"></div><div id="liveadopt"></div>
     <div class="panel nowpanel" id="nowpanel">
+    <div class="nowbar" id="nowbar" hidden>
+      <b class="nowl"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0' /> <path d='M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z' /></svg> 今ここ</b><input type="time" id="livetime" aria-label="今の時刻"><button type="button" class="btn small" id="livenow">今の時刻に</button>
+      <button type="button" class="btn small" id="locbtn" aria-expanded="false" aria-controls="locbtns"><span id="locname">入口</span> ▾</button>
+      <button type="button" class="btn small" data-late="10">+10分 遅れた</button>
+      <div class="locs" id="locbtns" hidden></div>
+    </div>
       <div class="nowrow"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 5l0 14' /> <path d='M5 12l14 0' /></svg> 今から</b><button type="button" class="btn small" id="now-wc"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6 10m-3 0a3 7 0 1 0 6 0a3 7 0 1 0 -6 0' /> <path d='M21 10c0 -3.866 -1.343 -7 -3 -7' /> <path d='M6 3h12' /> <path d='M21 10v10l-3 -1l-3 2l-3 -3l-3 2v-10' /> <path d='M6 10h.01' /></svg> トイレ</button><button type="button" class="btn small" id="now-food"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path stroke='none' d='M0 0h24v24H0z' /> <path d='M8 13v.01' /> <path d='M12 17v.01' /> <path d='M12 12v.01' /> <path d='M16 14v.01' /> <path d='M11 8v.01' /> <path d='M13.148 3.476l2.667 1.104a4 4 0 0 0 4.656 6.14l.053 .132a3 3 0 0 1 0 2.296q -.745 1.18 -1.024 1.852q -.283 .684 -.66 2.216a3 3 0 0 1 -1.624 1.623q -1.572 .394 -2.216 .661q -.712 .295 -1.852 1.024a3 3 0 0 1 -2.296 0q -1.203 -.754 -1.852 -1.024q -.707 -.292 -2.216 -.66a3 3 0 0 1 -1.623 -1.624q -.397 -1.577 -.661 -2.216q -.298 -.718 -1.024 -1.852a3 3 0 0 1 0 -2.296q .719 -1.116 1.024 -1.852q .257 -.62 .66 -2.216a3 3 0 0 1 1.624 -1.623q 1.547 -.384 2.216 -.661q .687 -.285 1.852 -1.024a3 3 0 0 1 2.296 0' /></svg> 何か買う</button><button type="button" class="btn small" id="now-shop"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304z' /><path d='M9 11v-5a3 3 0 0 1 6 0v5' /></svg> お土産・休憩</button><button type="button" class="btn small sun" id="now-sos"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0' /> <path d='M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0' /> <path d='M15 15l3.35 3.35' /> <path d='M9 15l-3.35 3.35' /> <path d='M5.65 5.65l3.35 3.35' /> <path d='M18.35 5.65l-3.35 3.35' /></svg> 予定が狂った</button></div>
       <div class="nowrow"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M6.5 7h11' /> <path d='M6.5 17h11' /> <path d='M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1z' /> <path d='M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1z' /></svg> 今の待ち</b><button type="button" class="btn small primary" id="now-shot" hidden><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 8h.01' /> <path d='M6 13l2.644 -2.644a1.21 1.21 0 0 1 1.712 0l3.644 3.644' /> <path d='M13 13l1.644 -1.644a1.21 1.21 0 0 1 1.712 0l1.644 1.644' /> <path d='M4 8v-2a2 2 0 0 1 2 -2h2' /> <path d='M4 16v2a2 2 0 0 0 2 2h2' /> <path d='M16 4h2a2 2 0 0 1 2 2v2' /> <path d='M16 20h2a2 2 0 0 0 2 -2v-2' /></svg> 公式アプリのスクショを読む</button><input type="file" id="shotfile" accept="image/*" multiple hidden><button type="button" class="btn small" id="now-wait"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4' /> <path d='M13.5 6.5l4 4' /></svg> 手で入れる</button><span class="note" id="shotnote"></span><span id="autonote" class="nclevel note"></span><span id="nclevel" class="nclevel"></span></div>
       <div class="nowrow"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' /> <path d='M12 7v5l3 3' /></svg> 帰る時刻</b><select id="leaveat" aria-label="帰る時刻"></select><span class="note" id="leavenote"></span></div>
@@ -2204,8 +2125,10 @@ details.more > summary { font-family: var(--mincho); font-weight: 700; letter-sp
       <div id="nowsub"></div>
       <div class="row"><button type="button" class="btn primary" id="replan"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4' /> <path d='M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4' /></svg> 残りを今から組み直す</button><span class="note">済んだものは、予定の ✓ を押すだけ</span></div>
     </div>
-    <div class="panel livelist" style="gap:10px"><div class="row" style="justify-content:space-between"><h3>このあとの予定</h3><div class="seg" role="group" aria-label="予定の表示"><button type="button" data-lv="list">一覧</button><button type="button" data-lv="detail">詳しく</button></div></div><div class="tlist" id="livetl"></div></div>
+    <div class="nowcard"><div id="nextcard"></div>
     <figure class="map"><div id="livemap"></div><figcaption class="credit">地図を押すと、そこが「今ここ」になります。</figcaption></figure>
+    </div>
+    <div class="panel livelist" style="gap:10px"><div class="row" style="justify-content:space-between"><h3>このあとの予定</h3><div class="seg" role="group" aria-label="予定の表示"><button type="button" data-lv="list">一覧</button><button type="button" data-lv="detail">詳しく</button></div></div><div class="tlist" id="livetl"></div></div>
     <div class="row"><button type="button" class="btn small" data-ostory="live"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 8h.01' /> <path d='M6 13l2.644 -2.644a1.21 1.21 0 0 1 1.712 0l3.644 3.644' /> <path d='M13 13l1.644 -1.644a1.21 1.21 0 0 1 1.712 0l1.644 1.644' /> <path d='M4 8v-2a2 2 0 0 1 2 -2h2' /> <path d='M4 16v2a2 2 0 0 0 2 2h2' /> <path d='M16 4h2a2 2 0 0 1 2 2v2' /> <path d='M16 20h2a2 2 0 0 0 2 -2v-2' /></svg> ここからを写真で</button><button type="button" class="btn small" data-otips="all">知っておくこと</button></div>
     <div class="panel tipboard" id="tipboard"></div>
     <details class="more"><summary>乗り物・食べ物を予定に足す</summary><div class="inner"><p class="note">押すと、予定が一番崩れない位置に入ります（つかんで予定に落とすと、その位置に。スマホは長押し）</p><div class="foodrow" id="livepal"></div></div></details>
@@ -2213,18 +2136,20 @@ details.more > summary { font-family: var(--mincho); font-weight: 700; letter-sp
 
   <!-- 時間帯 -->
   <section id="tab-hours" role="tabpanel" hidden>
-    <div class="secth"><h2 data-en="WAIT TIMES">いつ空いていて、何時まで並べるか</h2><p class="lead">選んでいる日の予想です。<b>おまかせの予定をそのまま使わなくても</b>、似た日の実際の待ち時間を見て、自分で順番を組めます。</p></div>
+    <div class="tabhero" data-ph="hours"><div><h2 data-en="WAIT TIMES">いつ空いていて、何時まで並べるか</h2><p class="lead">選んだ日の予想待ち時間（分）。◎一番空く（3分以内の差は「ほぼ同じ」）○次に空く。写真を押すとグラフ。</p></div></div>
     <div class="panel wave" id="nightbox"></div>
     <div class="panel" id="hmap"></div>
-    <div class="panel" id="hsum"></div>
-    <details class="more" id="hdet" open><summary>時間帯の表（ふつうの待ち・◎一番空く・○次に空く）</summary><div class="inner"><div class="scroll" id="tablebox"></div></div></details>
+    <details class="more"><summary>乗り物ごとの狙い目を一覧で見る</summary><div class="inner" id="hsum"></div></details>
+    <p class="scrollhint" aria-hidden="true">横にスクロールで、ほかの乗り物も <svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 6l6 6l-6 6' /></svg></p>
+    <div class="scroll" id="tablebox" tabindex="0" role="region" aria-label="乗り物ごとの予測待ち時間（横にスクロール）"></div>
+    <div class="pband" data-ph="x_harbor" aria-hidden="true"></div>
     <div class="panel" id="detail"></div>
   </section>
 
   <details class="more">
     <summary>データと写真の出典</summary>
     <div class="inner note">
-      <p>待ち時間：<a href="https://disneyreal.asumirai.info/">ディズニーリアル</a>の30分ごとの表示待ち時間（2025年9月1日〜2026年10月25日の420日）を数値化。ショーの時刻と休止施設も同サイト。各日の開園直後の初期値と、更新が止まっていた区間は除いています。</p>
+      <p>待ち時間：<a href="https://disneyreal.asumirai.info/">ディズニーリアル</a>の30分ごとの表示待ち時間（2025年9月1日〜2026年10月30日の425日）を数値化。ショーの時刻と休止施設も同サイト。各日の開園直後の初期値と、更新が止まっていた区間は除いています。</p>
       <p>プレミアアクセス：<a href="https://maihama-lab.com/column/dpa-priority-pass-difference/">maihama-lab（DPA料金一覧 2026年9月改定版）</a>、<a href="https://www.temapa.jp/articles/guide/disney-premier-access-price-list-2026/">temapa</a>、<a href="https://yasushi-duffy.com/dpa_soldout_time/">yasushi-duffy（DPA売り切れ時間）</a>。入園：<a href="https://www.tokyodisneyresort.jp/ticket/info/early_entry/">東京ディズニーリゾート公式（ハッピーエントリー）</a>、castel。</p>
       <p>乗り物の紹介と写真・食べ歩き：<a href="https://castel.jp/p/1035">castel ディズニーシーのアトラクション一覧</a>・<a href="https://castel.jp/p/1903">ディズニーシーの人気食べ歩きメニュー30選</a>。気温：気象庁 東京の日別平年値（1991〜2020年）。</p>
       <p>地図・通路・お店とトイレの位置：<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>（ODbL）をもとに作成。景色の写真（Wikimedia Commons）：<span id="xcred"></span>。個人で使うためのページです。東京ディズニーリゾート・オリエンタルランドとは関係ありません。</p>
@@ -3753,7 +3678,7 @@ if (!document.getElementById("gtoast")) document.body.insertAdjacentHTML("before
 (() => { const top = document.querySelector(".top"); if (!top || !window.ResizeObserver) return; new ResizeObserver(() => document.documentElement.style.setProperty("--toph", top.offsetHeight + "px")).observe(top); })();
 const BINS = [[20, "--w1"], [40, "--w2"], [60, "--w3"], [90, "--w4"], [120, "--w5"], [150, "--w6"], [Infinity, "--w7"]];
 const wchip = v => `<span class="wchip" style="${color(v)}">${Math.round(v)}分</span>`;
-const color = v => { const k = BINS.findIndex(b => v <= b[0]); return `background:var(${BINS[k][1]});color:var(${k === 6 ? "--wt7" : "--wt"})`; };
+const color = v => { const k = BINS.findIndex(b => v <= b[0]); return `background:var(${BINS[k][1]});color:var(${k >= 5 ? "--wt7" : "--wt"})`; };
 
 // ================= タブ =================
 const BACKDROP = { day: "x_harbor", plan: "x_venice", food: "x_capecod", live: "x_mc_night", hours: "x_prometheus" };
@@ -3848,90 +3773,15 @@ function renderSteps4() {
     else setTab(k);
   }));
 }
-// ===== 導入（はじめて開いた人に、使いたくなる流れで）=====
-//  マコなり社長の動画の型（tech-camp.in の文章版で確かめた）: 負の言い方のテーマ「〜TOP3」・読者の思い込みを突く問い・「もしかしたら、あなたも」・
-//  悪い例と良い例の対比・数字・最後に「いちばん大事なこと」と行動の呼びかけ。数字はすべて行く日の実データか、答え合わせで確かめた値（盛らない）
-let introC = { key: "", demo: null };
-function introDemo() {  // 人気の6つを「人気の順にそのまま」回る vs ナビの順番（ごはん・DPAなしで比べる）
-  const key = [M.date, S.entryMode, S.entry, S.speed].join("|"); if (introC.key === key) return introC.demo;
-  const ks = ["ソアリン", "トイストーリーマニア", "センターオブジアース", "タワーオブテラー", "ラプンツェル", "ピーターパン"].filter(k => RIDES[k] && avail(k, M.date) && M.prof[k] && shutAt(k) == null);
-  let demo = null;
-  try {
-    const ep0 = P().ep; P().ep = {};  // 比べはDPAなし
-    const its = ks.map(k => ({ id: "demo_" + k, type: "ride", key: k }));
-    const nv = simulate(its), pl = planRoute(its.map(x => ({ ...x })), [], { beam: 300 }), op = pl ? simulate(pl.order) : null;
-    P().ep = ep0;
-    const ok = s => s.rows.filter(r => RIDES[r.it.key] && !r.flag).length, wt = s => s.rows.filter(r => RIDES[r.it.key] && !r.flag).reduce((a, r) => a + r.wait, 0);
-    if (op) demo = { ks, nN: ok(nv), nW: wt(nv), nE: nv.end, oN: ok(op), oW: wt(op), oE: op.end, ord: op.rows.filter(r => RIDES[r.it.key]).map(r => r.it.key) };
-  } catch (e) { demo = null; }
-  introC = { key, demo }; return demo;
-}
+// 使用データ・推定値の意味・適用上の限界を冒頭に示す
 function renderIntro() {
   const box = document.getElementById("intro"); if (!box) return;
-  const ks = ["ソアリン", "トイストーリーマニア", "センターオブジアース", "タワーオブテラー", "ラプンツェル", "ピーターパン", "フローズン"].filter(k => RIDES[k] && avail(k, M.date) && M.prof[k]);
-  let ex = null;
-  for (const k of ks) { const hr = hourRows(k), b = hr.rows.find(x => x.h === hr.best), pk = hr.rows.filter(x => x.st === "ok" && x.med != null).reduce((a, x) => (!a || x.med > a.med ? x : a), null);
-    if (b && pk && pk.med - b.med >= 20 && (!ex || pk.med - b.med > ex.d)) ex = { k, b, pk, d: pk.med - b.med }; }
-  const dm = introDemo(), nDays = DAYS.filter(x => x.avg).length, have = S.sel.length > 0, sn = k => RIDES[k].short, day = md(M.date);
-  const hmF = m => { m = Math.round(m); const h = Math.floor(m / 60), mm = m % 60; return h ? `${h}<small>時間</small>${mm}<small>分</small>` : `${mm}<small>分</small>`; };
-  const hmT = m => { m = Math.round(m); const h = Math.floor(m / 60), mm = m % 60; return h ? `<span class="fig">${h}</span>時間<span class="fig">${mm}</span>分` : `<span class="fig">${mm}</span>分`; };
-  const showDemo = dm && (dm.oN > dm.nN || dm.nW - dm.oW >= 20);
-  const r1 = showDemo ? `<div class="wide"><div class="ledger"><table><thead><tr><th></th><th>並ぶ合計</th><th>乗れる数</th></tr></thead><tbody>
-      <tr class="is-pop"><th>人気の順にそのまま</th><td><span class="x">${hmF(dm.nW)}</span></td><td>${dm.nN}<small class="u">つ</small></td></tr>
-      <tr class="is-navi"><th>ナビの順番</th><td>${hmF(dm.oW)}</td><td>${dm.oN}<small class="u">つ</small></td></tr></tbody></table></div>
-    <div class="route"><p class="lbl">ナビの順番</p><ol>${dm.ord.map(k => `<li>${sn(k)}</li>`).join("")}</ol></div>
-    <p class="note">似た日の実際の待ち時間（ふつうの値）で計算。ごはん・DPAなし。</p>
-    <div class="concl"><p class="ivd">順番を変えるだけで、${dm.oN > dm.nN ? `${dm.oN - dm.nN}つ多く乗れて${dm.nW - dm.oW >= 20 ? `、並ぶ時間も<span class="nw">${hmT(dm.nW - dm.oW)}</span>短い` : ""}` : `並ぶ時間が<span class="nw">${hmT(dm.nW - dm.oW)}</span>短い`}。</p>
-      <p class="aside">人気のものから順に並ぶと、昼のいちばん混む時間に、いちばん長い列に並ぶことになります。</p></div></div>`
-    : `<div class="wide"><p class="aside">人気のものから順に並ぶと、昼のいちばん混む時間に、いちばん長い列に並ぶことになります。</p></div>`;
-  const exImg = ex ? (PH[{ "フローズン": "x_fs_frozen", "ラプンツェル": "x_fs_rapunzel", "ピーターパン": "x_fs_peter", "タワーオブテラー": "x_tot" }[ex.k]] || rideImg(ex.k) || PH.x_harbor) : PH.x_fs_frozen;
-  const mx = ex ? Math.max(ex.pk.med, ex.b.med) : 1;
-  const r2 = ex ? `<p class="body">${day}の${sn(ex.k)}だと、こうなります。</p>
-      <div class="ibars"><p class="ilg">待ち時間（似た日の実際の待ち時間から・ふつうの値）</p>
-        <div class="ibar"><span class="h">${ex.pk.h}時台</span><span class="track"><span class="val">${ex.pk.med}<small>分</small></span><span class="line" style="--w:${(ex.pk.med / mx).toFixed(2)}"></span></span></div>
-        <div class="ibar late"><span class="h">${ex.b.h}時台</span><span class="track"><span class="val">${ex.b.med}<small>分</small></span><span class="line" style="--w:${(ex.b.med / mx).toFixed(2)}"></span></span></div>
-        <p class="ivd">同じ乗り物で<span class="nw"><span class="fig">${ex.d}</span>分</span>の差。</p></div>` : "";
-  box.innerHTML = `<div class="open">
-    <h2 class="q" id="intro-q">「シーは混むから、<br>待つのは仕方ない」</h2>
-    <p class="q-sub">そう思っていませんか。</p>
-    <div class="open-row">
-      <p class="lead"><span class="nw">実は、</span><span class="nw">待ち時間の多くは</span><span class="nw"><em>「回り方」</em>で減らせます。</span><span class="nw">もしかしたら、</span><span class="nw">あなたも</span><span class="nw">やっているかもしれない</span><span class="nw">「シーで損する回り方 TOP3」を、</span><span class="nw">${day}の</span><span class="nw">実際のデータで</span><span class="nw">見てみます。</span></p>
-      <div class="for"><h3>とくに、こんな人に。</h3><ul>
-        <li><span class="nw">休日やクリスマス、</span><span class="nw">年末年始など、</span><span class="nw">混む日に行く人</span></li>
-        <li><span class="nw">はじめてで、</span><span class="nw">回る順番がわからない人</span></li>
-        <li><span class="nw">プレミアアクセス（DPA）を、</span><span class="nw">買うか迷っている人</span></li></ul></div>
-    </div></div>
-  <div class="sec"><div class="sec-head"><h2>シーで損する回り方 TOP3</h2></div>
-    <article class="irk irk1"><div class="num"><span class="n">1</span><span class="v">第一位</span></div>
-      <div class="main"><h3>思いついた順に並ぶ</h3><p class="body">${showDemo ? `${day}に、人気の${dm.ks.length}つ（${dm.ks.map(k => `<span class="nw">${sn(k)}</span>`).join("・")}）を回ると、こうなります。` : "同じ乗り物でも、回る順番で並ぶ時間は大きく変わります。"}</p></div>${r1}</article>
-    <article class="irk irk2"><div class="num"><span class="n">2</span><span class="v">第二位</span></div>
-      <figure class="photo"><img src="${exImg}" alt="" loading="lazy"><figcaption class="cap">${ex ? RIDES[ex.k].name : "ファンタジースプリングス"}</figcaption></figure>
-      <div class="main"><h3>人気アトラクションに、<br>いちばん混む時間に並ぶ</h3>${r2}<p class="aside">朝いちばんと夜は空くものが多い。でも、空く時間は乗り物ごとに違います。</p></div></article>
-    <article class="irk irk3"><div class="num"><span class="n">3</span><span class="v">第三位</span></div>
-      <div class="main"><h3><span class="nw">予定が崩れても、</span><span class="nw">そのまま続ける</span></h3><p class="body">当日は、思ったより長い列がどこかで必ず出ます。そのまま続けると後ろが全部ずれて、最後の1つ2つが閉まります。</p></div>
-      <div class="wide"><div class="shift" aria-hidden="true">
-        <div class="srow"><span class="k">予定</span><div class="trk"><i style="--x:0%;--w:15%"></i><i style="--x:16.5%;--w:16.9%"></i><i style="--x:35%;--w:13.5%"></i><i style="--x:50%;--w:17.7%"></i><i style="--x:69.2%;--w:15.4%"></i></div></div>
-        <div class="srow"><span class="k">実際</span><div class="trk"><i style="--x:0%;--w:15%"></i><i class="late" style="--x:16.5%;--w:32.3%"></i><i style="--x:50.4%;--w:13.5%"></i><i class="lost" style="--x:65.4%;--w:17.5%"></i><i class="lost" style="--x:84.4%;--w:15.2%"></i><em style="--x:16.5%">思ったより長い列</em><em style="--x:65.4%">乗れない</em></div></div>
-        <div class="closeline"><span>閉まる</span></div></div>
-        <ul class="keys" aria-hidden="true"><li>予定どおり</li><li class="late">思ったより長い列</li><li class="lost">乗れない</li></ul></div></article>
-  </div>
-  <div class="turn"><img src="${PH.x_pd_night}" alt="" loading="lazy"><span class="tag" aria-hidden="true">夜のポートディスカバリー</span>
-    <h2><span class="t1">このナビは、この3つを</span><span class="t2">全部、<wbr>ふせぎます。</span></h2>
-    <p>乗りたいものを選ぶだけで<em class="nw">「いつ・どの順で」</em>を自動で組み、当日は今の待ちを入れると、残りをその場で組み直します。</p></div>
-  <div class="iwhy"><h2><span class="nw">なぜ、</span><span class="nw">信じていいのか。</span><span class="sub">理由は3つです。</span></h2>
-    <ol class="irs">
-      <li><span class="rn" aria-hidden="true">1</span><h3>勘ではなく、<br>実際の記録</h3><div><p>1年分の、30分ごとの実際の待ち時間から、行く日に似た日を選んで予測します。</p><p class="datum"><b>${nDays}<small>日</small></b><span>使っている記録（1年分）</span></p></div></li>
-      <li><span class="rn" aria-hidden="true">2</span><h3>組んだら、<br>確かめる</h3><div><p>できた予定を、似た日の実際の待ち時間で回してみて、全部回れる見込みを%で出します。都合のいい数字だけは見せません。</p><p class="datum"><b>91<small>%</small></b><span>「◎ いい感じ」の予定が、実際に全部回れた割合（過去1年）</span></p></div></li>
-      <li><span class="rn" aria-hidden="true">3</span><h3>当日、崩れても<br>立て直せる</h3><div><p>今の待ちを3〜5個入れると、ほかの乗り物の予測も直ります。</p><p class="datum"><b>9<small>分</small><i>→</i>7<small>分</small></b><span>昼からの予測のずれ（平均）</span></p></div></li>
-    </ol>
-    <p class="honest"><b>正直に言うと、</b>予測は外れることもあります（雨の日や大型連休は特に）。だから「幅」で見せて、当日に直せるようにしています。</p></div>
-  <div class="close"><p class="pre">いちばん大事なのは</p><h2><span class="a">「何に乗るか」より、</span><span class="b">「いつ・どの順で並ぶか」</span></h2>
-    <p class="sub"><span class="nw">そこはナビに任せて、</span><span class="nw">あなたは</span><span class="nw">パークを楽しむことに</span><span class="nw">集中してください。</span></p></div>
-  <div class="finale"><img src="${PH.x_mc_evening}" alt="夕方のホテルミラコスタ" loading="lazy"><span class="tag" aria-hidden="true">夕方のホテルミラコスタ</span>
-    <div class="act"><p class="todo"><b>やることは、2つだけ。</b><span class="nw">行く日を選んで、</span><span class="nw">乗りたいものをタップする。</span><span class="nw">予定は自動でできます</span><span class="nw">（待ちを比べて自分たちで組むこともできます）。</span></p>
-      <p class="bye"><span class="nw">ぜひ、次のシーで</span><wbr><span class="nw">試してください。</span></p>
-      <div class="btns">${have ? `<button type="button" class="btn sun" data-gotab="plan">自分の予定を見る</button>` : `<button type="button" class="btn sun" data-intro-cal="1">行く日を選ぶ</button><button type="button" class="btn" data-gotab="plan">乗りたいものを選ぶ</button>`}</div></div></div>`;
-  const c = box.querySelector("[data-intro-cal]"); if (c) c.addEventListener("click", () => document.getElementById("cal").scrollIntoView({ behavior: "smooth" }));
+  const days = DAYS.filter(x => x.avg).map(x => x.d).sort();
+  box.innerHTML = `<details class="more" open><summary>推定の前提と利用上の留意点</summary><div class="inner">
+    <p><b>目的・使用データ</b>　本ナビは東京ディズニーシーの行程計画を支援する非公式ツールです。過去の表示待ち時間（${days[0] || "—"}〜${days.at(-1) || "—"}、${days.length}日）を用い、来園日と条件の近い日の記録から待ち時間を推定します。</p>
+    <p><b>推定値の解釈</b>　表・グラフの数値は将来の待ち時間の推定値であり、当日の観測値ではありません。予測幅は類似日のばらつきを示します。予定の達成見込みは過去記録に基づく試算であり、当日の実行を保証しません。</p>
+    <p><b>適用上の限界</b>　天候、運営状況、受付の早期終了などにより実際の待ち時間は変動します。ショーの開催時刻・休止情報・DPAの利用条件は公式アプリで確認してください。当日は観測した待ち時間を入力して予定を見直せます。</p>
+  </div></details>`;
 }
 // 「この乗り物たちで、近い日を比べる」: 選んでいる日と近くの空いている日（最大3日）を、今の希望・入園で並べる。見るだけ（P() も作らない）。日付を変えるのは「この日にする」だけ
 function dayCmpHTML() {
@@ -5251,7 +5101,7 @@ function wirePrep(box) { box.querySelectorAll("[data-prep]").forEach(c => c.addE
 // 営業時間: 記録のある日（過ぎた日）は記録、それより先は去年の同じ時期からの予想（公式の発表はふつう1〜2か月前）
 const hoursGuess = () => !(DAYMAP[M.date] && DAYMAP[M.date].o);
 // 待ち時間マップ（時間帯の画面の上の表）へ
-function goMap() { setTab("hours"); setTimeout(() => { const h = document.getElementById("hmap"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80); }
+function goMap() { setTab("hours"); setTimeout(() => { const h = document.getElementById("tablebox"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80); }
 const boostCurWait = () => { try { return Math.round(curSim().waitTot); } catch (e) { return null; } };
 // なぜこの順番？: 選んだ順にそのまま回った場合と比べ、乗り物ごとに「この時刻にした理由」を、予測の数字から出す
 function naiveSim() {
@@ -7108,7 +6958,7 @@ function renderHours() {
       const x = data[k].rows[i], c = M.cut[k];
       if (!x || x.med == null) { s += `<td class="off">${x ? (x.st === "注意" ? "締切注意" : x.st === "ok" ? "—" : x.st) : "—"}</td>`; continue; }
       const nr = data[k].near.includes(h), mk = data[k].best === h || nr ? "◎" : data[k].second === h ? "○" : "", sub = c && c.est ? "目安" : x.st === "注意" ? "締切注意" : nr ? "ほぼ同じ" : mk === "◎" ? "一番空く" : mk === "○" ? "次に空く" : "";
-      s += `<td class="q${HQ(x.med)}${mk === "◎" ? " best" : ""}">${mk}${x.med}${sub ? `<small>${sub}</small>` : ""}</td>`;
+      s += `<td class="${mk === "◎" ? "best" : ""}" style="${color(x.med)}">${mk}${x.med}${sub ? `<small>${sub}</small>` : ""}</td>`;
     }
     s += "</tr>";
   });
