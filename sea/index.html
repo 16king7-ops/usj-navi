@@ -2190,6 +2190,7 @@ button { font-family: inherit; }
     <div class="panel wave" id="wavebox"></div>
     <div class="panel" id="hmap"></div>
     <details class="more"><summary>乗り物ごとの狙い目を一覧で見る</summary><div class="inner" id="hsum"></div></details>
+    <p class="note">表は各時刻に並び始めた場合の予測を30分ごとに表示します。記録の間は補間し、開園直後は限られた記録から推定しています。表示を細かくしても予測の誤差はなくなりません。</p>
     <p class="scrollhint" aria-hidden="true">横にスクロールで、ほかの乗り物も <svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 6l6 6l-6 6' /></svg></p>
     <div class="scroll" id="tablebox" tabindex="0" role="region" aria-label="乗り物ごとの予測待ち時間（横にスクロール）"></div>
     <div class="pband" data-ph="x_harbor" aria-hidden="true"></div>
@@ -6986,6 +6987,22 @@ function hourRows(k) {
   const near = best ? ok.filter(x => x.h !== best.h && x.med <= best.med + 3).map(x => x.h) : [];  // 一番空く時台と3分以内の差の時台は「ほぼ同じ」（予測のずれより小さい差で1つに決めない）
   return { rows: out, best: best && best.h, near, second: sec && !near.includes(sec.h) && sec.med <= best.med * 1.6 + 10 && !(troughShare(k, sec.h) != null && troughShare(k, sec.h) < 0.1) ? sec.h : null };  // 似た日でほとんど一番空く時間に入らなかった（1割未満）時台は「次に空く」にしない
 }
+// 予定の計算と同じ時刻別予測を使う。1時間ごとの狙い目一覧はそのまま残す。
+function halfHourRows(k, times) {
+  const r = RIDES[k], c = M.cut[k];
+  const rows = times.map(t => {
+    const st = r.open && t < r.open ? "まだ" : c && c.max != null && t > c.max + 5 ? "終了" : c && t > c.p10 ? "注意" : "ok";
+    if (st === "まだ" || st === "終了") return { t, st };
+    const p = waitAt(k, t);
+    return p && Number.isFinite(p.med) ? { t, st, med: Math.round(p.med) } : { t, st };
+  });
+  const ok = rows.filter(x => x.st === "ok" && x.med != null && !(c && c.est));
+  const best = ok.length ? ok.reduce((a,b) => b.med < a.med ? b : a) : null;
+  const near = best ? ok.filter(x => x.t !== best.t && x.med <= best.med + 3).map(x => x.t) : [];
+  const far = best ? ok.filter(x => Math.abs(x.t - best.t) >= 120) : [];
+  const sec = far.length ? far.reduce((a,b) => b.med < a.med ? b : a) : null;
+  return { rows, best: best && best.t, near, second: sec && !near.includes(sec.t) && sec.med <= best.med * 1.6 + 10 && !(troughShare(k, Math.floor(sec.t / 60)) != null && troughShare(k, Math.floor(sec.t / 60)) < 0.1) ? sec.t : null };
+}
 function renderHourSum() {
   const keys = M.keys.filter(k => M.prof[k] && RIDES[k].src === "r" && RIDES[k].grp !== "kids"), sel = keys.filter(k => S.sel.includes(k)), rest = keys.filter(k => !S.sel.includes(k));
   const row = k => { const d = hourRows(k), b = d.rows.find(x => x.h === d.best), n13 = d.rows.find(x => x.h === 13), ok = d.rows.filter(x => x.med != null && x.st === "ok"); if (!b) return "";
@@ -7218,12 +7235,12 @@ function paintRetroMany() {
   const stats = a => { const e=a.map(x=>x.a-x.p); return {n:a.length,days:new Set(a.map(x=>x.d)).size,actual:a.reduce((s,x)=>s+x.a,0)/a.length,pred:a.reduce((s,x)=>s+x.p,0)/a.length,mae:e.reduce((s,v)=>s+Math.abs(v),0)/a.length,bias:e.reduce((s,v)=>s+v,0)/a.length,big:100*e.filter(v=>Math.abs(v)>40).length/a.length}; };
   const all=stats(rows), group=out.querySelector("#rm-group")?.value || "day", order=out.querySelector("#rm-order")?.value || "error", buckets=new Map(), weekdays=["日","月","火","水","木","金","土"];
   for (const x of rows) {
-    const key=group==="day" ? x.d : group==="month" ? x.d.slice(0,7) : group==="weekday" ? String(dObj(x.d).getDay()) : group==="hour" ? String(Math.floor(x.t/60)).padStart(2,"0") : x.k;
+    const key=group==="day" ? x.d : group==="month" ? x.d.slice(0,7) : group==="weekday" ? String(dObj(x.d).getDay()) : group==="hour" ? String(Math.floor(x.t/60)).padStart(2,"0") : group==="half" ? String(Math.floor(x.t/30)*30).padStart(4,"0") : x.k;
     if(!buckets.has(key))buckets.set(key,[]); buckets.get(key).push(x);
   }
   let items=[...buckets].map(([key,a])=>({key,...stats(a)}));
   items.sort(order==="error" ? (a,b)=>b.mae-a.mae : (a,b)=>a.key.localeCompare(b.key,"ja"));
-  const label=k=>group==="weekday" ? weekdays[+k]+"曜日" : group==="hour" ? +k+"時台" : group==="ride" ? RIDES[k].short : k;
+  const label=k=>group==="weekday" ? weekdays[+k]+"曜日" : group==="hour" ? +k+"時台" : group==="half" ? hm(+k)+"〜" : group==="ride" ? RIDES[k].short : k;
   const chronological=items.slice().sort((a,b)=>a.key.localeCompare(b.key,"ja"));
   const compareChart=group==="ride" ? "" : (()=>{
     const top=Math.ceil(Math.max(10,...items.map(x=>Math.max(x.actual,x.pred)))/10)*10, X=i=>20+i*960/Math.max(1,chronological.length-1), Y=v=>180-v/top*160;
@@ -7238,7 +7255,7 @@ function paintRetroMany() {
   })() : `<div aria-label="区分ごとの実際と予測の差">${chronological.map(x=>`<div style="display:grid;grid-template-columns:minmax(5em,9em) minmax(100px,1fr) 4em;gap:.4em;align-items:center;margin:.35em 0"><span>${esc(label(x.key))}</span><div style="height:1.2em;position:relative;background:linear-gradient(to right,transparent 49.8%,#a7b6c0 49.8%,#a7b6c0 50.2%,transparent 50.2%)"><span style="position:absolute;top:.15em;height:.9em;background:${x.bias>=0?"#c16836":"#146681"};left:${x.bias>=0?50:50+50*x.bias/scale}%;width:${50*Math.abs(x.bias)/scale}%"></span></div><b>${retroSign(x.bias)}分</b></div>`).join("")}</div><p class="note">中央が0分。右（橙）は実際の待ちが長く、左（青）は実際が短い。左右の端は±${scale}分。</p>`;
   out.innerHTML = `<p>比較 <b>${n.toLocaleString()}点</b>・${new Set(rows.map(x=>x.d)).size}日：平均のずれ <b>${all.mae.toFixed(1)}分</b>、差の平均 ${retroSign(all.bias)}分、40分超 ${all.big.toFixed(1)}%。</p>
     <p class="note">1点は1施設・1時刻の記録。平均のずれは差の絶対値の平均、差は実際−予測（＋は実際が長い）。記録の多い施設・日が全体平均に多く反映されます。休止・欠測の時刻は含みません。</p>
-    <div class="row"><label>まとめ方 <select id="rm-group"><option value="day">日別</option><option value="month">月別</option><option value="weekday">曜日別</option><option value="hour">時間帯別</option><option value="ride">乗り物別</option></select></label>
+    <div class="row"><label>まとめ方 <select id="rm-group"><option value="day">日別</option><option value="month">月別</option><option value="weekday">曜日別</option><option value="hour">時間帯別</option><option value="half">30分ごと</option><option value="ride">乗り物別</option></select></label>
     <label>並び順 <select id="rm-order"><option value="error">ずれが大きい順</option><option value="name">日付・名前順</option></select></label></div>
     ${compareChart}<h4>差の平均のグラフ</h4><p class="note">実際−予測。プラスとマイナスが打ち消し合うため、ずれの大きさは下の表の「平均のずれ」も確認してください。</p>${chart}
     <div class="ox"><table class="plain"><thead><tr><th>区分</th><th class="r">平均のずれ</th><th class="r">差の平均</th><th class="r">40分超</th><th class="r">点数 / 日数</th></tr></thead><tbody>${items.map(x=>`<tr><td>${group==="day" ? `<button type="button" class="linkbtn" data-rm-day="${x.key}">${x.key}</button>` : esc(label(x.key))}</td><td class="r"><b>${x.mae.toFixed(1)}分</b></td><td class="r">${retroSign(x.bias)}分</td><td class="r">${x.big.toFixed(1)}%</td><td class="r">${x.n.toLocaleString()} / ${x.days}</td></tr>`).join("")}</tbody></table></div>
@@ -7263,10 +7280,11 @@ function renderHours() {
   { const hm0 = document.getElementById("hmap"); if (hm0) hm0.hidden = true; }  // 乗り物が行のヒートマップは出さない（時間が行の表に一本化）
   renderHourSum();
   const keys = M.keys.filter(k => M.prof[k] && RIDES[k].grp !== "kids");
-  const H = hourRows(keys[0] || "ソアリン").rows.map(x => x.h), data = Object.fromEntries(keys.map(k => [k, hourRows(k)]));
+  const H = []; for (let t = Math.ceil(M.open / 30) * 30; t < M.close; t += 30) H.push(t);
+  const data = Object.fromEntries(keys.map(k => [k, halfHourRows(k, H)]));
   let s = `<table class="wt"><thead><tr><th class="h">時間</th>${keys.map(k => `<th><button type="button" data-k="${k}">${rideImg(k) ? `<img src="${rideImg(k)}" alt="">` : ""}${RIDES[k].short}</button></th>`).join("")}</tr></thead><tbody>`;
   H.forEach((h, i) => {
-    s += `<tr><th class="h">${h}時台</th>`;
+    s += `<tr><th class="h">${hm(h)}</th>`;
     for (const k of keys) {
       const x = data[k].rows[i], c = M.cut[k];
       if (!x || x.med == null) { s += `<td class="off">${x ? (x.st === "注意" ? "締切注意" : x.st === "ok" ? "—" : x.st) : "—"}</td>`; continue; }
