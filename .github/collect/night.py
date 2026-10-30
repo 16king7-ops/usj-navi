@@ -19,6 +19,8 @@ for r in sorted(rows, key=lambda r: r[0]):  # 重ねて読んだ回の同じ行�
 if not runs: sys.exit(f"{d}: 記録なし")
 horror = {k for k, r in D["rides"].items() if r.get("src") == "h"}
 rec = build(d, uniq, sorted(runs), D["tpw"], horror, tuple(D["hours"].get(d) or (480, 1260)), glob.glob(os.path.join(G, "jma", "270000", "*.json")))
+if len(runs) < 300 or len(rec["s"]) < 8 or rec["avg"] is None:  # 読めた回が少ない日（記録集めが止まった日など）は入れない。中身の薄い記録は予測を悪くする
+    print(f"{d}: 記録が少ないので入れない（読んだ回 {len(runs)}・乗り物 {len(rec['s'])}・平均 {rec['avg']}）"); sys.exit(0)
 p = os.path.join(SITE, "recent.js")
 old = json.loads(open(p, encoding="utf-8").read().split("=", 1)[1].rstrip().rstrip(";")) if os.path.exists(p) else {"days": []}
 days = sorted([x for x in old["days"] if x["d"] != d] + [rec], key=lambda x: x["d"])
