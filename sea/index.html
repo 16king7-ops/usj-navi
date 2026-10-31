@@ -2020,17 +2020,18 @@ button { font-family: inherit; }
         </ul>
       </div></details>
 
-      <details class="more"><summary>予測のしかた：似た日と、4つの補正</summary><div class="inner">
+      <details class="more"><summary>予測のしかた：似た日と補正</summary><div class="inner">
         <p><b>似た日</b>：行く日の前後10日（足りなければ広げる）の、同じ曜日の種類（平日／土日祝）の日です。4日以上の大型連休と、年末年始・お盆は混み方が別物なので、ふつうの日の似た日には入れません。</p>
         <p>そのうえで、別のパークの記録で効くと確かめた補正（連休の何日目か・営業時間の長さ・今年と去年の水準の差・天気予報）を、シーの記録から計算し直して使っています。シーはほぼ毎日9時〜21時なので、営業時間の補正はほとんど効きません。</p>
+        <p><b>最近の傾向</b>：前年と今年の比較記録が十分にあり、直近3週間の平日・休日それぞれで同じ方向の差が続く乗り物は、最近の水準に一部寄せます。4週間より先、クリスマス、大型連休、年末年始は適用しません。季節や施設によって当てはまり方が異なり、補正後も大きくずれることがあります。</p>
         <p><b>天気</b>：雨は「一日中雨・大雨」と「雨（時々止む・のち曇）」を分けています。記録では、一日中雨の日は晴れの日の8割ほど、止む時間がある雨は8割5分ほどの待ちでした（前は雨の効きを弱く見すぎていて、雨の日の予測が高すぎました）。</p>
-        <p><b>予測の幅</b>：「似た日の多くは○〜○分」は、80%の日が入るように作っています（2025年9月〜2026年10月の答え合わせで80〜83%）。似た日が少ないほど幅を広げます。</p>
+        <p><b>予測の幅</b>：「似た日の多くは○〜○分」は、約80%の日が入ることを目指して作っています。似た日が少ないほど幅を広げます。最近の傾向を使った補正後の幅は、今後も検証が必要です。</p>
         <p><b>やっていないこと</b>：チケットの値段は運営の「混みそう」の見込みですが、過去の値段の記録がないので、予測には使わず表示だけにしています。4日以上の大型連休を「連休の何日目か」の暦で選ぶ方法も試しましたが、前例がGW1回だけで、かえってずれたので使っていません（年末年始だけは暦で選んでいます）。</p>
         <p><b>記録がない乗り物</b>：インディ・ジョーンズは1年間ずっとお休みで記録がないので、再開後（2026年11月30日〜）は目安の待ち（60〜140分）で扱います。</p>
       </div></details>
 
       <details class="more"><summary>予測はどれくらい当たるか</summary><div class="inner" id="about-acc">
-        <p>答え合わせは、実際に使うときと同じ条件にしました。予測する日の30日前までの記録だけで予測し、その日の実際と比べます。</p>
+        <p>過去の日について、30日前までの待ち時間の記録を使って現在のモデルで再計算し、実際と比較しています。モデルや記録の前処理には後年の情報を含むため、当時発行した予測の精度を厳密に再現したものではありません。</p>
         <div class="ox"><table class="plain">
           <thead><tr><th>測り方（2026年9月1日〜10月8日の38日・約2万3千件。各日の30日前までの記録で予測）</th><th class="r">結果</th></tr></thead>
           <tbody>
@@ -2477,6 +2478,18 @@ const closeShift = (x, last, close) => Math.min(close, x.c && x.c < close && las
 const LATE_OK = 30;  // 表示が終わったあとも、閉園までに乗り始められそうなら入れてくれる日がある（20:53に海底2万マイルの列に入れた体験談・ユーザー）。毎日ではなく、混んでいれば早く閉じるので、予定には入れず「わんちゃん」の案内だけに使う
 let CUT_SLACK = 0, CUT_MUST = 45, CUT_SURE = 60, CUT_Q = 0.1, CUT_NEAR = 20;  // 受付の締め切り（lastAt）は「似た日の9割はこの時刻まで並べた」（CUT_Q）。「必ず」以外はそれまでに着けばよい（CUT_SLACK=0）。「必ず」は外れると困るので CUT_MUST 分前まで（ただし時刻の決まった予定や今の時刻から60分以内は CUT_NEAR 分前まで）。「確実」は CUT_SURE 分前
 const AVG_MED = medOf(DAYS.filter(x => x.avg).map(x => x.avg));  // 記録の日の、日平均の中央値
+// 同じ季節の前年・今年を十分に比較でき、直近の同種の日も同じ方向にずれる場合だけ、最近の水準へ半分寄せる。
+function recentLevelFactor(date, k, rr, fx, typ) {
+  const end = cutoffDay || (date < TODAY ? date : TODAY);
+  if (date > addDays(end, 28) || inYE(date) || isXmas(date) || isBig(date) || yoyPairs().length < 14) return 1;
+  const recent = DAYS.filter(x => x.d < end && x.d >= addDays(end, -21) && usable(x) && typOf(x.d) === typ && rideMean(x, k) != null);
+  const observed = recent.map(x => rideMean(x, k) * relF(date, x) * wxF(date, x, k));
+  const base = rr.map((x, i) => { const v = rideMean(x, k); return v == null ? null : v * fx[i]; }).filter(v => v != null);
+  if (observed.length < 4 || base.length < 4) return 1;
+  const mid = medOf(base);
+  if (observed.filter(v => v < mid * 0.9).length < 3 && observed.filter(v => v > mid * 1.1).length < 3) return 1;
+  return Math.min(1.3, Math.max(0.7, Math.sqrt((medOf(observed) + 10) / (mid + 10))));
+}
 function buildModel(date) {
   const c = crowd(date), refs = c.refs, typ = typOf(date), [open, close] = hoursOf(date), sh = open - 480;
   const prof = {}, cut = {}, wide = {}, keys = Object.keys(RIDES).filter(k => avail(k, date));
@@ -2494,12 +2507,13 @@ function buildModel(date) {
       }
       const cutM = (r.cut_in || []).filter(([rg]) => inR(date, [rg])).map(x => x[1])[0], SF = r.from_ ? 1 : yoyRide(src), fx = rr.map(x => relF(date, x) * (lastYr(date, x) ? SF : 1) * wxF(date, x, src));
       const mF = r.from_ ? 1 : morningF(src), lyF = rr.map(x => lastYr(date, x));
+      const recentF = r.from_ ? 1 : recentLevelFactor(date, src, rr, fx, typ);
       const pts = [], lasts = [];
       for (let i = 0; i < SLOT_M.length; i++) {
         const m = SLOT_M[i];
         if (m < (r.open ? r.open - 30 : 0) || (cutM && m > cutM)) continue;
         const mw = Math.max(0, Math.min(1, (MORN_MIN - (al(m) - open)) / MORN_MIN));  // 朝だけ（開園から90分でだんだん0に）
-        const v = []; rr.forEach((x, j) => { const w = dec(x.s[src], i); if (w != null) v.push(w * fx[j] * (mw > 0 && lyF[j] ? Math.pow(mF, mw) : 1)); }); v.sort((a, b) => a - b);
+        const v = []; rr.forEach((x, j) => { const w = dec(x.s[src], i); if (w != null) v.push(w * fx[j] * recentF * (mw > 0 && lyF[j] ? Math.pow(mF, mw) : 1)); }); v.sort((a, b) => a - b);
         if (v.length >= 3) { const [med, lo, hi] = bandOf(v, s0); pts.push([al(m), Math.round(med), Math.round(lo), Math.round(hi), v.length]); }
       }
       // 受付の締め切り: 混む日（レベル3）は、似た日のうち同じくらい混んだ日（日平均が予測の9割以上）から取る。混む日ほど早く終わる
