@@ -2192,6 +2192,7 @@ button { font-family: inherit; }
     <div class="panel" id="hmap"></div>
     <details class="more"><summary>乗り物ごとの狙い目を一覧で見る</summary><div class="inner" id="hsum"></div></details>
     <p class="note">表は各時刻に並び始めた場合の予測を30分ごとに表示します。記録の間は補間し、開園直後は限られた記録から推定しています。表示を細かくしても予測の誤差はなくなりません。</p>
+    <p class="note" id="hours-closed" hidden></p>
     <p class="scrollhint" aria-hidden="true">横にスクロールで、ほかの乗り物も <svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 6l6 6l-6 6' /></svg></p>
     <div class="scroll" id="tablebox" tabindex="0" role="region" aria-label="乗り物ごとの予測待ち時間（横にスクロール）"></div>
     <div class="pband" data-ph="x_harbor" aria-hidden="true"></div>
@@ -4857,6 +4858,7 @@ function renderPlanHero(sim) {
     <div class="teaser" id="boosttz" hidden></div>
     <div class="trust" id="trust"></div>
     <div class="acts3"><button type="button" class="btn primary" id="optbtn"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0' /> <path d='M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z' /> <path d='M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5' /></svg> おまかせ最適化</button><button type="button" class="btn sun" id="golive">このプランで当日へ ›</button><button type="button" class="btn" id="gomap"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 待ち時間マップ</button><button type="button" class="btn" id="shareplan"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0' /> <path d='M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2' /> <path d='M16 3.13a4 4 0 0 1 0 7.75' /> <path d='M21 21v-2a4 4 0 0 0 -3 -3.85' /></svg> 一緒に行く人に送る</button><button type="button" class="btn" id="copyplan2"><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z' /> <path d='M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1' /></svg> 文字でコピー</button></div>
+    <p class="note">当日は10時15分ごろに「当日」を開き、今の待ちが読み込まれたか確認するのがおすすめです。自動で取れないときは手入力もできます。過去の試算では、人気8施設のその後の予測の平均誤差が約19分から15分に減りました（2026年9〜10月、60日）。読み込んでも予測は外れることがあります。</p>
     <ol class="plist"><li><span class="t">${hm(t0)}</span><span class="ph"></span><span class="nm">入園${S.entryMode === "happy" ? "（ハッピーエントリー）" : ""}<small>${dp ? "入ったらすぐ、アプリでプレミアアクセスを買う" : "ゲートを入ったら、最初の予定へ"}</small></span><span></span></li>${rows}${chanceHTML(sim)}</ol>
     <div class="minimap" id="minimap">${miniMapHTML(sim)}</div>
     <details class="more prep" id="prepwrap"${prepOpen ? " open" : ""}><summary><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M20.942 13.021a9 9 0 1 0 -9.407 7.967' /> <path d='M12 7v5l3 3' /> <path d='M15 19l2 2l4 -4' /></svg> 当日の朝までにやること</summary><div class="inner" id="prepbox"></div></details>
@@ -4954,11 +4956,13 @@ function miniMapHTML(sim) {
   const H = []; for (let h = Math.floor(M.open / 60); h < Math.ceil(M.close / 60); h++) H.push(h);
   const at = {}, atM = {}; sim.rows.forEach(r => { if (RIDES[r.it.key] && !r.flag) { at[r.it.key] = Math.floor(r.start / 60); atM[r.it.key] = r.start; } });
   const ks2 = [...ks.filter(k => at[k] != null).sort((a, b) => at[a] - at[b]), ...ks.filter(k => at[k] == null)];
-  const row = k => { const d = hourRows(k);
+  const row = k => { const d = hourRows(k, true);
     return `<tr><th scope="row"><span class="mmn">${RIDES[k].short}${at[k] == null ? "<small>予定に入らず</small>" : epOf(k) ? "<small>DPA</small>" : ""}</span></th>${H.map(h => { const x = d.rows.find(q => q.h === h), pl = at[k] === h ? " plan" : "";
       if (!x || x.med == null) return `<td class="off${pl}" data-mk="${k}" data-mh="${h}">${x && x.st === "終了" ? "締" : x && x.st === "まだ" ? "" : "—"}</td>`;
       return `<td class="q${HQ(x.med)}${pl}" data-mk="${k}" data-mh="${h}">${x.med}</td>`; }).join("")}</tr>`; };
-  return `<div class="mmh"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 待ち時間マップ<small>選んだものの、ふつうの待ち（分）の予測。この日に似た日（去年と最近の${M.crowd.refs.length}日）の実際の待ちから出しています。${hm(M.open)}〜${hm(M.close)}（いちばん右は${H[H.length - 1]}時台）。<span class="mmk"></span>が予定の時間</small></b><button type="button" class="btn small" id="mm-all">全部の乗り物・くわしく ›</button></div>
+  const liveTimes = Object.values(P().over || {}).filter(x => x && Number.isFinite(x.from)).map(x => x.from);
+  const liveNote = liveTimes.length ? `当日の待ちを反映（最新 ${hm(Math.max(...liveTimes))}）。` : "当日の待ちはまだ反映していません。";
+  return `<div class="mmh"><b><svg class='ic' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z' /> <path d='M4 20h14' /></svg> 待ち時間マップ<small>各時台の予測の平均（分）。この日に似た${M.crowd.refs.length}日の記録から計算。${liveNote}各時刻の予測とは異なることがあります。${hm(M.open)}〜${hm(M.close)}（いちばん右は${H[H.length - 1]}時台）。<span class="mmk"></span>が予定の時間</small></b><button type="button" class="btn small" id="mm-all">全部の乗り物・くわしく ›</button></div>
     <div class="hmwrap"><table class="hm mini"><thead><tr><th scope="col"><span class="hm-sr">乗り物</span></th>${H.map(h => `<th scope="col">${h}${h === H[0] ? "時" : ""}</th>`).join("")}</tr></thead><tbody>${ks2.map(row).join("")}</tbody></table></div>${eveHTML(ks2, atM)}`;
 }
 // 閉園前の3時間は30分ごと（夜は待ちが大きく変わり、受付も順に終わる。記録も30分ごと）。at = { 乗り物: 予定の開始（分） }
@@ -4969,7 +4973,7 @@ function eveHTML(ks, at = {}) {
     const r = RIDES[k], c = M.cut[k], v = (M.prof[k] || []).filter(q => q[0] >= t && q[0] < t + 30), pl = at[k] != null && at[k] >= t && at[k] < t + 30 ? " plan" : "";
     const st = r.open && t + 30 <= r.open ? "まだ" : c && c.max && t > c.max + 5 ? "終了" : c && t + 15 > c.p10 ? "注意" : "ok";
     if (!v.length || st === "まだ" || st === "終了") return `<td class="off${pl}">${st === "終了" ? "締" : st === "まだ" ? "" : "—"}</td>`;
-    const m = Math.round(v.reduce((a, q) => a + q[1], 0) / v.length);
+    const m = Math.round(v.reduce((a, q) => a + waitAt(k, q[0]).med, 0) / v.length);
     return `<td class="q${HQ(m)}${st === "注意" ? " warn" : ""}${pl}">${m}</td>`;
   };
   return `<div class="eve"><b>閉園前の3時間は30分ごと</b><small>夜は30分で待ちが大きく変わり、受付も順に終わります。点線の枠＝受付の締め切りが近い、締＝受付が終わったあと</small>
@@ -6986,10 +6990,10 @@ function doReplan() {
 let focusK = "ソアリン";
 // 谷が日によってぶれないか（似た日の何割で、その日一番空いた2時間に入ったか）
 const shareTxt = (k, h) => { const p = troughShare(k, h); return p == null ? "" : p < 0.05 ? "。似た日では、その日一番空いた2時間に入った日はなかった（ほかの時間とあまり差がない）" : `。似た日の${p >= 0.95 ? "すべて" : Math.round(p * 10) + "割"}で、その日一番空いた2時間に入った${p >= 0.7 ? "（ほぼ毎日空く）" : p < 0.4 ? "（日によってぶれる）" : ""}`; };
-function hourRows(k) {
+function hourRows(k, includeLive = false) {
   const p = M.prof[k] || [], c = M.cut[k], r = RIDES[k], out = [];
   for (let h = Math.floor(M.open / 60); h < Math.ceil(M.close / 60); h++) {
-    const v = p.filter(q => q[0] >= h * 60 && q[0] < h * 60 + 60);
+    const v = p.filter(q => q[0] >= h * 60 && q[0] < h * 60 + 60).map(q => { if (!includeLive) return q; const w = waitAt(k, q[0]); return [q[0], w.med, w.p10, w.p90]; });
     const st = (r.open && h * 60 + 60 <= r.open) ? "まだ" : c && c.max && h * 60 > c.max + 5 ? "終了" : c && h * 60 + 30 > c.p10 ? "注意" : "ok";
     const avg = f => Math.round(v.reduce((a, q) => a + q[f], 0) / v.length);
     out.push(v.length && st !== "まだ" && st !== "終了" ? { h, st, med: avg(1), p10: avg(2), p90: avg(3) } : { h, st });
@@ -7293,6 +7297,9 @@ function renderHours() {
   renderNight();
   { const hm0 = document.getElementById("hmap"); if (hm0) hm0.hidden = true; }  // 乗り物が行のヒートマップは出さない（時間が行の表に一本化）
   renderHourSum();
+  const closed = Object.values(RIDES).flatMap(r => (r.not_in || []).filter(span => inR(M.date, [span])).map(span => `${r.short}（${span[0]}〜${span[1]}）`));
+  const closedBox = document.getElementById("hours-closed"); closedBox.hidden = !closed.length;
+  closedBox.innerHTML = closed.length ? `選んだ日に休止予定のため、表に表示していません：${closed.map(esc).join("、")}。 <a href="https://www.tokyodisneyresort.jp/tds/monthly/stop.html" target="_blank" rel="noopener">公式の休止情報を確認</a>` : "";
   const keys = M.keys.filter(k => M.prof[k] && RIDES[k].grp !== "kids");
   const H = []; for (let t = Math.ceil(M.open / 30) * 30; t < M.close; t += 30) H.push(t);
   const data = Object.fromEntries(keys.map(k => [k, halfHourRows(k, H)]));
