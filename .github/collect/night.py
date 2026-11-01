@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from tpw_day import build
 G, SITE = sys.argv[1], sys.argv[2]
-d = sys.argv[3] if len(sys.argv) > 3 else (datetime.utcnow() + timedelta(hours=9)).strftime("%Y-%m-%d")
+d = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] else (datetime.utcnow() + timedelta(hours=9 - 6)).strftime("%Y-%m-%d")  # 日をまたいで（朝6時まで）動いても前の日の分を作る（定期実行が遅れるため）
 html = open(os.path.join(SITE, "index.html"), encoding="utf-8").read(); i = html.index("const D = ") + 10
 D = json.loads(html[i:].split("\n", 1)[0].strip()[:-1])
 rows, runs = [], set()
