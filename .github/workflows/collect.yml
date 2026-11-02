@@ -1,5 +1,6 @@
 # 記録を集める（元は _work/攻略アプリ/collect/。deploy_site.py が site/.github/ に写す）。集めた生の記録は data 枝（暗号化）、毎晩の1日分の記録は main の recent.js
-#  live: 日本時間 7時〜22時台に30分ごとに起動を予約（同時に1本）、ThemeParks.wiki の待ち・休止を1分ごと（暗号化）と気象庁の天気予報。動いた回は22:45まで読む（定期実行は1日数回しか動かないことがある）
+#  live: ThemeParks.wiki の待ち・休止を1分ごと（暗号化）と気象庁の天気予報。1回最長340分で、終わると次の回を自分で起動する（同時に1本）。7時前は7時まで待つ。
+#        定期実行は1日数回しか動かず、11/1・11/2 は開園直後と昼すぎに数時間ずつ抜けたので、30分ごとの予約はつながりが切れたときの予備
 #  night: 日本時間 23:40ごろ、その日の1分ごとの記録からアプリの1日分の記録を作って recent.js に足し（night.py）、それを入れたアプリで翌日から14日分の予測を発行して固定（issue_forecast.cjs）
 name: collect
 on:
@@ -13,6 +14,7 @@ on:
       day: { description: "毎晩の記録を作る日（空ならきょう）", default: "" }
 permissions:
   contents: write
+  actions: write  # 次の回を起動する
 jobs:
   live:
     if: github.event.schedule == '7,37 22,23,0-13 * * *' || (github.event_name == 'workflow_dispatch' && inputs.minutes != '0')
@@ -25,6 +27,10 @@ jobs:
       - run: node .github/collect/live.mjs
         env: { TPW_KEY: "${{ secrets.TPW_KEY }}", MINUTES: "${{ inputs.minutes || '340' }}" }
       - run: bash .github/collect/save.sh "待ち・天気予報"
+        env: { GH_TOKEN: "${{ github.token }}" }
+      # 次の回を起動（失敗した回は10分おいてから。すぐ失敗が続いても1時間に数回まで）
+      - if: always() && !cancelled()
+        run: '[ "${{ job.status }}" = success ] || sleep 600; gh workflow run collect.yml -R "${{ github.repository }}" --ref main'
         env: { GH_TOKEN: "${{ github.token }}" }
   night:
     if: github.event.schedule == '40 14 * * *' || inputs.night

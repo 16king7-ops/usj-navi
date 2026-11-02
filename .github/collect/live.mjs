@@ -1,5 +1,5 @@
 // GitHub の定期実行で、ThemeParks.wiki の /live を1分ごとに MINUTES 分（既定340分、日本時間22:45まで）読み、前回から lastUpdated が変わった行だけを残す（列は tpw_log.py と同じ＋ほかの列の種類）。
-//  30分ごとに起動を予約し、同時に動くのは1本（collect.yml の concurrency）。動いた回は22:45まで（最長340分）読み続ける。GitHub の定期実行は1日数回しか動かないことがあったため（2026/10/31〜11/1）
+//  回が終わるたびに次の回を起動し（collect.yml）、同時に動くのは1本（concurrency）。30分ごとの定期実行は、つながりが切れたときの予備
 //  生の値は公開しない約束（ThemeParks.wiki の規約）なので、OUT/tpw/日付/時分.enc に暗号化して置く（鍵は Actions の秘密 TPW_KEY。この PC の pull.py が戻す）
 //  ついでに気象庁の大阪府の天気予報を1回読み、OUT/jma/270000/発表時刻.json に置く（すでにあれば save.sh が上書きしない）
 //  営業予定（/schedule。公式の開閉園）も起動時に1回読み、暗号化した記録の schedule に入れる（いつの時点でどう発表されていたかを残す。変更の履歴は pull.py が schedule/ に）
@@ -12,10 +12,12 @@ const OUT = process.env.OUT || "out", UA = { "User-Agent": "usj-navi-collector (
 const jst = () => new Date(Date.now() + 9 * 3600e3).toISOString().replace("T", " ").slice(0, 19);
 const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
 const get = async u => { const r = await fetch(u, { headers: UA, signal: AbortSignal.timeout(30e3) }); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); };
-// 終わり: MINUTES 分後か、日本時間 22:45 の早いほう（GitHub の定期実行は遅れたりとばされたりするので、動いた回がその日の終わりまで読み続ける。最長 Actions の6時間の内）。7時前・22:45 より後に動いた回は読まない
-const jstNow = () => new Date(Date.now() + 9 * 3600e3), close = (() => { const j = jstNow(); return Date.UTC(j.getUTCFullYear(), j.getUTCMonth(), j.getUTCDate(), 22, 45) - 9 * 3600e3; })();
-const start = jst(), end = Math.min(Date.now() + (+process.env.MINUTES || 340) * 60e3, close), seen = {}, rows = [], runs = [], errs = [];
-if (jstNow().getUTCHours() < 7 || Date.now() >= close) { console.log("営業時間外なので読まない", start); process.exit(0); }
+// 終わり: MINUTES 分後か、日本時間 22:45 の早いほう。7時前に動いた回は7時まで待ってから読み、22:45 より後なら翌日の7時を待つ。待つだけで MINUTES を使い切ったら何も置かずに終わる
+//  回が終わると collect.yml が次の回を起動する（GitHub の定期実行は遅れたりとばされたりして、11/1・11/2 も開園直後と昼すぎに数時間ずつ抜けた）
+const close = (() => { const j = new Date(Date.now() + 9 * 3600e3), c = Date.UTC(j.getUTCFullYear(), j.getUTCMonth(), j.getUTCDate(), 22, 45) - 9 * 3600e3; return Date.now() >= c ? c + 864e5 : c; })(), t7 = close - (15 * 60 + 45) * 60e3;
+const end = Math.min(Date.now() + (+process.env.MINUTES || 340) * 60e3, close), seen = {}, rows = [], runs = [], errs = [];
+if (Date.now() < t7) { const w = Math.min(t7, end) - Date.now(); console.log("7時まで待つ", Math.round(w / 60e3), "分"); await new Promise(r => setTimeout(r, w)); if (Date.now() < t7) process.exit(0); }
+const start = jst();
 try {
   const w = await get(JMA), at = w[0].reportDatetime;
   mkdirSync(`${OUT}/jma/270000`, { recursive: true }); writeFileSync(`${OUT}/jma/270000/${at.replace(/:/g, "")}.json`, JSON.stringify(w));
