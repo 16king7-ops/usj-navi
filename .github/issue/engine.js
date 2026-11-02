@@ -793,6 +793,26 @@ function laterTip(k, now, last) {
   const b = ok.reduce((m, p) => (!m || p.med < m.med ? p : m), null);
   return { w, save0: w - lo, save: b ? w - b.med : 0, bt: b ? b.t : now };
 }
+// 計画欄の「今日の見直し」（当日タブを使わない人向け）: 今日の待ちを読み込んでいるとき、予定どおりに進んでいる前提で
+//  （並び始めが now より前の予定は済んだとみなす）、残りを now の時刻・場所から読み込んだ予測で計算し直す。予定は変えない。
+//  late＝読み込む前の予測では間に合っていたのに、読み込んだ予測では受付終了・閉園に間に合わない乗り物。re＝残りを組み直した案（late があるときだけ）
+//  根拠（2026-11-02 予測検証/audit1102/miss.py、396日）: 遅れで乗れない乗り物が出た日（人気8施設 6%・詰め込み10施設 17%）の約7割で、朝の読み込み時点の計算に「間に合わない」が出ていた。そこで組み直すと減った日の方が多い
+function todayCheck(now, musts = []) {
+  const s = ncOf(), items = restItems(); if (!s.ks.length || !items.length) return null;
+  const sim1 = simulate(items, liveOpt()), o = P().over; let sim0;
+  P().over = {}; _nc = null; try { sim0 = simulate(items, liveOpt()); } finally { P().over = o; _nc = null; }
+  const ahead = r => r.start >= now || (r.it.qs != null), was = new Set(sim0.rows.filter(r => r.flag).map(r => r.it.id));
+  const rest1 = sim1.rows.filter(ahead), done = sim1.rows.filter(r => !ahead(r)), loc = done.length ? done[done.length - 1].to : (liveOpt().loc || GATE);
+  const late = rest1.filter(r => RIDES[r.it.key] && r.flag && !was.has(r.it.id)).map(r => r.it);
+  const out = { at: s.t1, now, done: done.map(r => r.it), loc, late, end0: sim0.end, end1: sim1.end, cont: rest1.length ? simulate(rest1.map(r => r.it), { start: now, loc }) : null, re: null };
+  if (late.length && rest1.length) {
+    const its = () => rest1.map(r => ({ ...r.it, at: undefined, mAt: undefined })), ms = musts.filter(k => rest1.some(r => r.it.key === k));
+    let p = planMain(its(), ms, { start: now, loc }), noMust = false;
+    if (!p && ms.length) { p = planMain(its(), [], { start: now, loc }); noMust = true; }  // 「必ず」を全部は守れないときは、外した案を見せる（押すかは利用者が決める）
+    if (p) out.re = { order: p.order, missed: p.missed || [], noMust, sim: simulate(p.order, { start: now, loc }) };
+  }
+  return out;
+}
 // 組み方（S.style）: lean＝ふつう（待ちは似た日のふつうの値。はじめの値）／normal＝慎重（ふつうと多めの中間）／must＝必ず最優先。sure＝確実は画面から外した（シー版と同じ考え方）
 // 計画で見る「多め」: 予測の幅（p90）は正直な80%の範囲に広げたので、計画の控えめさは前と同じになるよう 0.32 を掛ける（前の上乗せ 平均12分 ÷ 今の 37分）
 const PK = 0.32, upper = w => w.med + PK * Math.max(0, w.p90 - w.med);
