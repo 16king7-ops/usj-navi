@@ -39,6 +39,11 @@ jobs:
           git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add recent.js; git diff --cached --quiet || git commit -qm "毎晩の記録"
           for i in 1 2 3 4 5; do git push -q origin HEAD:main && break; sleep $((i * 7)); git pull -q --rebase origin main; done
-      - run: node .github/issue/issue_forecast.cjs --html index.html --engine .github/issue/engine.js --recent recent.js --out out/issued --inputs out/inputs
+      # 発行の直前の気象庁の大阪府の予報を入れて発行する（2026-11-02 予測検証/audit1102: 前日に出ていた予報から天気の区分を入れると前日夜 −0.21±0.10分、4期間とも改善）。取れなければ天気なしで発行
+      - run: |
+          mkdir -p out/jma/270000
+          if curl -sf -A "usj-navi-collector" https://www.jma.go.jp/bosai/forecast/data/forecast/270000.json -o jma.json; then
+            cp jma.json "out/jma/270000/$(node -p 'require("./jma.json")[0].reportDatetime.replace(/:/g,"")').json"; W="--weather jma.json"; else W=""; fi
+          node .github/issue/issue_forecast.cjs --html index.html --engine .github/issue/engine.js --recent recent.js --out out/issued --inputs out/inputs $W
       - run: bash .github/collect/save.sh "予測の発行"
         env: { GH_TOKEN: "${{ github.token }}" }

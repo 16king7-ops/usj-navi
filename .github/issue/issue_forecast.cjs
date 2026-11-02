@@ -58,7 +58,9 @@ if (opt("--weather", null)) {
   const w = JSON.parse(fs.readFileSync(opt("--weather"), "utf8")), atWx = w[0] && w[0].reportDatetime, ts = w[0] && w[0].timeSeries && w[0].timeSeries[0];
   if (!Number.isFinite(Date.parse(atWx)) || Date.parse(atWx) > Math.min(Date.parse(at + "+09:00"), Date.now()) || !ts || !Array.isArray(ts.timeDefines) || !ts.areas || !ts.areas[0] || ts.areas[0].area?.code !== "270000" || !Array.isArray(ts.areas[0].weathers)) { console.error("気象庁予報の形式・地域が不正か、予測発行時点より後の予報です"); process.exit(1); }
   const days = {};
-  ts.timeDefines.forEach((t, i) => { const d = t.slice(0, 10), text = ts.areas[0].weathers[i]; if (d >= from && d <= to && typeof text === "string" && text.length < 100) days[d] = text; });
+  // 気象庁の文を記録と同じ書き方にする（collect/tpw_day.py の jma_text と同じ。「くもり　のち　雨」→「曇後雨」。wxClass がそのまま読める）
+  const jmaText = w => w.replace(/\s+/g, "").replace(/晴れ/g, "晴").replace(/くもり/g, "曇").replace(/のち/g, "後").replace(/(夜|昼前|昼過ぎ|朝|夕方|明け方|夜遅く|未明)/g, "");
+  ts.timeDefines.forEach((t, i) => { const d = t.slice(0, 10), text = ts.areas[0].weathers[i]; if (d >= from && d <= to && typeof text === "string" && text.length < 100) days[d] = jmaText(text); });
   if (!Object.keys(days).length) { console.error("対象日の気象庁予報がありません"); process.exit(1); }
   D.forecastWeather = { at: atWx, source: "https://www.jma.go.jp/bosai/forecast/data/forecast/270000.json", days };
 }

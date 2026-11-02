@@ -63,11 +63,14 @@ const Q = p => AVGS[Math.floor((AVGS.length - 1) * p)];
 const QS = [Q(0.25), Q(0.5), Q(0.75)];
 const LV = ["空いている", "ふつう", "やや混む", "混む"], LVM = ["◎", "○", "△", "✕"];
 const HHN_ALL = [["2025-09-05", "2025-11-03"], ["2026-09-11", "2026-11-08"]];
+// HHN 期間の日は期間中の日だけを似た日にする。7日以上先の予測では、期間外の日にも期間中の日を入れない（両方向）。
+//  答え合わせ（2026-11-02 予測検証/audit1102/、変わった日のセル）: 7日前 −0.35±0.18・14日前 −0.42±0.25・30日前 −0.38±0.31分（影響のある 2025/11〜12・2026/8〜9 の両方で改善）。
+//  前日夜は +0.11±0.45分で効かない（前日の持ち越し・1日の水準の機械学習が直近の水準を入れるため）ので、片方向のまま
 function refDays(date, need = 6) {
-  const typ = typOf(date), y = doy(date), hhn = inR(date, HHN_ALL), big = isBig(date), sp = special(date);
+  const typ = typOf(date), y = doy(date), hhn = inR(date, HHN_ALL), big = isBig(date), sp = special(date), both = leadOf(date) >= 7;
   for (const W of [10, 17, 25, 40]) {
     const r = DAYS.filter(x => x.avg && Object.keys(x.s).length && typOf(x.d) === typ && Math.min(Math.abs(doy(x.d) - y), 365 - Math.abs(doy(x.d) - y)) <= W && x.d !== date
-      && (!hhn || inR(x.d, HHN_ALL)) && usable(x) && (big || !isBig(x.d)) && (sp || !special(x.d)));
+      && (hhn ? inR(x.d, HHN_ALL) : !both || !inR(x.d, HHN_ALL)) && usable(x) && (big || !isBig(x.d)) && (sp || !special(x.d)));
     if (r.length >= need || W === 40) return r;
   }
 }
@@ -574,21 +577,33 @@ function baseAt(k, t, beforeMicro = false) {  // 今日の様子で直す前の�
 // ===== 当日の補正（ナウキャスト。予測検証/sonnet2/報告.md） =====
 //  公式アプリで分かった今の待ち P().over[k] = {v, from}（スクショか手入力。乗り物ごとに最新だけ）から、あとの時刻の予測を直す
 //    e = ln((v+10)/(予測+10))     … その乗り物の「実際÷予測」（待ちが小さいときも暴れないよう +10）
-//    G = Σe / (n+1.5)             … 今日の混み具合（分かった乗り物の平均。1.5個ぶん0に寄せる）。今日の水準は夕方まで7〜10割残るので、全部の乗り物に掛ける
-//    分かった乗り物 = ψ·[G + (e − G)·(0.3 + 0.7·exp(−経過分/100))]   分かっていない乗り物 = ψ·G
+//    G = Σf·e / (Σf+1.5)          … 今日の混み具合（分かった乗り物の平均。1.5個ぶん0に寄せる）。今日の水準は夕方まで7〜10割残るので、全部の乗り物に掛ける
+//      f = exp(−(一番新しい観測の時刻 − その乗り物の観測の時刻)/60) … 手入力などで古い観測が混ざったら軽く数える（全部同じ時刻なら従来と同じ）
+//    分かった乗り物 = ψ·[G + (e − G)·(0.3 + 0.7·exp(−経過分/100))]
+//    分かっていない乗り物 = ψ·Gu、Gu = Σ群(群の e の平均) / (観測のある群の数+1.5) … 絶叫だけ入れた日に、ほかの群まで絶叫の混み方で動かしすぎない
+//  答え合わせ（2026-11-02 予測検証/audit1102/、2025/10〜2026/10 の396日、読み込み 10:15〜16:15 から30〜240分先）:
+//    古い観測が混ざる（半分の乗り物は60分前の値だけ、手入力だけ）: −0.029分（±0.011、4期間とも改善）。当日の機械学習が働く時刻混在では −0.01〜−0.02分（誤差の範囲。2026-11-02 その2、期間ごとに学び直した機械学習で）。絶叫5つだけ入れる: 読み込んでいない乗り物 −0.29分（4期間とも改善。機械学習が働く自動読み込みでも −0.25〜−0.32分）、
+//    家族向け5つだけ: −0.12分（4期間とも改善、人気6つ −0.12分）。全部の乗り物を読み込む普段の自動読み込みでは変わらない（26万セル中1.2万セルが動き、差 ±0.001分以内）
 //    ψ = 1 − exp(−(分かった時刻 − 開園)/60)   … 開園直後の値は当てにならないので効きを弱める
 //  幅は、ずらした中心から log(待ち+10) で ±hw: 分かった乗り物 0.15 + 0.20·(1−exp(−経過分/90))、分かっていない乗り物 0.40（開園直後の値なら広げる）
 //  1日抜きの検証（根拠）中は直さない
-const NC = { c: 10, kg: 1.5, om: 0.3, tau: 100, ts: 60, h0: 0.15, h1: 0.2, th: 90, hu: 0.4, hl: 0.5 };
+const NC = { c: 10, kg: 1.5, om: 0.3, tau: 100, ts: 60, h0: 0.15, h1: 0.2, th: 90, hu: 0.4, hl: 0.5, tf: 60 };
+const NC_GRP = {};  // 利用目的の群（Gu 用）
+for (const [g, ks] of Object.entries({ 絶叫: ["ハリウッドドリーム", "バックドロップ", "フライングダイナソー", "ジュラシックパーク"], ハリポタ: ["ハリーポッター", "ヒッポグリフ"], 任天堂: ["マリオカート", "ヨッシー", "ドンキーコング"], ミニオン: ["ミニオンライド", "ミニオンミッション", "ミニオンアイス"],
+  子ども: ["スヌーピーフライングエース", "フライングスヌーピー", "キティカップケーキ", "エルモのバブルバブル", "モッピー", "エルモのスケートボード"], 屋内ほか: ["コナン4D", "スペースファンタジー", "ジョーズ"], ホラー: ["貞子", "ファクトリー", "チェンソーマン", "ジョーズ夜"] })) for (const k of ks) NC_GRP[k] = g;
 let _nc = null;
 function ncOf() {  // P().over か M が変わったときだけ作り直す（over は setOver で毎回新しい object にする）
   const o = P().over;
   if (_nc && _nc.o === o && _nc.M === M) return _nc;
-  const ks = Object.keys(o).filter(k => o[k] && Number.isFinite(o[k].v) && o[k].v >= 0 && o[k].v <= 600 && Number.isFinite(o[k].from) && o[k].from >= 0 && o[k].from < 1440 && M.prof[k]), e = {}, psi = {};
-  let sum = 0, t1 = -1;
-  for (const k of ks) { const x = o[k], m = baseAt(k, x.from, true).med; e[k] = Math.log((x.v + NC.c) / (m + NC.c)); sum += e[k]; psi[k] = 1 - Math.exp(-Math.max(0, x.from - M.open) / NC.ts); t1 = Math.max(t1, x.from); }
-  const G = ks.length ? sum / (ks.length + NC.kg) : 0;
-  return (_nc = { o, M, ks, e, psi, G, t1, psiAll: t1 < 0 ? 0 : 1 - Math.exp(-Math.max(0, t1 - M.open) / NC.ts) });
+  const ks = Object.keys(o).filter(k => o[k] && Number.isFinite(o[k].v) && o[k].v >= 0 && o[k].v <= 600 && Number.isFinite(o[k].from) && o[k].from >= 0 && o[k].from < 1440 && M.prof[k]), e = {}, psi = {}, by = {};
+  let sum = 0, wsum = 0, t1 = -1;
+  for (const k of ks) t1 = Math.max(t1, o[k].from);
+  for (const k of ks) {
+    const x = o[k], m = baseAt(k, x.from, true).med, f = Math.exp(-(t1 - x.from) / NC.tf); e[k] = Math.log((x.v + NC.c) / (m + NC.c)); sum += f * e[k]; wsum += f; psi[k] = 1 - Math.exp(-Math.max(0, x.from - M.open) / NC.ts);
+    const g = NC_GRP[k]; if (g) (by[g] = by[g] || []).push(e[k]);
+  }
+  const G = ks.length ? sum / (wsum + NC.kg) : 0, gs = Object.values(by), Gu = gs.length ? gs.reduce((a, v) => a + v.reduce((p, q) => p + q, 0) / v.length, 0) / (gs.length + NC.kg) : G;
+  return (_nc = { o, M, ks, e, psi, G, Gu, t1, psiAll: t1 < 0 ? 0 : 1 - Math.exp(-Math.max(0, t1 - M.open) / NC.ts) });
 }
 function setOver(k, v, from, src) {  // 今の待ちを入れる（v が null なら消す）。同じ乗り物は新しい値で置き換える。src: 'auto'（ThemeParks.wiki）か 'manual'（手入力・スクショ）
   if (!RIDES[k] || (v != null && (!Number.isFinite(v) || v < 0 || v > 600 || !Number.isFinite(from) || from < 0 || from >= 1440))) return false;
@@ -759,12 +774,24 @@ function waitAt(k, t) {
   const x = P().over[k], seen = x && x.v != null && s.e[k] != null;
   if (t < (seen ? x.from : s.t1) - 30) return b;  // 分かった時刻より前は直さない
   const h = seen ? Math.max(0, t - x.from) : 0;
-  const sh = seen ? s.psi[k] * (s.G + (s.e[k] - s.G) * (NC.om + (1 - NC.om) * Math.exp(-h / NC.tau))) : s.psiAll * s.G;
+  const sh = seen ? s.psi[k] * (s.G + (s.e[k] - s.G) * (NC.om + (1 - NC.om) * Math.exp(-h / NC.tau))) : s.psiAll * s.Gu;
   const lm0 = Math.log(b.med + NC.c) + sh, la = analogLm(k, t), lm1 = la == null ? lm0 : (1 - AN.wb) * lm0 + AN.wb * la;  // 当日の似た日と半々
   const tj = trajLm(k, t), lm2 = tj ? (1 - tj.w) * lm1 + tj.w * tj.lm : lm1;  // 似た推移を何分後かに応じて混ぜる
   const lm = lm2 + mlDelta(k, t, Math.log(b.med + NC.c), lm2, la, tj);  // 当日の機械学習で残りのずれを直す
   const hw = (seen ? NC.h0 + NC.h1 * (1 - Math.exp(-h / NC.th)) : NC.hu) * (1 + NC.hl * Math.exp(-Math.max(0, (seen ? x.from : s.t1) - M.open) / NC.ts));
   return { med: Math.max(0, Math.exp(lm) - NC.c), p10: Math.max(0, Math.exp(lm - hw) - NC.c), p90: Math.max(0, Math.exp(lm + hw) - NC.c) };
+}
+// いまの狙い目の「待つと空く」: 今（now）より後の30分ごとの予測で、今より15分以上短く、その時刻の予測の上限（p90）も今の予測以下で、
+//  前後30分のどちらかも今より10分以上短い時刻のうち、一番短い時刻を返す（一瞬だけ短い予測や、外れると今より長くなる時刻は案内しない）。save0 は条件なしの一番短い差（「今が一番空いている」用）
+//  答え合わせ（2026-11-02 予測検証/audit1102/decide.py、期間ごとに学び直したモデル、開園90分後・12:15・14:15、表示待ち時間）:
+//   案内どおり後で並んで実際に20分以上余計に待った件 人気4つ 前半 12→6・後半 16→4、10分以上余計 30→9・29→8。後回し1件あたりの得は前半 −2.0・後半 −1.4分減る
+function laterTip(k, now, last) {
+  const w = waitAt(k, now).med, pts = [];
+  for (let t = now + 30; t <= last - 15; t += 30) { const x = waitAt(k, t); pts.push({ t, med: x.med, p90: x.p90 }); }
+  const lo = pts.reduce((m, p) => Math.min(m, p.med), w);
+  const ok = pts.filter((p, i) => w - p.med >= 15 && p.p90 <= w && [pts[i - 1], pts[i + 1]].some(q => q && q.med <= w - 10));
+  const b = ok.reduce((m, p) => (!m || p.med < m.med ? p : m), null);
+  return { w, save0: w - lo, save: b ? w - b.med : 0, bt: b ? b.t : now };
 }
 // 組み方（S.style）: lean＝ふつう（待ちは似た日のふつうの値。はじめの値）／normal＝慎重（ふつうと多めの中間）／must＝必ず最優先。sure＝確実は画面から外した（シー版と同じ考え方）
 // 計画で見る「多め」: 予測の幅（p90）は正直な80%の範囲に広げたので、計画の控えめさは前と同じになるよう 0.32 を掛ける（前の上乗せ 平均12分 ÷ 今の 37分）

@@ -2,11 +2,12 @@
 //  30分ごとに起動を予約し、同時に動くのは1本（collect.yml の concurrency）。動いた回は22:45まで（最長340分）読み続ける。GitHub の定期実行は1日数回しか動かないことがあったため（2026/10/31〜11/1）
 //  生の値は公開しない約束（ThemeParks.wiki の規約）なので、OUT/tpw/日付/時分.enc に暗号化して置く（鍵は Actions の秘密 TPW_KEY。この PC の pull.py が戻す）
 //  ついでに気象庁の大阪府の天気予報を1回読み、OUT/jma/270000/発表時刻.json に置く（すでにあれば save.sh が上書きしない）
+//  営業予定（/schedule。公式の開閉園）も起動時に1回読み、暗号化した記録の schedule に入れる（いつの時点でどう発表されていたかを残す。変更の履歴は pull.py が schedule/ に）
 //  Powered by ThemeParks.wiki https://themeparks.wiki/
 import { mkdirSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { gzipSync } from "node:zlib";
-const LIVE = "https://api.themeparks.wiki/v1/entity/47f61fac-7586-41ac-ae80-61c9257cf33e/live", JMA = "https://www.jma.go.jp/bosai/forecast/data/forecast/270000.json";
+const LIVE = "https://api.themeparks.wiki/v1/entity/47f61fac-7586-41ac-ae80-61c9257cf33e/live", SCHED = LIVE.replace(/live$/, "schedule"), JMA = "https://www.jma.go.jp/bosai/forecast/data/forecast/270000.json";
 const OUT = process.env.OUT || "out", UA = { "User-Agent": "usj-navi-collector (https://github.com/16king7-ops/usj-navi)" };
 const jst = () => new Date(Date.now() + 9 * 3600e3).toISOString().replace("T", " ").slice(0, 19);
 const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -19,6 +20,8 @@ try {
   const w = await get(JMA), at = w[0].reportDatetime;
   mkdirSync(`${OUT}/jma/270000`, { recursive: true }); writeFileSync(`${OUT}/jma/270000/${at.replace(/:/g, "")}.json`, JSON.stringify(w));
 } catch (e) { errs.push(`${jst()} jma ${e.name}: ${e.message}`); }
+let schedule = null;
+try { schedule = { at: jst(), schedule: (await get(SCHED)).schedule }; } catch (e) { errs.push(`${jst()} schedule ${e.name}: ${e.message}`); }
 while (Date.now() < end) {
   const at = jst(), t0 = Date.now();
   try {
@@ -32,7 +35,7 @@ while (Date.now() < end) {
   } catch (e) { errs.push(`${at} ${e.name}: ${e.message}`); }
   await new Promise(r => setTimeout(r, Math.max(0, t0 + 60e3 - Date.now())));
 }
-const dir = `${OUT}/tpw/${start.slice(0, 10)}`, body = gzipSync(JSON.stringify({ cols: "at_jst,entityId,name,entityType,status,waitTime,lastUpdated,otherQueues", rows, runs, errs }));
+const dir = `${OUT}/tpw/${start.slice(0, 10)}`, body = gzipSync(JSON.stringify({ cols: "at_jst,entityId,name,entityType,status,waitTime,lastUpdated,otherQueues", rows, runs, errs, schedule }));
 mkdirSync(dir, { recursive: true });
 execFileSync("openssl", ["enc", "-aes-256-cbc", "-md", "sha256", "-pbkdf2", "-iter", "100000", "-salt", "-pass", "env:TPW_KEY", "-out", `${dir}/${start.slice(11, 16).replace(":", "")}.enc`], { input: body });
 console.log(`取得 ${runs.length}回・失敗 ${errs.length}回・行 ${rows.length}`);
